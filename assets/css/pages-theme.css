@@ -1,0 +1,380 @@
+/* ============================================================
+   GLOBAL PAGE THEME — Dark Frosted Glass
+   Import this into any admin page:
+   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
+   ============================================================ */
+
+/* ---- BODY ---- */
+body {
+    background: #0f172a url('../images/background.png') center center / cover no-repeat fixed !important;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+/* ---- MAIN CONTENT ---- */
+.main-content {
+    background: transparent !important;
+}
+
+/* ---- TOP NAVBAR ---- */
+.top-navbar {
+    background: var(--primary);
+    color: #ffffff;
+}
+.top-navbar h5,
+.top-navbar small,
+.top-navbar strong {
+    color: #ffffff !important;
+}
+.top-navbar .date-display {
+    color: rgba(255, 255, 255, 0.7);
+}
+.top-navbar .date-display i {
+    color: rgba(255, 255, 255, 0.5);
+}
+.top-navbar .nav-icon-btn {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.top-navbar .nav-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+.top-navbar .notification-badge {
+    background: #ef4444;
+}
+
+/* ---- ALL CARDS ---- */
+.card,
+.stat-card,
+.stat-card-mini,
+.calendar-card,
+.detail-card {
+    background: rgba(10, 34, 76, 0.50) !important;
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+/* ---- CARD HEADERS & BODY ---- */
+.card-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
+    color: #ffffff;
+}
+.card-header span,
+.card-header i {
+    color: #ffffff;
+}
+.card-body {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* ---- STAT CARDS ---- */
+.stat-value {
+    color: #ffffff !important;
+}
+.stat-label {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+.stat-label i {
+    color: rgba(255, 255, 255, 0.65);
+}
+.stat-change {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+.stat-change.positive {
+    color: #60A5FA !important;
+}
+.stat-change.negative {
+    color: #F87171 !important;
+}
+.stat-icon.bg-primary-soft  { background: rgba(0, 102, 254, 0.3);  color: #60A5FA; }
+.stat-icon.bg-success-soft  { background: rgba(16, 185, 129, 0.3); color: #34D399; }
+.stat-icon.bg-warning-soft  { background: rgba(245, 158, 11, 0.3); color: #FBBF24; }
+.stat-icon.bg-info-soft     { background: rgba(59, 130, 246, 0.3); color: #93C5FD; }
+
+/* ---- CALENDAR THEME ---- */
+.cal-title { color: #ffffff; }
+.cal-month-label { color: #60A5FA !important; }
+.cal-weekday { color: rgba(255, 255, 255, 0.50) !important; }
+.cal-day-num { color: rgba(255, 255, 255, 0.90) !important; }
+.cal-day.other-month .cal-day-num { color: rgba(255, 255, 255, 0.25) !important; }
+.cal-day:hover { background: rgba(255, 255, 255, 0.08); }
+.cal-day.today {
+    border-color: #60A5FA;
+    background: rgba(96, 165, 250, 0.12);
+    box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.25);
+}
+.cal-day.today .cal-day-num { color: #60A5FA !important; font-weight: 800; }
+.cal-day.today::after { background: #60A5FA; }
+.cal-day.selected {
+    background: rgba(0, 102, 254, 0.6);
+    border-color: rgba(0, 102, 254, 0.7);
+    box-shadow: 0 4px 14px rgba(0, 102, 254, 0.4);
+}
+.cal-day.selected .cal-day-num { color: #fff !important; }
+.cal-day.selected:hover { background: rgba(0, 102, 254, 0.7); }
+.cal-nav-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+.cal-nav-btn:hover {
+    background: rgba(0, 102, 254, 0.4);
+    border-color: rgba(0, 102, 254, 0.5);
+    color: #fff;
+}
+.cal-today-btn {
+    border-color: rgba(96, 165, 250, 0.4);
+    color: #60A5FA;
+    background: transparent;
+}
+.cal-today-btn:hover {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: #60A5FA;
+    color: #fff;
+}
+.cal-legend { border-top-color: rgba(255, 255, 255, 0.08); }
+.cal-legend-item { color: rgba(255, 255, 255, 0.5); }
+.cal-legend-dot-today { border-color: #60A5FA; }
+.cal-event-indicator .evt-pip { background: rgba(255, 255, 255, 0.3); }
+.cal-day.selected .cal-event-indicator .evt-pip { border: 1px solid rgba(255, 255, 255, 0.5); }
+
+/* ---- DETAIL PANEL THEME ---- */
+.detail-placeholder-icon {
+    background: rgba(96, 165, 250, 0.12);
+    color: #60A5FA;
+}
+.detail-placeholder h6 { color: #ffffff; }
+.detail-placeholder p  { color: rgba(255, 255, 255, 0.45); }
+.detail-day-num {
+    background: rgba(0, 102, 254, 0.5);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 102, 254, 0.3);
+}
+.detail-day-name   { color: #ffffff; }
+.detail-month-name { color: rgba(255, 255, 255, 0.5); }
+.detail-section { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.detail-section-title { color: rgba(255, 255, 255, 0.45); }
+.detail-header { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.detail-close-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+.detail-close-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #F87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+.detail-stat-box { background: rgba(255, 255, 255, 0.06); }
+.detail-stat-box:hover {
+    background: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.detail-stat-lbl { color: rgba(255, 255, 255, 0.45); }
+.detail-stat-present .detail-stat-num { color: #34D399; }
+.detail-stat-absent  .detail-stat-num { color: #F87171; }
+.detail-stat-late    .detail-stat-num { color: #FBBF24; }
+.detail-stat-total   .detail-stat-num { color: #60A5FA; }
+.detail-bar { background: rgba(255, 255, 255, 0.08); }
+.detail-bar-present { background: #34D399; }
+.detail-bar-late    { background: #FBBF24; }
+.detail-bar-absent  { background: #F87171; }
+.detail-bar-labels { color: rgba(255, 255, 255, 0.4); }
+.detail-rate-badge.rate-none { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.4); }
+.detail-rate-badge.rate-good { background: rgba(52, 211, 153, 0.15); color: #34D399; }
+.detail-rate-badge.rate-ok   { background: rgba(251, 191, 36, 0.15);  color: #FBBF24; }
+.detail-rate-badge.rate-poor { background: rgba(248, 113, 113, 0.15); color: #F87171; }
+
+/* ---- SESSION ITEMS THEME ---- */
+.session-item { background: rgba(255, 255, 255, 0.05); }
+.session-item:hover { background: rgba(255, 255, 255, 0.10); }
+.session-name { color: #ffffff; }
+.session-meta { color: rgba(255, 255, 255, 0.45); }
+.session-icon.session-gate    { background: rgba(59, 130, 246, 0.2); color: #93C5FD; }
+.session-icon.session-subject { background: rgba(0, 102, 254, 0.2);  color: #60A5FA; }
+.session-status.active    { background: rgba(52, 211, 153, 0.15); color: #34D399; }
+.session-status.completed { background: rgba(96, 165, 250, 0.15); color: #60A5FA; }
+.detail-no-sessions { color: rgba(255, 255, 255, 0.25); }
+
+/* ---- DETAIL EVENTS THEME ---- */
+.detail-no-events { color: rgba(255, 255, 255, 0.25); }
+.detail-event-item { background: rgba(255, 255, 255, 0.05); }
+.detail-event-item:hover { background: rgba(255, 255, 255, 0.10); }
+.detail-event-title { color: #ffffff; }
+.detail-event-item.completed .detail-event-title { color: rgba(255, 255, 255, 0.3); }
+.detail-event-desc { color: rgba(255, 255, 255, 0.4); }
+.detail-event-meta { color: rgba(255, 255, 255, 0.4); }
+.detail-event-bar.type-general  { background: #10b981; }
+.detail-event-bar.type-meeting  { background: #3b82f6; }
+.detail-event-bar.type-deadline { background: #ef4444; }
+.detail-event-bar.type-reminder { background: #f59e0b; }
+.detail-event-tag.tag-general  { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.detail-event-tag.tag-meeting  { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.detail-event-tag.tag-deadline { background: rgba(239, 68, 68, 0.15);  color: #ef4444; }
+.detail-event-tag.tag-reminder { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.evt-action-btn { color: rgba(255, 255, 255, 0.3); }
+.evt-action-btn:hover { background: rgba(239, 68, 68, 0.2); color: #F87171; }
+.evt-action-btn.complete-btn:hover { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+.evt-action-btn.complete-btn.is-completed { color: #34D399; }
+.btn-add-event { color: #60A5FA; }
+.btn-add-event:hover {
+    border-color: rgba(96, 165, 250, 0.5);
+    background: rgba(96, 165, 250, 0.1);
+}
+
+/* ---- NOTIFICATION DROPDOWN THEME ---- */
+.notification-dropdown {
+    background: rgba(10, 34, 76, 0.85) !important;
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+}
+.notif-header { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.notif-header-title { color: #ffffff; }
+.notif-count { background: rgba(0, 102, 254, 0.4); }
+.notif-item:hover { background: rgba(255, 255, 255, 0.06); }
+.notif-item-title { color: #ffffff; }
+.notif-item-meta { color: rgba(255, 255, 255, 0.4); }
+.notif-type-tag { background: rgba(255, 255, 255, 0.08); }
+.notif-type-general  .notif-type-tag { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.notif-type-meeting  .notif-type-tag { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.notif-type-deadline .notif-type-tag { background: rgba(239, 68, 68, 0.15);  color: #ef4444; }
+.notif-type-reminder .notif-type-tag { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.notif-type-general  .notif-item-bar { background: #10b981; }
+.notif-type-meeting  .notif-item-bar { background: #3b82f6; }
+.notif-type-deadline .notif-item-bar { background: #ef4444; }
+.notif-type-reminder .notif-item-bar { background: #f59e0b; }
+.notif-empty { color: rgba(255, 255, 255, 0.25); }
+.notif-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); }
+
+/* ---- FORM CONTROLS ---- */
+.form-select {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+.form-select option {
+    background: #0A224C;
+    color: #ffffff;
+}
+.text-muted {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* ---- CHARTS ---- */
+canvas {
+    filter: brightness(0.95);
+}
+
+/* ---- EVENT MODAL THEME ---- */
+.event-modal {
+    background: rgba(10, 34, 76, 0.90) !important;
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+}
+.event-modal-header { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.event-modal-title { color: #ffffff; }
+.event-modal-title i { color: #60A5FA; }
+.event-modal-close {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+}
+.event-modal-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #F87171;
+}
+.evt-field label { color: rgba(255, 255, 255, 0.5); }
+.evt-field input[type="text"],
+.evt-field input[type="date"],
+.evt-field input[type="time"],
+.evt-field textarea {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+}
+.evt-field input::placeholder,
+.evt-field textarea::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+.evt-field input:focus,
+.evt-field textarea:focus {
+    border-color: #60A5FA !important;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+.evt-type-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.5);
+}
+.evt-type-btn:hover { border-color: rgba(255, 255, 255, 0.2); }
+.evt-type-btn.active[data-type="general"]  { border-color: #10b981; color: #34D399; background: rgba(16, 185, 129, 0.15); }
+.evt-type-btn.active[data-type="meeting"]  { border-color: #3b82f6; color: #93C5FD; background: rgba(59, 130, 246, 0.15); }
+.evt-type-btn.active[data-type="deadline"] { border-color: #ef4444; color: #F87171; background: rgba(239, 68, 68, 0.15); }
+.evt-type-btn.active[data-type="reminder"] { border-color: #f59e0b; color: #FBBF24; background: rgba(245, 158, 11, 0.15); }
+.event-modal-footer { border-top-color: rgba(255, 255, 255, 0.08); }
+.evt-btn-cancel {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+}
+.evt-btn-cancel:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.evt-btn-save {
+    background: rgba(0, 102, 254, 0.5);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 102, 254, 0.3);
+}
+.evt-btn-save:hover {
+    background: rgba(0, 102, 254, 0.65);
+    box-shadow: 0 6px 16px rgba(0, 102, 254, 0.4);
+}
+
+/* ---- TOAST NOTIFICATIONS ---- */
+.toast-notification.toast-success { background: linear-gradient(135deg, #10b981, #059669); }
+.toast-notification.toast-info    { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.toast-notification.toast-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.toast-notification.toast-error   { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+/* ---- BADGES ---- */
+.badge-role.role-admin   { background: rgba(0, 102, 254, 0.2);  color: #60A5FA; }
+.badge-role.role-teacher { background: rgba(245, 158, 11, 0.2); color: #FBBF24; }
+.badge-role.role-gate    { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+.badge-status.badge-active   { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+.badge-status.badge-inactive { background: rgba(107, 114, 128, 0.2); color: #9CA3AF; }
+
+/* ---- ACTIVITY ITEMS ---- */
+.activity-text { color: #ffffff; }
+.activity-text strong { color: #ffffff; }
+.activity-time { color: rgba(255, 255, 255, 0.4); }
+.activity-icon.bg-secondary-soft { background: rgba(107, 114, 128, 0.25); color: #9CA3AF; }
+.activity-icon.bg-success-soft   { background: rgba(16, 185, 129, 0.25);  color: #34D399; }
+.activity-icon.bg-info-soft      { background: rgba(59, 130, 246, 0.25);  color: #93C5FD; }
+.activity-icon.bg-primary-soft   { background: rgba(0, 102, 254, 0.25);   color: #60A5FA; }
+
+/* ---- EMPTY STATES ---- */
+.empty-icon { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.25); }
+.empty-state h6 { color: rgba(255, 255, 255, 0.5); }
+.empty-state p  { color: rgba(255, 255, 255, 0.3); }
+
+/* ---- EVENT DOTS ---- */
+.event-dot.dot-good    { background: #34D399; }
+.event-dot.dot-poor    { background: #F87171; }
+.event-dot.dot-late    { background: #FBBF24; }
+.event-dot.dot-session { background: #60A5FA; }
+
+/* ---- DETAIL SCROLLBARS ---- */
+.detail-sessions::-webkit-scrollbar-thumb,
+.detail-events-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* ---- RESPONSIVE ---- */
+/* background-attachment stays "fixed" everywhere so the BG image never scrolls with content */

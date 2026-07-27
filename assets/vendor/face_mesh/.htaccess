@@ -1,0 +1,18 @@
+# Serve MediaPipe FaceMesh assets with correct MIME types.
+# Needed because the site sends X-Content-Type-Options: nosniff, which makes
+# browsers reject .wasm if it is not served as application/wasm.
+<IfModule mod_mime.c>
+    AddType application/wasm .wasm
+    AddType application/octet-stream .data
+    AddType application/octet-stream .binarypb
+    AddType text/javascript .js
+</IfModule>
+
+# Allow these static assets to be served (override any parent deny rules).
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order Allow,Deny
+    Allow from all
+</IfModule>

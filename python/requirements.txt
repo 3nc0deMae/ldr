@@ -1,0 +1,9 @@
+flask
+flask-cors
+deepface
+tensorflow
+tf-keras
+opencv-python
+numpy
+retina-face
+mediapipe       # lightweight CPU-friendly detector alternative (set FACE_DETECTOR=mediapipe)

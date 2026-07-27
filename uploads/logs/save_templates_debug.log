@@ -1,0 +1,1 @@
+[2026-07-24 12:01:33] ERROR: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'ldb_fras.system_notification_config' doesn't exist

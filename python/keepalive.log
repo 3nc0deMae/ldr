@@ -1,0 +1,22 @@
+2026-06-17 01:11:09,928 - INFO - ============================================================
+2026-06-17 01:11:09,930 - INFO - LDB-FRAS Keep-Alive Monitor Started
+2026-06-17 01:11:09,930 - INFO - Ping interval: 300 seconds
+2026-06-17 01:11:09,931 - INFO - ============================================================
+2026-06-17 01:11:14,022 - ERROR - Service is not responding!
+2026-06-17 01:21:28,166 - ERROR - Ping failed: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)
+2026-06-18 01:41:30,797 - INFO - ============================================================
+2026-06-18 01:41:30,797 - INFO - LDB-FRAS Keep-Alive Monitor Started
+2026-06-18 01:41:30,798 - INFO - Ping interval: 300 seconds
+2026-06-18 01:41:30,798 - INFO - ============================================================
+2026-06-18 01:41:34,870 - ERROR - Service is not responding!
+2026-06-18 01:56:58,788 - ERROR - Ping failed: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)
+2026-06-18 12:32:15,670 - INFO - ============================================================
+2026-06-18 12:32:15,670 - INFO - LDB-FRAS Keep-Alive Monitor Started
+2026-06-18 12:32:15,671 - INFO - Ping interval: 300 seconds
+2026-06-18 12:32:15,671 - INFO - ============================================================
+2026-06-18 12:32:19,745 - ERROR - Service is not responding!
+2026-06-18 14:10:38,574 - INFO - ============================================================
+2026-06-18 14:10:38,575 - INFO - LDB-FRAS Keep-Alive Monitor Started
+2026-06-18 14:10:38,575 - INFO - Ping interval: 300 seconds
+2026-06-18 14:10:38,575 - INFO - ============================================================
+2026-06-18 14:10:42,662 - ERROR - Service is not responding!

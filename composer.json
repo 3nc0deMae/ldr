@@ -1,0 +1,16 @@
+{
+    "name": "ralphjohn/tin",
+    "autoload": {
+        "psr-4": {
+            "Ralphjohn\\Tin\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "christine"
+        }
+    ],
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    }
+}

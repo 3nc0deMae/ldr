@@ -1,0 +1,85 @@
+# ============================================================
+# LDB-FRAS Production .htaccess
+# Phase 20: Deployment - Apache Configuration
+# ============================================================
+
+RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Remove trailing slash
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+# Block access to sensitive files
+<FilesMatch "\.(sql|log|env|gitignore|md|json|lock|yml|yaml|sh|service|py|pyc|txt)$">
+    Require all denied
+</FilesMatch>
+
+# Block access to config and sensitive directories
+<Files "config.php">
+    Require all denied
+</Files>
+
+# Protect directories
+RewriteRule ^includes/ - [F,L]
+RewriteRule ^python/ - [F,L]
+RewriteRule ^tests/ - [F,L]
+RewriteRule ^deploy/ - [F,L]
+RewriteRule ^docs/ - [F,L]
+RewriteRule ^\.git/ - [F,L]
+
+# PHP Production Settings
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 12M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 256M
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_log /var/log/php/ldb-fras-error.log
+    php_flag expose_php Off
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "same-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # CORS for API only
+    <LocationMatch "^/api/">
+        Header set Access-Control-Allow-Origin "*"
+        Header set Access-Control-Allow-Methods "POST, GET, OPTIONS"
+        Header set Access-Control-Allow-Headers "Content-Type, X-CSRF-TOKEN, X-Requested-With"
+    </LocationMatch>
+</IfModule>
+
+# Gzip Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css application/javascript application/json
+</IfModule>
+
+# Browser Caching
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
+
+# Custom error pages
+ErrorDocument 403 /unauthorized.php
+ErrorDocument 404 /index.php

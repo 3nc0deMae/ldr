@@ -1,0 +1,567 @@
+Project Overview
+System Name
+
+Liceo de Baleno Facial Recognition Attendance System (LDB-FRAS)
+
+Technology Stack
+
+Frontend
+
+HTML5
+CSS3
+JavaScript
+Bootstrap 5
+Chart.js
+DataTables
+
+Backend
+
+PHP 8+
+Python (Face Recognition Engine)
+REST API Communication
+
+Database
+
+MySQL
+
+Facial Recognition
+
+OpenCV
+Face Recognition Library
+NumPy
+
+Notifications
+
+SMTP Email
+SMS API (Semaphore/Twilio)
+
+Server
+
+Apache (XAMPP/Laragon)
+Linux Hosting/VPS
+PHASE 1 — Project Planning & Analysis
+Objectives
+
+Define:
+
+User Roles
+Features
+Database
+System Architecture
+Attendance Workflow
+User Roles
+Admin
+
+Can:
+
+Manage Students
+Manage Teachers
+Manage Subjects
+Manage Strands
+Send Announcements
+View Reports
+Configure Settings
+Teacher
+
+Can:
+
+Login
+Take Attendance
+View Attendance
+Generate Reports
+Gate Personnel
+
+Can:
+
+Start Time-In Session
+Start Time-Out Session
+View Gate Logs
+Parent/Guardian
+
+Receives:
+
+SMS Notifications
+Email Notifications
+School Announcements
+PHASE 2 — System Architecture Design
+Architecture Flow
+Camera
+   ↓
+Python Face Recognition Engine
+   ↓
+Attendance API
+   ↓
+PHP Backend
+   ↓
+MySQL Database
+   ↓
+Email/SMS Service
+Facial Recognition Workflow
+Capture Face
+      ↓
+Detect Face
+      ↓
+Compare Face Encodings
+      ↓
+Match Student
+      ↓
+Record Attendance
+      ↓
+Send Notification
+PHASE 3 — Database Design
+Main Tables
+Users
+users
+
+Fields:
+
+id
+role
+email
+password
+status
+Students
+students
+
+Fields:
+
+student_id
+first_name
+middle_name
+last_name
+age
+gender
+address
+email
+grade_level
+section
+Guardians
+guardians
+
+Fields:
+
+guardian_name
+relationship
+phone
+email
+address
+Student Faces
+student_faces
+
+Fields:
+
+student_id
+front_face
+left_face
+right_face
+face_encoding
+Teachers
+teachers
+
+Fields:
+
+teacher_id
+fullname
+email
+phone
+Subjects
+subjects
+
+Fields:
+
+subject_name
+subject_code
+grade_level
+Attendance
+attendance
+
+Fields:
+
+student_id
+subject_id
+date
+time
+status
+Gate Logs
+gate_logs
+
+Fields:
+
+student_id
+time_in
+time_out
+status
+Announcements
+announcements
+
+Fields:
+
+title
+message
+recipients
+delivery_type
+Notifications
+notifications
+
+Fields:
+
+recipient
+channel
+status
+sent_at
+PHASE 4 — UI/UX Design
+Design Theme
+
+Modern School Dashboard
+
+Colors:
+
+Primary: #0A224C
+Secondary: #0066FE
+Background: #F7F9FC
+Success: #28A745
+Warning: #FFC107
+Danger: #DC3545
+PHASE 5 — Landing Page
+Features
+
+Header:
+
+School Logo
+System Name
+Facial Recognition Icon
+
+Body:
+
+Welcome Message
+Select User Type
+
+Buttons:
+
+Admin
+Teacher
+Gate
+
+Footer:
+
+© 2026 Liceo de Baleno
+Facial Recognition Attendance System
+PHASE 6 — Authentication Module
+Admin Login
+
+Features:
+
+Email Login
+Password Login
+Remember Me
+Forgot Password
+Forgot Password
+
+Workflow:
+
+Email
+ ↓
+Generate OTP
+ ↓
+Send OTP
+ ↓
+Verify OTP
+ ↓
+Reset Password
+Teacher Registration
+
+Rules:
+
+Teacher must already exist in database.
+Email must match teacher record.
+Prevent unauthorized signup.
+PHASE 7 — Admin Dashboard
+Dashboard Widgets
+Statistics Cards
+Total Students
+Total Teachers
+Total Subjects
+Graphs
+Daily Attendance
+Monthly Attendance
+Attendance Rate
+Recent Activities
+Recent Logins
+Attendance Sessions
+New Students
+PHASE 8 — Student Management
+Student List
+
+Features:
+
+Search
+Filter
+Pagination
+Add Student
+Personal Information
+Student ID
+First Name
+Middle Name
+Last Name
+Age
+Gender
+Address
+Email
+Grade
+Section
+Guardian Information
+Name
+Address
+Contact Number
+Email
+Facial Registration
+
+Capture:
+
+Front Face
+Left Face
+Right Face
+
+Store:
+
+Face Encoding
+
+instead of raw image matching.
+
+PHASE 9 — Teacher Management
+Features
+Add Teacher
+Edit Teacher
+Delete Teacher
+Search Teacher
+
+Fields:
+
+Name
+Email
+Phone
+Subjects Handled
+Advisory Class
+PHASE 10 — Subject & Strand Management
+Subjects
+
+Fields:
+
+Subject Name
+Subject Code
+Grade Level
+Strands
+
+Fields:
+
+Strand Name
+Strand Code
+Dashboard Cards
+Total Subjects
+Total Strands
+PHASE 11 — Announcement System
+Template Library
+
+Templates:
+
+Class Suspension
+School Event
+Achievement
+Misconduct
+Meeting
+General
+Rich Text Editor
+
+Features:
+
+Bold
+Italic
+Underline
+Lists
+Image Upload
+Delivery Channels
+
+Checkboxes:
+
+SMS
+Email
+Recipients
+All Parents
+Grade 7
+Grade 8
+Grade 9
+Grade 10
+Grade 11
+Grade 12
+PHASE 12 — Gate Attendance System
+Session Configuration
+
+Set:
+
+Start Time
+End Time
+Late Threshold
+Face Recognition Scanner
+
+Displays:
+
+Student ID
+Name
+Time
+Status
+Automatic Detection
+Matched Student
+       ↓
+Save Log
+       ↓
+Mark Present
+Absent Detection
+
+After session ends:
+
+All Students
+      ↓
+Compare Scanned Records
+      ↓
+Identify Missing Students
+      ↓
+Mark Absent
+      ↓
+Send SMS/Email
+PHASE 13 — Teacher Attendance Module
+Attendance Session
+
+Teacher selects:
+
+Subject
+Grade
+Section
+
+Configure:
+
+Time Limit
+Late Threshold
+
+Start Face Scan
+
+Displays:
+
+Student ID
+Name
+Time
+Status
+
+End Session
+
+Generate attendance summary.
+
+PHASE 14 — Attendance Reports
+Admin Reports
+
+Filters:
+
+Grade
+Section
+Subject
+Date Range
+
+Displays:
+
+Present
+Absent
+Late
+Attendance Rate
+
+Export:
+
+PDF
+Excel
+PHASE 15 — Teacher Reports
+Statistics
+
+Cards:
+
+Total Sessions
+Average Attendance
+Perfect Attendance
+Low Attendance
+
+Charts
+
+Pie Chart
+Bar Chart
+Trend Graph
+PHASE 16 — Notification System
+Email Notifications
+
+Events:
+
+Attendance Recorded
+Student Absent
+Student Late
+Announcement Sent
+SMS Notifications
+
+Examples:
+
+Your child Juan Dela Cruz
+timed in at 7:15 AM.
+Your child was absent today.
+PHASE 17 — Settings Module
+System Settings
+School Information
+SMTP Configuration
+SMS Configuration
+Attendance Rules
+Late Threshold Defaults
+PHASE 18 — Security Implementation
+Security Features
+Password Hashing (bcrypt)
+CSRF Protection
+Session Management
+Role-Based Access Control
+Input Validation
+SQL Injection Prevention
+Audit Logs
+PHASE 19 — Testing
+Unit Testing
+Login
+Attendance
+Notifications
+Integration Testing
+Face Recognition
+SMS
+Email
+User Acceptance Testing
+
+Use:
+
+System Usability Scale (SUS) as specified in the project requirements.
+
+PHASE 20 — Deployment
+Production Setup
+Apache/Nginx
+MySQL
+PHP
+Python Service
+Final Deliverables
+Complete Source Code
+Database Schema
+API Documentation
+User Manual
+Technical Documentation
+SUS Evaluation Results
+Estimated Development Order
+Database Design
+Authentication
+Student Management
+Teacher Management
+Subject Management
+Facial Registration
+Gate Module
+Teacher Attendance
+Reports
+Notifications
+Settings
+Testing
+Deployment

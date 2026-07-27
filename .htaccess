@@ -1,0 +1,43 @@
+# LDB-FRAS Apache Configuration
+# Rewrite Rules for Clean URLs
+
+RewriteEngine On
+
+# Redirect to HTTPS (uncomment for production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Block access to sensitive files
+<FilesMatch "\.(sql|log|env|gitignore)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Block access to config files
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Protect includes directory
+<IfModule mod_rewrite.c>
+    RewriteRule ^includes/ - [F,L]
+    RewriteRule ^python/ - [F,L]
+</IfModule>
+
+# PHP Settings
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 12M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+
+
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>

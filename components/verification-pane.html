@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liceo de Baleno - Pending Container Verification Pane</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center font-sans antialiased text-gray-800">
+
+  <!-- Main Container: Sidebar + Camera Viewport -->
+  <div class="w-full max-w-6xl bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 flex flex-col lg:flex-row min-h-[600px]">
+    
+    <!-- Sidebar Control Panel -->
+    <aside class="w-full lg:w-80 xl:w-96 bg-gray-50 border-b lg:border-b-0 lg:border-r border-gray-200 p-6 flex flex-col flex-shrink-0">
+      <div class="mb-6">
+        <h2 class="text-lg font-bold text-blue-900">Registration Controls</h2>
+        <p class="text-xs text-gray-500 mt-1">Admin verification pane - 3-angle capture</p>
+      </div>
+
+      <!-- Student Info Card (decorative placeholder) -->
+      <div class="bg-white rounded-xl p-4 border border-gray-200 mb-6">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Student Profile</p>
+        <p class="text-sm font-semibold text-gray-900">Juan Dela Cruz</p>
+        <p class="text-xs text-gray-600">LRN: 123456789012</p>
+        <p class="text-xs text-gray-600">Grade 11 - STEM A</p>
+      </div>
+
+      <!-- Mandatory Validation Switch -->
+      <div class="mb-6">
+        <label class="flex items-start gap-3 cursor-pointer select-none bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <input 
+            type="checkbox" 
+            id="consent-verification-checkbox"
+            class="mt-0.5 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          >
+          <span class="text-sm text-gray-700 leading-snug">
+            I certify that a physical, signed Parental Consent and Biometric Waiver form is on file for this specific student profile.
+          </span>
+        </label>
+      </div>
+
+      <!-- Step Indicator -->
+      <div class="mb-6">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Capture Progress</p>
+        <div class="flex items-center gap-2" id="step-tracker">
+          <div id="step-indicator-1" class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold transition-all duration-300">1</span>
+            <span class="text-xs text-gray-600 hidden sm:inline">Front</span>
+          </div>
+          <div class="h-px flex-1 bg-gray-200 mx-1 min-w-[8px]"></div>
+          <div id="step-indicator-2" class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold transition-all duration-300">2</span>
+            <span class="text-xs text-gray-600 hidden sm:inline">Left</span>
+          </div>
+          <div class="h-px flex-1 bg-gray-200 mx-1 min-w-[8px]"></div>
+          <div id="step-indicator-3" class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold transition-all duration-300">3</span>
+            <span class="text-xs text-gray-600 hidden sm:inline">Right</span>
+          </div>
+        </div>
+        <p id="step-text" class="text-xs font-medium text-gray-500 mt-3">Complete all three angles</p>
+      </div>
+
+      <!-- Capture Buttons -->
+      <div class="space-y-3 mt-auto">
+        <button 
+          id="btn-capture-front"
+          disabled
+          class="w-full px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:border-blue-400 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        >
+          📸 Capture Front Profile
+        </button>
+        <button 
+          id="btn-capture-left"
+          disabled
+          class="w-full px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:border-blue-400 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        >
+          📸 Capture Left Profile
+        </button>
+        <button 
+          id="btn-capture-right"
+          disabled
+          class="w-full px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:border-blue-400 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        >
+          📸 Capture Right Profile
+        </button>
+      </div>
+    </aside>
+
+    <!-- Camera Viewport Wrapper -->
+    <main class="flex-1 bg-gray-900 flex items-center justify-center relative">
+      <!-- Simulated Camera Feed -->
+      <div class="text-center text-gray-400 p-8">
+        <div class="w-64 h-64 mx-auto rounded-full bg-gray-800 flex items-center justify-center mb-4">
+          <svg class="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <p class="text-sm">Camera feed preview</p>
+      </div>
+
+      <!-- Optional: Status Badge -->
+      <div id="camera-status" class="absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-700 text-gray-300">
+        Awaiting Verification
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function() {
+      // --- DOM References ---
+      const checkbox = document.getElementById('consent-verification-checkbox');
+      const btnFront = document.getElementById('btn-capture-front');
+      const btnLeft = document.getElementById('btn-capture-left');
+      const btnRight = document.getElementById('btn-capture-right');
+      const stepText = document.getElementById('step-text');
+      const cameraStatus = document.getElementById('camera-status');
+      const stepCircles = [
+        document.getElementById('step-indicator-1'),
+        document.getElementById('step-indicator-2'),
+        document.getElementById('step-indicator-3')
+      ];
+
+      // --- State ---
+      let adminComplianceState = {
+        verified: false,
+        frontCaptured: false,
+        leftCaptured: false,
+        rightCaptured: false
+      };
+
+      // --- Step Tracker Logic ---
+      function updateStepIndicator() {
+        const steps = [adminComplianceState.frontCaptured, adminComplianceState.leftCaptured, adminComplianceState.rightCaptured];
+        const completedCount = steps.filter(Boolean).length;
+
+        // Reset all circles
+        stepCircles.forEach((el, index) => {
+          const span = el.querySelector('span');
+          span.classList.remove('bg-blue-600', 'text-white', 'scale-110');
+          span.classList.add('bg-gray-200', 'text-gray-500');
+
+          if (steps[index]) {
+            span.classList.remove('bg-gray-200', 'text-gray-500');
+            span.classList.add('bg-blue-600', 'text-white');
+          }
+        });
+
+        // Highlight active step
+        if (completedCount < 3) {
+          stepCircles[completedCount].querySelector('span').classList.add('scale-110', 'ring-4', 'ring-blue-200');
+        }
+
+        // Update status text
+        if (completedCount === 0) {
+          stepText.textContent = 'Complete all three angles';
+          cameraStatus.textContent = 'Awaiting Verification';
+          cameraStatus.className = 'absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-700 text-gray-300';
+        } else if (completedCount < 3) {
+          const nextStep = completedCount + 1;
+          const nextLabel = nextStep === 1 ? 'Front' : nextStep === 2 ? 'Left' : 'Right';
+          stepText.textContent = 'Step ' + completedCount + '/3 complete - Next: ' + nextLabel;
+          cameraStatus.textContent = 'Capturing...';
+          cameraStatus.className = 'absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-600 text-white animate-pulse';
+        } else {
+          stepText.textContent = 'All angles captured!';
+          cameraStatus.textContent = 'Ready';
+          cameraStatus.className = 'absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-600 text-white';
+        }
+      }
+
+      function captureAngle(angle) {
+        if (!adminComplianceState.verified) return;
+
+        const key = angle + 'Captured';
+        if (adminComplianceState[key]) return;
+
+        adminComplianceState[key] = true;
+        updateStepIndicator();
+
+        // Mock: In production, this would capture from webcam stream
+        console.log('Captured ' + angle + ' angle for student.');
+      }
+
+      function updateCaptureButtons() {
+        const isVerified = adminComplianceState.verified;
+        btnFront.disabled = !isVerified;
+        btnLeft.disabled = !isVerified;
+        btnRight.disabled = !isVerified;
+      }
+
+      // --- Event Listeners ---
+
+      // Checking the compliance box unlocks capture buttons and records admin compliance state
+      checkbox.addEventListener('change', function() {
+        adminComplianceState.verified = checkbox.checked;
+        updateCaptureButtons();
+
+        // Optional: Provide visual feedback when compliance is verified
+        if (checkbox.checked) {
+          checkbox.closest('label').classList.add('bg-green-50', 'border-green-300');
+          checkbox.closest('label').classList.remove('bg-amber-50', 'border-amber-200');
+        } else {
+          checkbox.closest('label').classList.remove('bg-green-50', 'border-green-300');
+          checkbox.closest('label').classList.add('bg-amber-50', 'border-amber-200');
+        }
+      });
+
+      btnFront.addEventListener('click', function() { captureAngle('front'); });
+      btnLeft.addEventListener('click', function() { captureAngle('left'); });
+      btnRight.addEventListener('click', function() { captureAngle('right'); });
+
+      // --- Initialization ---
+      updateStepIndicator();
+      updateCaptureButtons();
+    })();
+  </script>
+</body>
+</html>

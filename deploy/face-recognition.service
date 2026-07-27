@@ -1,0 +1,29 @@
+[Unit]
+Description=LDB-FRAS Face Recognition Engine
+Documentation=file:///var/www/ldb-fras/docs
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/ldb-fras/python
+ExecStart=/usr/bin/python3 /var/www/ldb-fras/python/app.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=FLASK_ENV=production
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/ldb-fras/uploads
+
+[Install]
+WantedBy=multi-user.target

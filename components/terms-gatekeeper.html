@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liceo de Baleno - Add Student T&Cs Gatekeeper</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center font-sans antialiased text-gray-800">
+
+  <!-- T&Cs Gatekeeper Modal Overlay -->
+  <div id="tcs-gatekeeper-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
+      
+      <!-- Header -->
+      <div class="px-6 py-5 border-b border-gray-200 bg-blue-50 flex-shrink-0">
+        <h2 class="text-xl font-bold text-blue-900 tracking-tight">Terms and Conditions</h2>
+        <p class="text-sm text-gray-600 mt-1">Please review the data privacy agreement before adding a new student.</p>
+      </div>
+
+      <!-- Scrollable Contract Text -->
+      <div class="px-6 py-5 overflow-y-auto flex-1 bg-white border-b border-gray-100">
+        <div class="text-gray-700 leading-relaxed space-y-4 text-sm">
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">1. Introduction</h3>
+            <p>This Data Privacy Agreement ("Agreement") governs the collection, processing, storage, and protection of personal and sensitive personal information within the Web-Based Facial Recognition Attendance System ("System") of Liceo de Baleno. By accessing, registering, or interacting with this System, you explicitly acknowledge that you have read, understood, and consented to the processing of your data in accordance with the Republic Act No. 10173, otherwise known as the Data Privacy Act of 2012 (DPA).</p>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">2. Scope of Data Collection</h3>
+            <p>To fulfill its functions, the System processes the following information:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li><strong>Biometric Data:</strong> Multi-angle facial images (Front, Left, and Right profiles) converted into encrypted, mathematical biometric templates.</li>
+              <li><strong>Student Personal Information:</strong> Full name, Learner Reference Number (LRN), grade level, section, and official school email.</li>
+              <li><strong>Guardian Personal Information:</strong> Full name, relationship to the student, active mobile number, and contact details.</li>
+              <li><strong>Logistical Data:</strong> Automated attendance timestamps, kiosk interaction logs, and historical tracking metrics.</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">3. Purpose of Data Processing</h3>
+            <p>All collected information is processed strictly under the principles of transparency, legitimate purpose, and proportionality for the following objectives:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li>Automating, verifying, and securing daily student attendance records.</li>
+              <li>Triggering real-time SMS/system notifications to registered guardians regarding student arrival and departure.</li>
+              <li>Academic research, system evaluation, and technical validation within the scope of institutional optimization and authorized research development.</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">4. Data Storage and Security</h3>
+            <p>Liceo de Baleno implements rigorous organizational, physical, and technical security measures:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li>Data is hosted on secure, encrypted servers with strict role-based access control lists (ACLs).</li>
+              <li>Facial photographs are processed into one-way, non-reversible digital hashes to prevent reverse engineering of facial images.</li>
+              <li>Access is tightly restricted to authorized system administrators, institutional authorities, and designated researchers.</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">5. Data Retention and Disposal</h3>
+            <ul class="list-disc pl-5 space-y-1">
+              <li>Personal and biometric data will be retained only for the duration of the student's enrollment or the active lifecycle evaluation of this research system.</li>
+              <li>Upon graduation, transfer, withdrawal of consent, or formal system decommissioning, all biometric vectors and personal identifiers will be permanently deleted, overwritten, or anonymized beyond recovery.</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">6. Data Subject Rights</h3>
+            <p>Under the DPA of 2012, students (and their legal guardians) are afforded the following rights:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li><strong>Right to be Informed:</strong> Knowing how, why, and when their biometric data is processed.</li>
+              <li><strong>Right to Object/Opt-out:</strong> The right to withhold or withdraw consent to biometric tracking without academic penalty (alternative manual attendance mechanisms will be provided).</li>
+              <li><strong>Right to Access and Rectification:</strong> Requesting a copy of stored records or correcting clerical errors in guardian contact details.</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">7. Third-Party Disclosures</h3>
+            <p>Biometric templates and personal data will never be shared, rented, or sold to third-party commercial entities. Data transmission is limited exclusively to authorized school personnel and targeted SMS gateways used solely for transmitting automated guardian attendance updates.</p>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">8. Limitation of Liability</h3>
+            <p>While the development team and Liceo de Baleno implement industry-standard encryption and safety protocols, no digital system is entirely immune to malicious breaches. The institution shall not be held liable for unforeseen system disruptions or unauthorized access occurring outside reasonable technical control, provided all statutory security updates and best practices have been strictly maintained.</p>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">9. Governing Law</h3>
+            <p>This Agreement shall be governed, interpreted, and enforced in absolute accordance with the laws of the Republic of the Philippines, under the regulatory oversight of the National Privacy Commission (NPC).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agreement Controls -->
+      <div class="px-6 py-5 bg-gray-50 flex-shrink-0 space-y-4">
+        <label class="flex items-start gap-3 cursor-pointer select-none">
+          <input 
+            type="checkbox" 
+            id="tcs-agreement-checkbox"
+            class="mt-0.5 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          >
+          <span class="text-sm text-gray-700 leading-snug">
+            I agree to the Data Privacy Terms and Conditions and verify that parental/guardian consent has been secured for this student.
+          </span>
+        </label>
+
+        <div class="flex items-center justify-end gap-3">
+          <button 
+            id="btn-cancel"
+            class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          >
+            Cancel
+          </button>
+          <button 
+            id="btn-next"
+            disabled
+            class="px-5 py-2.5 rounded-lg bg-gray-400 text-white text-sm font-semibold hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIDDEN: Add Student Form Modal (revealed after T&Cs acceptance) -->
+  <div id="add-student-modal" class="hidden">
+    <!-- Replace this block with your actual Add Student form HTML/JS -->
+    <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
+        <div class="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="text-xl font-bold text-gray-900">Add New Student</h2>
+          <button onclick="closeAddStudentModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+        </div>
+        <div class="p-6 space-y-5">
+          <p class="text-sm text-gray-600">This is where the actual Add Student form lives. It only becomes accessible after T&Cs acceptance.</p>
+          <!-- Real form fields go here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // --- DOM References ---
+      const tcsGatekeeper = document.getElementById('tcs-gatekeeper-modal');
+      const checkbox = document.getElementById('tcs-agreement-checkbox');
+      const btnNext = document.getElementById('btn-next');
+      const btnCancel = document.getElementById('btn-cancel');
+      const addStudentModal = document.getElementById('add-student-modal');
+
+      // --- Utility: close gatekeeper and reveal add student form ---
+      function openAddStudentForm() {
+        tcsGatekeeper.classList.add('hidden');
+        addStudentModal.classList.remove('hidden');
+      }
+
+      function closeAddStudentModal() {
+        addStudentModal.classList.add('hidden');
+        resetGatekeeper();
+      }
+
+      function resetGatekeeper() {
+        checkbox.checked = false;
+        updateNextButton();
+      }
+
+      function updateNextButton() {
+        if (checkbox.checked) {
+          btnNext.disabled = false;
+          btnNext.classList.remove('bg-gray-400');
+          btnNext.classList.add('bg-blue-600', 'hover:bg-blue-700');
+        } else {
+          btnNext.disabled = true;
+          btnNext.classList.add('bg-gray-400');
+          btnNext.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        }
+      }
+
+      // --- Event Listeners ---
+      
+      // Enable/disable Next button based on checkbox state
+      checkbox.addEventListener('change', function() {
+        updateNextButton();
+      });
+
+      // Next: validate acceptance and open the form
+      btnNext.addEventListener('click', function() {
+        if (!checkbox.checked) return;
+        openAddStudentForm();
+      });
+
+      // Cancel: reset state and close gatekeeper (no form opened)
+      btnCancel.addEventListener('click', function() {
+        resetGatekeeper();
+      });
+
+      // Expose for inline onclick references
+      window.closeAddStudentModal = closeAddStudentModal;
+    })();
+  </script>
+</body>
+</html>

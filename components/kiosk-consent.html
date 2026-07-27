@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liceo de Baleno - Kiosk Registration Consent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center font-sans antialiased text-gray-800">
+
+  <!-- Background: Kiosk LRN Entry Screen (simulated) -->
+  <div id="lrn-entry-screen" class="text-center p-8">
+    <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+      <h1 class="text-2xl font-bold text-blue-900 mb-2">Liceo de Baleno</h1>
+      <p class="text-gray-600 mb-6">Facial Recognition Attendance Kiosk</p>
+      <label class="block text-left text-sm font-semibold text-gray-700 mb-2">Enter your Learner Reference Number (LRN)</label>
+      <input 
+        type="text" 
+        id="lrn-input"
+        placeholder="e.g. 109876543210"
+        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-lg tracking-wide"
+      >
+      <button 
+        id="btn-submit-lrn"
+        class="mt-4 w-full px-5 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Continue
+      </button>
+    </div>
+  </div>
+
+  <!-- Consent Modal Overlay (hidden by default) -->
+  <div id="consent-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200">
+      <div class="px-6 py-5 bg-blue-50 border-b border-gray-200">
+        <h2 class="text-xl font-bold text-blue-900">🔒 Data Privacy Verification</h2>
+      </div>
+      <div class="px-6 py-6">
+        <p class="text-gray-700 leading-relaxed text-sm">
+          You are about to register your facial profile into the <strong>Liceo de Baleno Automated Attendance System</strong>. By clicking <strong>"Accept & Start Camera"</strong>, you authorize the system to capture your facial features to automate your daily school logs. Your facial data is securely encrypted and protected under the Philippine Data Privacy Act of 2012. If you do not consent, click <strong>"Decline"</strong> to log attendance through traditional manual verification.
+        </p>
+      </div>
+      <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
+        <button 
+          id="btn-decline"
+          class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+        >
+          Decline & Exit
+        </button>
+        <button 
+          id="btn-accept"
+          class="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Accept & Start Camera
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden: webcam viewport (revealed after consent) -->
+  <div id="webcam-viewport" class="hidden">
+    <div class="fixed inset-0 bg-black z-40 flex flex-col">
+      <div class="p-4 bg-gray-900 text-white flex items-center justify-between">
+        <h3 class="font-semibold">Face Registration - <span id="webcam-lrn-display"></span></h3>
+        <button onclick="resetKiosk()" class="text-sm px-3 py-1 rounded bg-gray-700 hover:bg-gray-600">Exit Kiosk</button>
+      </div>
+      <div class="flex-1 flex items-center justify-center bg-gray-800">
+        <p class="text-gray-400">Webcam feed would render here.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const lrnInput = document.getElementById('lrn-input');
+      const btnSubmitLrn = document.getElementById('btn-submit-lrn');
+      const consentModal = document.getElementById('consent-modal');
+      const btnDecline = document.getElementById('btn-decline');
+      const btnAccept = document.getElementById('btn-accept');
+      const lrnEntryScreen = document.getElementById('lrn-entry-screen');
+      const webcamViewport = document.getElementById('webcam-viewport');
+      const webcamLrnDisplay = document.getElementById('webcam-lrn-display');
+
+      // Mock webcam initialization - replace with real implementation
+      function initWebcamStream() {
+        return new Promise((resolve) => {
+          console.log('Webcam initializing...');
+          setTimeout(() => {
+            console.log('Webcam ready.');
+            resolve({ success: true, stream: null });
+          }, 1200);
+        });
+      }
+
+      function resetKiosk() {
+        webcamViewport.classList.add('hidden');
+        lrnEntryScreen.classList.remove('hidden');
+        lrnInput.value = '';
+        lrnInput.focus();
+      }
+
+      async function acceptAndStartCamera(lrn) {
+        consentModal.classList.add('hidden');
+        lrnEntryScreen.classList.add('hidden');
+        webcamViewport.classList.remove('hidden');
+        webcamLrnDisplay.textContent = lrn;
+
+        await initWebcamStream();
+      }
+
+      function declineAndExit() {
+        consentModal.classList.add('hidden');
+        lrnInput.value = '';
+        lrnInput.focus();
+        // Optionally alert or log decline event per DPA requirements
+      }
+
+      function showConsentModal() {
+        consentModal.classList.remove('hidden');
+      }
+
+      // --- Event Listeners ---
+
+      // Trigger consent modal when student submits LRN
+      btnSubmitLrn.addEventListener('click', function() {
+        const lrnValue = lrnInput.value.trim();
+        if (!lrnValue) {
+          lrnInput.classList.add('ring-2', 'ring-red-300');
+          return;
+        }
+        showConsentModal();
+      });
+
+      lrnInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          btnSubmitLrn.click();
+        }
+      });
+
+      lrnInput.addEventListener('input', function() {
+        lrnInput.classList.remove('ring-2', 'ring-red-300');
+      });
+
+      // Decline: clear state and return to LRN input
+      btnDecline.addEventListener('click', declineAndExit);
+
+      // Accept: close modal and initialize webcam
+      btnAccept.addEventListener('click', function() {
+        const lrnValue = lrnInput.value.trim();
+        acceptAndStartCamera(lrnValue);
+      });
+
+      // Expose for inline handlers if needed
+      window.resetKiosk = resetKiosk;
+    })();
+  </script>
+</body>
+</html>
