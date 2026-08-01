@@ -9,7 +9,8 @@ RUN apt-get update \
     && docker-php-ext-install pdo_mysql mysqli mbstring zip \
     && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
-
+    
+RUN docker-php-ext-install pdo_mysql mysqli mbstring zip
 # Clean MPM state at build time
 RUN rm -f /etc/apache2/mods-enabled/mpm_*.load && a2enmod mpm_prefork
 
