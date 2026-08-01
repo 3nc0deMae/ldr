@@ -41,7 +41,8 @@ class Database {
         }
 
         // 2. Railway MySQL plugin variables, 3. generic overrides, 4. local development defaults
-        $this->host     = getenv('MYSQLHOST')     ?: getenv('DB_HOST')     ?: 'localhost';
+        // Note: '127.0.0.1' is used instead of 'localhost' to force TCP connections and avoid missing socket errors in Docker/Railway.
+        $this->host     = getenv('MYSQLHOST')     ?: getenv('DB_HOST')     ?: '127.0.0.1';
         $this->port     = getenv('MYSQLPORT')     ?: getenv('DB_PORT')     ?: '3306';
         $this->username = getenv('MYSQLUSER')     ?: getenv('DB_USER')     ?: 'root';
         $this->password = getenv('MYSQLPASSWORD') ?: getenv('DB_PASSWORD') ?: '';
