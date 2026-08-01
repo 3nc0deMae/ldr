@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+.vscode
+.kilo
+vendor
+tests
+docs
+deploy
+python
+composer.phar
+composer-setup.php
+*.log
