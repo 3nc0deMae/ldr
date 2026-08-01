@@ -52,8 +52,16 @@ a2enmod mpm_prefork
 echo "ServerName localhost" > /etc/apache2/conf-available/server-name.conf
 a2enconf server-name 2>/dev/null || true
 
-sed -i "s/^Listen 80$/Listen ${PORT}/" /etc/apache2/ports.conf
+# Listen on the Railway-injected $PORT (what Railway's proxy probes) AND on
+# port 80 (fallback for setups that expect the default Apache port). Replace
+# ports.conf entirely so the Listen lines are deterministic (a plain sed on
+# "Listen 80" silently does nothing if the line format differs).
+printf 'Listen %s\nListen 80\n' "$PORT" > /etc/apache2/ports.conf
 sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT}>/" /etc/apache2/sites-available/000-default.conf
+
+# Fail fast with a visible config error instead of booting on the wrong port.
+apache2ctl -t
+echo "== Apache configured. Listening on: $(grep '^Listen' /etc/apache2/ports.conf | tr '\n' ' ') =="
 exec /usr/local/bin/apache2-foreground
 EOF
 RUN chmod +x /usr/local/bin/port-entrypoint.sh
