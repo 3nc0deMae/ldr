@@ -47,6 +47,11 @@ a2dismod mpm_worker 2>/dev/null || true
 a2dismod mpm_prefork 2>/dev/null || true
 a2enmod mpm_prefork
 
+# Silence the harmless "AH00558: Could not reliably determine the server's
+# fully qualified domain name" warning with a global ServerName.
+echo "ServerName localhost" > /etc/apache2/conf-available/server-name.conf
+a2enconf server-name 2>/dev/null || true
+
 sed -i "s/^Listen 80$/Listen ${PORT}/" /etc/apache2/ports.conf
 sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 exec /usr/local/bin/apache2-foreground
