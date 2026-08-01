@@ -12,7 +12,7 @@ class Database {
     public function __construct() {
         // Kunin ang mga values mula sa Railway environment variables
         $this->host = getenv('DB_HOST') ?: 'altaria.proxy.rlwy.net';
-        $this->db_name = getenv('DB_NAME') ?: 'ldb_fras';
+        $this->db_name = getenv('DB_NAME') ?: 'railway';
         $this->username = getenv('DB_USER') ?: 'root';
         $this->password = getenv('DB_PASSWORD') ?: 'uULVyzmjeIfdrBjviQeCXvsQrqaJlNdm';
         $this->port = getenv('DB_PORT') ?: '25294';
