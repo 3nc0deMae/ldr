@@ -29,6 +29,10 @@ require_once TEST_ROOT . '/vendor/autoload.php';
 require_once TEST_ROOT . '/includes/db.php';
 require_once TEST_ROOT . '/includes/functions.php';
 
+// Python Face Recognition API constants (mirrors config.php for test contexts)
+if (!defined('PYTHON_API_URL')) define('PYTHON_API_URL', 'http://localhost:5000');
+if (!defined('PYTHON_API_KEY')) define('PYTHON_API_KEY', 'ldb_fras_api_key_2026');
+
 // Include security.php selectively (avoid session-dependent functions)
 // Some functions like validateRequired, validateLength etc. don't need session
 require_once TEST_ROOT . '/includes/security.php';

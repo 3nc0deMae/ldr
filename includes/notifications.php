@@ -11,6 +11,27 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 /**
+ * Store/retrieve the last email send error message.
+ * @param string|null $msg When provided, stores the message; otherwise reads it.
+ * @return string
+ */
+function _emailLastError($msg = null) {
+    static $last = '';
+    if ($msg !== null) {
+        $last = $msg;
+    }
+    return $last;
+}
+
+/**
+ * Get the human-readable reason the last email send failed (empty if it succeeded).
+ * @return string
+ */
+function getLastEmailError() {
+    return _emailLastError();
+}
+
+/**
  * Send email notification using PHPMailer SMTP
  * @param string $to        Recipient email
  * @param string $subject   Email subject
@@ -21,6 +42,7 @@ use PHPMailer\PHPMailer\Exception;
 function sendEmailNotification($to, $subject, $body, $options = []) {
     $db = getDB();
     error_log("EMAIL SEND START: to=$to subject=$subject");
+    _emailLastError('');
 
     // Auto-migrate email counter columns if missing
     try {
@@ -57,6 +79,8 @@ function sendEmailNotification($to, $subject, $body, $options = []) {
     $enabled      = getSetting($db, 'enable_email_notifications', '1');
 
     if ($enabled !== '1') {
+        _emailLastError('Email notifications are disabled in System Settings. Enable "Email Notifications" under Admin → System Settings → Email & SMS.');
+        logNotification($db, $to, 'email', $subject, $body, 'failed', _emailLastError());
         return false;
     }
 
@@ -66,6 +90,12 @@ function sendEmailNotification($to, $subject, $body, $options = []) {
         $headers .= "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
         $result = @mail($to, $subject, wrapEmailTemplate($subject, $body, defined('APP_LOGO_URL') ? APP_LOGO_URL : ''), $headers);
+        if (!$result) {
+            $mailErr = error_get_last();
+            _emailLastError('SMTP credentials are not configured, the PHP mail() fallback also failed'
+                . ($mailErr && !empty($mailErr['message']) ? ': ' . $mailErr['message'] : '')
+                . '. Enter your SMTP username and password (e.g., a Gmail App Password) under Admin → System Settings → Email & SMS.');
+        }
     } else {
         $logoUrl = defined('APP_LOGO_URL') ? APP_LOGO_URL : '';
         $embedImages = [];
@@ -78,7 +108,7 @@ function sendEmailNotification($to, $subject, $body, $options = []) {
                                   $embedImages);
     }
 
-    logNotification($db, $to, 'email', $subject, $body, $result ? 'sent' : 'failed');
+    logNotification($db, $to, 'email', $subject, $body, $result ? 'sent' : 'failed', $result ? null : _emailLastError());
     error_log("EMAIL SEND RESULT: to=$to result=" . ($result ? 'SUCCESS' : 'FAILED'));
 
     if ($result) {
@@ -467,7 +497,9 @@ function sendViaPHPMailer($host, $port, $username, $password, $encryption, $from
         $mail->send();
         return true;
     } catch (Exception $e) {
-        error_log("PHPMailer error: " . $e->getMessage());
+        $msg = $e->getMessage();
+        error_log("PHPMailer error: " . $msg);
+        _emailLastError('SMTP send failed: ' . $msg);
         return false;
     }
 }

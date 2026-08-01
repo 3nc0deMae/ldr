@@ -45,6 +45,29 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 } catch (Exception $e) { error_log('strands: ' . $e->getMessage()); }
 
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS `tracks` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `track_name` VARCHAR(255) NOT NULL,
+        `description` TEXT DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+} catch (Exception $e) { error_log('tracks: ' . $e->getMessage()); }
+
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS `electives` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `track_id` INT NOT NULL,
+        `elective_name` VARCHAR(255) NOT NULL,
+        `description` TEXT DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_track_id (`track_id`),
+        FOREIGN KEY (`track_id`) REFERENCES `tracks`(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+} catch (Exception $e) { error_log('electives: ' . $e->getMessage()); }
+
 // ============================================================
 // AJAX HANDLERS
 // ============================================================
@@ -241,6 +264,45 @@ if (isset($_POST['ajax_action']) || isset($_GET['ajax_action'])) {
             } catch (Exception $e) { echo json_encode(['success'=>false,'message'=>'Database error.']); }
             exit;
 
+        case 'add_track':
+            $name = trim($_POST['track_name'] ?? '');
+            $desc = trim($_POST['description'] ?? '');
+            if (empty($name)) { echo json_encode(['success'=>false,'message'=>'Track name is required.']); exit; }
+            try {
+                $db->prepare("INSERT INTO tracks (track_name,description) VALUES (?,?)")->execute([$name,$desc]);
+                echo json_encode(['success'=>true,'message'=>'Track added.']);
+            } catch (Exception $e) { echo json_encode(['success'=>false,'message'=>'Database error.']); }
+            exit;
+
+        case 'update_track':
+            $id   = (int)($_POST['track_id'] ?? 0);
+            $name = trim($_POST['track_name'] ?? '');
+            $desc = trim($_POST['description'] ?? '');
+            if ($id<=0||empty($name)) { echo json_encode(['success'=>false,'message'=>'Track name required.']); exit; }
+            try {
+                $db->prepare("UPDATE tracks SET track_name=?,description=? WHERE id=?")->execute([$name,$desc,$id]);
+                echo json_encode(['success'=>true,'message'=>'Track updated.']);
+            } catch (Exception $e) { echo json_encode(['success'=>false,'message'=>'Database error.']); }
+            exit;
+
+        case 'delete_track':
+            $id = (int)($_POST['id'] ?? 0);
+            if ($id<=0) { echo json_encode(['success'=>false,'message'=>'Invalid ID.']); exit; }
+            try {
+                $check = $db->prepare("SELECT id FROM tracks WHERE id=?");
+                $check->execute([$id]);
+                if (!$check->fetch()) {
+                    echo json_encode(['success'=>false,'message'=>'Track not found.']);
+                    exit;
+                }
+                $db->prepare("DELETE FROM tracks WHERE id=?")->execute([$id]);
+                echo json_encode(['success'=>true,'message'=>'Track deleted.']);
+            } catch (Exception $e) {
+                error_log('Delete track error: ' . $e->getMessage());
+                echo json_encode(['success'=>false,'message'=>'Cannot delete track. It may be in use.']);
+            }
+            exit;
+
         default:
             echo json_encode(['success'=>false,'message'=>'Unknown action.']); exit;
     }
@@ -268,7 +330,7 @@ try {
 $totalSubjects=$totalTracks=$totalSections=$jhsCount=$shsCount=0;
 try {
     $totalSubjects=$db->query("SELECT COUNT(*) FROM subjects")->fetchColumn();
-    $totalTracks=$db->query("SELECT COUNT(*) FROM strands")->fetchColumn();
+    $totalTracks=$db->query("SELECT COUNT(*) FROM tracks")->fetchColumn();
     $totalSections=$db->query("SELECT COUNT(*) FROM sections")->fetchColumn();
 
     $subjectLevelRows = $db->query("SELECT grade_level, grade_level_end FROM subjects")->fetchAll();
@@ -284,6 +346,9 @@ try {
 
 $strands = [];
 try { $strands = $db->query("SELECT * FROM strands ORDER BY strand_name")->fetchAll(); } catch (Exception $e) {}
+
+$tracks = [];
+try { $tracks = $db->query("SELECT * FROM tracks ORDER BY track_name")->fetchAll(); } catch (Exception $e) {}
 
 $allSections = [];
 try {
@@ -339,9 +404,6 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
 }
 ?>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
 
 <style>
@@ -587,19 +649,17 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-diagram-3 me-2"></i>SHS Tracks</span><button class="btn-add-action btn-add-track-sm" id="btnAddTrack" style="padding:6px 14px;font-size:11px"><i class="bi bi-plus-lg"></i> Add Track</button></div>
             <div class="card-body">
-                <?php if(empty($strands)): ?><div class="empty-state"><div class="empty-icon bg-success-soft"><i class="bi bi-diagram-3"></i></div><h6>No Tracks Added Yet</h6><p>Click "Add Track" to create SHS tracks.</p></div>
+                <?php if(empty($tracks)): ?><div class="empty-state"><div class="empty-icon bg-success-soft"><i class="bi bi-diagram-3"></i></div><h6>No Tracks Added Yet</h6><p>Click "Add Track" to create SHS tracks.</p></div>
                 <?php else: ?><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr>
-                    <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Code</th>
                     <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Name</th>
                     <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Description</th>
                     <th style="width:100px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Actions</th>
-                </tr></thead><tbody><?php foreach($strands as $st): ?><tr class="track-row">
-                    <td><code style="font-size:12px"><?= sanitize($st['strand_code']) ?></code></td>
-                    <td class="fw-600"><?= sanitize($st['strand_name']) ?></td>
+                </tr></thead><tbody><?php foreach($tracks as $st): ?><tr class="track-row">
+                    <td class="fw-600"><?= sanitize($st['track_name']) ?></td>
                     <td style="font-size:12px"><?= sanitize($st['description']??'-') ?></td>
                     <td><div class="d-flex gap-1">
-                        <button class="btn btn-sm btn-outline-primary" style="padding:4px 10px" onclick='openEditTrack(<?= json_encode(['id'=>(int)$st['id'],'strand_code'=>$st['strand_code'],'strand_name'=>$st['strand_name'],'description'=>$st['description']??''],JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>)'><i class="bi bi-pencil" style="font-size:12px"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" style="padding:4px 10px" onclick="openDeleteModal('track',<?= $st['id'] ?>, '<?= addslashes($st['strand_name']) ?>')"><i class="bi bi-trash" style="font-size:12px"></i></button>
+                        <button class="btn btn-sm btn-outline-primary" style="padding:4px 10px" onclick='openEditTrack(<?= json_encode(['id'=>(int)$st['id'],'track_name'=>$st['track_name'],'description'=>$st['description']??''],JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>)'><i class="bi bi-pencil" style="font-size:12px"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" style="padding:4px 10px" onclick="openDeleteModal('track',<?= $st['id'] ?>, '<?= addslashes($st['track_name']) ?>')"><i class="bi bi-trash" style="font-size:12px"></i></button>
                     </div></td>
                 </tr><?php endforeach; ?></tbody></table></div><?php endif; ?>
             </div>
@@ -647,16 +707,15 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
 
 <!-- ADD TRACK -->
 <div class="event-modal-overlay" id="addTrackOverlay"><div class="event-modal"><div class="event-modal-header"><div class="event-modal-title"><i class="bi bi-diagram-3"></i><span>Add New Track</span></div><button class="event-modal-close" onclick="closeModal('addTrackOverlay')"><i class="bi bi-x-lg"></i></button></div>
-<form id="addTrackForm" autocomplete="off"><input type="hidden" name="ajax_action" value="add_strand"><div class="event-modal-body">
-    <div class="evt-field"><label>Track Code <span class="required">*</span></label><input type="text" name="strand_code" placeholder="e.g. STEM" required maxlength="20"></div>
-    <div class="evt-field"><label>Track Name <span class="required">*</span></label><input type="text" name="strand_name" placeholder="e.g. Science, Technology, Engineering & Math" required maxlength="150"></div>
+<form id="addTrackForm" autocomplete="off"><input type="hidden" name="ajax_action" value="add_track"><div class="event-modal-body">
+    <div class="evt-field"><label>Track Name <span class="required">*</span></label><input type="text" name="track_name" placeholder="e.g. Science, Technology, Engineering & Math" required maxlength="150"></div>
+    <div class="evt-field"><label>Description</label><textarea name="description" rows="2" placeholder="Brief description..." maxlength="500"></textarea></div>
 </div><div class="event-modal-footer"><button type="button" class="evt-btn evt-btn-cancel" onclick="closeModal('addTrackOverlay')">Cancel</button><button type="submit" class="evt-btn evt-btn-save" id="addTrackSave"><i class="bi bi-check-lg me-1"></i> Add Track</button></div></form></div></div>
 
 <!-- EDIT TRACK -->
 <div class="event-modal-overlay" id="editTrackOverlay"><div class="event-modal"><div class="event-modal-header"><div class="event-modal-title"><i class="bi bi-pencil-square"></i><span>Edit Track</span></div><button class="event-modal-close" onclick="closeModal('editTrackOverlay')"><i class="bi bi-x-lg"></i></button></div>
-<form id="editTrackForm" autocomplete="off"><input type="hidden" name="ajax_action" value="update_strand"><input type="hidden" name="strand_id" id="edit-track-id"><div class="event-modal-body">
-    <div class="evt-field"><label>Track Code <span class="required">*</span></label><input type="text" name="strand_code" id="edit-track-code" required maxlength="20"></div>
-    <div class="evt-field"><label>Track Name <span class="required">*</span></label><input type="text" name="strand_name" id="edit-track-name" required maxlength="150"></div>
+<form id="editTrackForm" autocomplete="off"><input type="hidden" name="ajax_action" value="update_track"><input type="hidden" name="track_id" id="edit-track-id"><div class="event-modal-body">
+    <div class="evt-field"><label>Track Name <span class="required">*</span></label><input type="text" name="track_name" id="edit-track-name" required maxlength="150"></div>
     <div class="evt-field"><label>Description</label><textarea name="description" id="edit-track-desc" rows="2" maxlength="500"></textarea></div>
 </div><div class="event-modal-footer"><button type="button" class="evt-btn evt-btn-cancel" onclick="closeModal('editTrackOverlay')">Cancel</button><button type="submit" class="evt-btn evt-btn-save" id="editTrackSave"><i class="bi bi-check-lg me-1"></i> Save Changes</button></div></form></div></div>
 
@@ -835,8 +894,7 @@ window.openEditSection=function(sec){
 // EDIT TRACK
 window.openEditTrack=function(st){
     document.getElementById('edit-track-id').value=st.id;
-    document.getElementById('edit-track-code').value=st.strand_code||'';
-    document.getElementById('edit-track-name').value=st.strand_name||'';
+    document.getElementById('edit-track-name').value=st.track_name||'';
     document.getElementById('edit-track-desc').value=st.description||'';
     openModal('editTrackOverlay');
 };
@@ -1059,7 +1117,7 @@ function setupDeleteHandler(overlayId, actionName, idFieldName, successMessage) 
 // Setup all delete handlers
 setupDeleteHandler('deleteSubjectOverlay', 'delete_subject', 'subject_id', 'Subject deleted successfully.');
 setupDeleteHandler('deleteSectionOverlay', 'delete_section', 'section_id', 'Section deleted successfully.');
-setupDeleteHandler('deleteTrackOverlay', 'delete_strand', 'id', 'Track deleted successfully.');
+setupDeleteHandler('deleteTrackOverlay', 'delete_track', 'id', 'Track deleted successfully.');
 
 // TOAST NOTIFICATION SYSTEM
 window.showToast = function(msg, type) {

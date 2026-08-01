@@ -79,10 +79,6 @@ $upcomingEvents = [];
 try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND is_completed = 0 ORDER BY event_date ASC, event_time IS NULL, event_time ASC LIMIT 20"); $stmt->execute(); $upcomingEvents = $stmt->fetchAll(); } catch (Exception $e) {}
 ?>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-navbar.css">
 

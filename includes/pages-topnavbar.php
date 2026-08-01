@@ -305,7 +305,7 @@ $__userInitial = $__userName ? strtoupper(substr($__userName, 0, 1)) : strtouppe
 if (!document.getElementById('ntf-tailwind-script')) {
     var s = document.createElement('script');
     s.id = 'ntf-tailwind-script';
-    s.src = 'https://cdn.tailwindcss.com';
+    s.src = '<?= BASE_URL ?>/assets/vendor/js/tailwind.js';
     s.onload = function () {
         if (window.tailwind) { tailwind.config = { corePlugins: { preflight: false } }; }
     };

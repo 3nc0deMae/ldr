@@ -37,156 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'create' || $action === 'save_draft') {
-        $subject       = sanitize($_POST['subject'] ?? '');
-        $bodyHTML      = $_POST['body_html'] ?? '';
-        $bodyPlain     = trim(strip_tags($bodyHTML));
-        $templateType  = sanitize($_POST['template_type'] ?? 'general');
-        $recipientType = sanitize($_POST['recipient_type'] ?? 'all');
-        $channelEmail  = !empty($_POST['channel_email']) ? 1 : 0;
-        $channelSMS    = !empty($_POST['channel_sms'])   ? 1 : 0;
-        $scheduleType  = sanitize($_POST['schedule_type'] ?? 'now');
-        $scheduleDate  = sanitize($_POST['schedule_date'] ?? '');
-        $scheduleTime  = sanitize($_POST['schedule_time'] ?? '');
-        $status        = ($action === 'save_draft') ? 'draft' : (($scheduleType === 'scheduled') ? 'scheduled' : 'sent');
-
-        $recipients = ['all' => false, 'grades' => [], 'student_ids' => []];
-        if ($recipientType === 'all') $recipients['all'] = true;
-        elseif ($recipientType === 'grade') $recipients['grades'] = array_map('intval', $_POST['grades'] ?? []);
-        elseif ($recipientType === 'individual') $recipients['student_ids'] = array_map('intval', $_POST['student_ids'] ?? []);
-
-        $channels = [];
-        if ($channelEmail) $channels[] = 'email';
-        if ($channelSMS)   $channels[] = 'sms';
-
-        $imagePath = null;
-        if (!empty($_FILES['attachment_image']['name'])) {
-            $uploadDir = __DIR__ . '/../uploads/announcements/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-            $ext = strtolower(pathinfo($_FILES['attachment_image']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg','jpeg','png','gif','webp'])) {
-                $filename = 'ann_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-                if (move_uploaded_file($_FILES['attachment_image']['tmp_name'], $uploadDir . $filename)) {
-                    $imagePath = 'uploads/announcements/' . $filename;
-                }
-            }
-        }
-
-        $scheduledAt = null;
-        if ($scheduleType === 'scheduled' && $scheduleDate && $scheduleTime) {
-            $scheduledAt = $scheduleDate . ' ' . $scheduleTime . ':00';
-        }
-
-        if ($subject && $bodyPlain) {
-            try {
-                $stmt = $db->prepare(
-                    "INSERT INTO announcements
-                     (template_type, subject, body, body_html, recipients, channels, attachment_path, status, scheduled_at, created_by, created_at)
-                     VALUES (:template_type, :subject, :body, :body_html, :recipients, :channels, :attachment_path, :status, :scheduled_at, :created_by, NOW())"
-                );
-                $stmt->execute([
-                    ':template_type'   => $templateType,
-                    ':subject'         => $subject,
-                    ':body'            => $bodyPlain,
-                    ':body_html'       => $bodyHTML,
-                    ':recipients'      => json_encode($recipients),
-                    ':channels'        => json_encode($channels),
-                    ':attachment_path' => $imagePath,
-                    ':status'          => $status,
-                    ':scheduled_at'    => $scheduledAt,
-                    ':created_by'      => $_SESSION['user_id']
-                ]);
-
-                $notif_err = '';
-                $ann_user_notif_id = null;
-                if (!empty($channels) && $status === 'sent') {
-                    try {
-                        require_once __DIR__ . '/../includes/notifications.php';
-                        $studentConditions = ["s.status = 'active'"];
-                        $studentParams = [];
-                        if (!empty($recipients['grades'])) {
-                            $studentConditions[] = "s.grade_level IN (" . implode(',', array_fill(0, count($recipients['grades']), '?')) . ")";
-                            $studentParams = array_merge($studentParams, $recipients['grades']);
-                        } elseif (!empty($recipients['student_ids'])) {
-                            $studentConditions[] = "s.id IN (" . implode(',', array_fill(0, count($recipients['student_ids']), '?')) . ")";
-                            $studentParams = array_merge($studentParams, $recipients['student_ids']);
-                        }
-                        $hasEmail = in_array('email', $channels);
-                        $hasSMS   = in_array('sms', $channels);
-                        $contactFilters = [];
-                        if ($hasEmail) $contactFilters[] = "(g.email IS NOT NULL AND g.email != '')";
-                        if ($hasSMS)   $contactFilters[] = "(g.phone IS NOT NULL AND g.phone != '')";
-                        $contactClause = !empty($contactFilters) ? 'AND (' . implode(' OR ', $contactFilters) . ')' : '';
-
-                        $sql = "SELECT g.guardian_name, g.email, g.phone, g.relationship
-                                FROM students s
-                                LEFT JOIN guardians g ON s.id = g.student_id
-                                WHERE " . implode(' AND ', $studentConditions) . " {$contactClause}";
-                        $stmt2 = $db->prepare($sql);
-                        $stmt2->execute($studentParams);
-                        $rawGuardians = $stmt2->fetchAll();
-                        $guardians = [];
-                        foreach ($rawGuardians as $g) {
-                            $key = !empty($g['email']) ? $g['email'] : (!empty($g['phone']) ? 'sms:' . $g['phone'] : null);
-                            if ($key && !isset($guardians[$key])) {
-                                $guardians[$key] = $g;
-                            }
-                        }
-                        $guardians = array_values($guardians);
-
-                        $notifDeliveryStatus = 'sent';
-                        if (!empty($guardians)) {
-                            $bulkResult = sendBulkNotification($db, $guardians, $subject, $bodyHTML, $channels);
-                            if (($bulkResult['failed'] ?? 0) > 0) {
-                                $notifDeliveryStatus = 'failed';
-                                $notif_err = ($bulkResult['failed'] ?? 0) . ' recipient(s) failed to receive the notification.';
-                                $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([(int)$db->lastInsertId()]);
-                            }
-                        }
-
-                        $ann_user_notif_id = createUserNotification($db, [
-                            'user_role'       => 'admin',
-                            'category'        => 'announcement',
-                            'title'           => $subject,
-                            'message'         => strip_tags($bodyHTML),
-                            'delivery_status' => $notifDeliveryStatus,
-                            'reference_id'    => (int)$db->lastInsertId(),
-                        ]);
-                    } catch (Exception $e) {
-                        $notif_err = $e->getMessage();
-                        if ($ann_user_notif_id) {
-                            $db->prepare("UPDATE user_notifications SET delivery_status = 'failed' WHERE id = ?")->execute([$ann_user_notif_id]);
-                        }
-                        $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([(int)$db->lastInsertId()]);
-                    }
-                }
-
-                $_SESSION['flash_message'] = [
-                    'type'    => 'success',
-                    'message' => ($action === 'save_draft') ? 'Announcement saved as draft.' : (($status === 'scheduled') ? 'Announcement scheduled successfully.' : 'Announcement sent successfully.')
-                ];
-                if ($notif_err) {
-                    $_SESSION['flash_message']['message'] .= ' (Notification failed: ' . $notif_err . ')';
-                    $_SESSION['flash_message']['type'] = 'warning';
-                }
-            } catch (Exception $e) {
-                $_SESSION['flash_message'] = ['type' => 'danger', 'message' => 'Failed to save announcement. Please try again.'];
-            }
-        } else {
-            $_SESSION['flash_message'] = ['type' => 'warning', 'message' => 'Subject and message body are required.'];
-        }
-        if (!empty($_POST['ajax'])) {
-            header('Content-Type: application/json');
-            if (ob_get_length()) { ob_end_clean(); }
-            $resp = ['success' => true];
-            if (!empty($_SESSION['flash_message'])) {
-                $resp['message'] = $_SESSION['flash_message']['message'];
-                $resp['type'] = $_SESSION['flash_message']['type'];
-            }
-            echo json_encode($resp);
-            exit;
-        }
-        if (ob_get_length()) { ob_end_clean(); }
-        header('Location: ' . BASE_URL . '/admin/announcements.php');
+        // Creation / draft handling now lives in the shared processor so that
+        // role-based recipient routing is enforced for admins AND advisers.
+        require_once __DIR__ . '/../process_announcement.php';
         exit;
     }
 
@@ -251,12 +104,52 @@ $customTemplates = [];
 try { $customTemplates = $db->query("SELECT * FROM announcement_templates ORDER BY created_at DESC")->fetchAll(); } catch (Exception $e) {}
 
 $templates = [
-    'class_suspension' => ['title'=>'Class Suspension','icon'=>'bi-calendar-x','color'=>'danger','subject'=>'Class Suspension Notice','body'=>'<p>Dear Parents/Guardians,</p><p>Please be informed that classes for <strong>[GRADE LEVEL/SECTION]</strong> will be suspended on <strong>[DATE]</strong> due to <strong>[REASON]</strong>.</p><p>Classes will resume on <strong>[RESUME DATE]</strong>.</p><p><br></p><p>Thank you,<br>Liceo de Baleno Administration</p>'],
-    'school_event' => ['title'=>'School Event','icon'=>'bi-calendar-event','color'=>'primary','subject'=>'Upcoming School Event','body'=>'<p>Dear Parents/Guardians,</p><p>We are pleased to inform you about our upcoming school event:</p><p><strong>Event:</strong> [EVENT NAME]<br><strong>Date:</strong> [DATE]<br><strong>Time:</strong> [TIME]<br><strong>Venue:</strong> [VENUE]</p><p>Your child\'s participation is highly encouraged.</p><p><br></p><p>Thank you,<br>Liceo de Baleno Administration</p>'],
-    'student_achievement' => ['title'=>'Achievement','icon'=>'bi-trophy','color'=>'success','subject'=>'Student Achievement Recognition','body'=>'<p>Dear Parents/Guardians,</p><p>We are proud to inform you that your child, <strong>[STUDENT NAME]</strong>, has achieved <strong>[ACHIEVEMENT DETAILS]</strong> in <strong>[COMPETITION/ACTIVITY]</strong> held on <strong>[DATE]</strong>.</p><p>Congratulations!</p><p><br></p><p>Liceo de Baleno Administration</p>'],
-    'student_misconduct' => ['title'=>'Misconduct','icon'=>'bi-exclamation-triangle','color'=>'warning','subject'=>'Student Conduct Notice','body'=>'<p>Dear Parents/Guardians,</p><p>This is to inform you regarding an incident involving your child, <strong>[STUDENT NAME]</strong>, on <strong>[DATE]</strong>.</p><p><strong>Nature of Incident:</strong> [DESCRIPTION]<br><strong>Action Taken:</strong> [ACTION]</p><p>We request your presence for a parent-teacher conference on <strong>[MEETING DATE]</strong> at <strong>[TIME]</strong>.</p><p><br></p><p>Respectfully,<br>Liceo de Baleno Administration</p>'],
-    'parent_meeting' => ['title'=>'Meeting','icon'=>'bi-people','color'=>'info','subject'=>'Parent-Teacher Conference Invitation','body'=>'<p>Dear Parents/Guardians,</p><p>You are cordially invited to attend a Parent-Teacher Conference on:</p><p><strong>Date:</strong> [DATE]<br><strong>Time:</strong> [TIME]<br><strong>Venue:</strong> [VENUE]<br><strong>Agenda:</strong> [AGENDA]</p><p>Your attendance is important for your child\'s academic progress.</p><p><br></p><p>Thank you,<br>Liceo de Baleno Administration</p>'],
-    'general' => ['title'=>'General','icon'=>'bi-megaphone','color'=>'secondary','subject'=>'General Announcement','body'=>'<p>Dear Parents/Guardians,</p><p>[ANNOUNCEMENT CONTENT]</p><p><br></p><p>Thank you,<br>Liceo de Baleno Administration</p>']
+    'class_suspension' => [
+        'title'   => 'Emergency & Suspension',
+        'icon'    => 'bi-calendar-x',
+        'color'   => 'danger',
+        'subject' => 'EMERGENCY: School Suspension on [Date] due to [Reason/Weather]',
+        'body'    => '<p>Dear Parents, Guardians, and Faculty,</p><p><br></p><p>Please be informed that classes at Liceo de Baleno are officially suspended on <strong>[Date]</strong> due to <strong>[Reason/Weather]</strong>.</p><p><br></p><p>Normal operations and classes are scheduled to resume on <strong>[Date]</strong>. Please stay safe and await further official advisories.</p><p><br></p><p>— Liceo de Baleno Administration</p>'
+    ],
+    'school_event' => [
+        'title'   => 'Institutional Event',
+        'icon'    => 'bi-calendar-event',
+        'color'   => 'primary',
+        'subject' => 'ANNOUNCEMENT: [Event Name] Scheduled for [Date]',
+        'body'    => '<p>Dear Liceo de Baleno Community,</p><p><br></p><p>We are pleased to invite everyone to our upcoming <strong>[Event Name]</strong> taking place on <strong>[Date]</strong> at <strong>[Venue/Location]</strong>.</p><p><br></p><p>Event Schedule &amp; Details:</p><ul><li>Time: <strong>[Time]</strong></li><li>Activity: <strong>[Brief Description]</strong></li></ul><p><br></p><p>We look forward to your active participation!</p><p><br></p><p>— Liceo de Baleno Administration</p>'
+    ],
+    'faculty_meeting' => [
+        'title'   => 'Faculty & Staff Briefing',
+        'icon'    => 'bi-people',
+        'color'   => 'info',
+        'subject' => 'FACULTY NOTICE: Mandatory Staff Meeting on [Date]',
+        'body'    => '<p>Dear Teachers and Class Advisers,</p><p><br></p><p>There will be an urgent faculty meeting on <strong>[Date]</strong> at <strong>[Time]</strong> in <strong>[Location/Online Link]</strong>.</p><p><br></p><p>Agenda Items:</p><ol><li>Quarterly Grade Submission Deadlines</li><li>Attendance &amp; FRAS System Protocols</li><li>Upcoming School Activities</li></ol><p><br></p><p>Attendance is required. Please prepare your class reports accordingly.</p><p><br></p><p>— Office of the Principal / Admin</p>'
+    ],
+    'general' => [
+        'title'   => 'General Campus Notice',
+        'icon'    => 'bi-megaphone',
+        'color'   => 'secondary',
+        'subject' => 'CAMPUS NOTICE: [Topic / Policy Update]',
+        'body'    => '<p>Dear Parents and Students,</p><p><br></p><p>Please be advised of the following administrative update regarding <strong>[Topic]</strong>:</p><p><br></p><p>[Insert Details / Guidelines Here]</p><p><br></p><p>Thank you for your continued cooperation.</p><p><br></p><p>— Liceo de Baleno Administration</p>'
+    ],
+    'student_misconduct' => [
+        'title'   => 'Student Misconduct',
+        'icon'    => 'bi-exclamation-triangle',
+        'color'   => 'warning',
+        'subject' => 'NOTICE: Concern Regarding [Student Name] — [Issue]',
+        'body'    => '<p>Dear Parent/Guardian of <strong>[Student Name]</strong>,</p><p><br></p><p>We are writing to inform you about a concern regarding your child observed on <strong>[Date]</strong>.</p><p><br></p><p>Incident Details:</p><ul><li>Issue: <strong>[Issue / Incident]</strong></li><li>Location: <strong>[Venue / Location]</strong></li><li>Time: <strong>[Time]</strong></li></ul><p><br></p><p>In line with the Student Handbook, we would appreciate it if you could discuss this matter with your child. You may coordinate with the Class Adviser or the Guidance Office to schedule a conference at your earliest convenience.</p><p><br></p><p>We believe that open communication between home and school will help guide your child toward better conduct.</p><p><br></p><p>— Liceo de Baleno Administration</p>'
+    ]
+];
+
+// Metadata for history badges (includes legacy types still present in the DB)
+$templateMeta = [
+    'class_suspension'  => ['title' => 'Emergency & Suspension', 'icon' => 'bi-calendar-x'],
+    'school_event'      => ['title' => 'Institutional Event',    'icon' => 'bi-calendar-event'],
+    'faculty_meeting'   => ['title' => 'Faculty & Staff',        'icon' => 'bi-people'],
+    'general'           => ['title' => 'Campus Notice',          'icon' => 'bi-megaphone'],
+    'student_achievement' => ['title' => 'Achievement',          'icon' => 'bi-trophy'],
+    'student_misconduct'  => ['title' => 'Misconduct',           'icon' => 'bi-exclamation-triangle'],
+    'parent_meeting'      => ['title' => 'Meeting',              'icon' => 'bi-people']
 ];
 
 $notifTemplates = [];
@@ -283,9 +176,7 @@ if (isset($_GET['resend'])) {
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FONTS + QUILL + DESIGN SYSTEM
      ═══════════════════════════════════════════════════════════════════════════ -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
 
@@ -1492,10 +1383,11 @@ if (isset($_GET['resend'])) {
                     $tplColors = [
                         'class_suspension'     => ['bg'=>'var(--ann-danger-soft)',  'fg'=>'var(--ann-danger)'],
                         'school_event'         => ['bg'=>'var(--ann-accent-soft)',  'fg'=>'var(--ann-accent)'],
+                        'faculty_meeting'      => ['bg'=>'var(--ann-info-soft)',    'fg'=>'var(--ann-info)'],
+                        'general'              => ['bg'=>'rgba(255,255,255,0.06)',  'fg'=>'#9ca3af'],
                         'student_achievement'  => ['bg'=>'var(--ann-success-soft)', 'fg'=>'var(--ann-success)'],
                         'student_misconduct'   => ['bg'=>'var(--ann-warning-soft)', 'fg'=>'var(--ann-warning)'],
                         'parent_meeting'       => ['bg'=>'var(--ann-info-soft)',    'fg'=>'var(--ann-info)'],
-                        'general'              => ['bg'=>'rgba(255,255,255,0.06)',  'fg'=>'#9ca3af'],
                     ];
                     foreach ($templates as $key => $tpl):
                         $c = $tplColors[$key] ?? $tplColors['general'];
@@ -1532,7 +1424,7 @@ if (isset($_GET['resend'])) {
         </div>
 
         <!-- ═══ Compose Form ═══ -->
-        <form method="POST" action="<?= BASE_URL ?>/admin/announcements.php" id="announcementForm" enctype="multipart/form-data">
+        <form method="POST" action="<?= BASE_URL ?>/process_announcement.php" id="announcementForm" enctype="multipart/form-data">
             <?= csrfField() ?>
             <input type="hidden" name="action" value="create" id="formAction">
             <input type="hidden" name="template_type" id="ann-template_type" value="general">
@@ -1719,11 +1611,25 @@ if (isset($_GET['resend'])) {
                         </div>
                         <div class="settings-body">
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" name="recipient_type" id="recAll" value="all" checked>
-                                <label class="form-check-label" for="recAll">All Parents</label>
+                                <input class="form-check-input" type="checkbox" name="recipient_type[]" id="recAllParents" value="all_parents" checked>
+                                <label class="form-check-label" for="recAllParents">
+                                    <i class="bi bi-person-hearts" style="margin-right:4px;color:#fff;"></i> All Parents
+                                </label>
                             </div>
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" name="recipient_type" id="recGrade" value="grade">
+                                <input class="form-check-input" type="checkbox" name="recipient_type[]" id="recAllTeachers" value="all_teachers">
+                                <label class="form-check-label" for="recAllTeachers">
+                                    <i class="bi bi-person-badge" style="margin-right:4px;color:#fff;"></i> All Teachers
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="recipient_type[]" id="recAdvisers" value="advisers_only">
+                                <label class="form-check-label" for="recAdvisers">
+                                    <i class="bi bi-person-check" style="margin-right:4px;color:#fff;"></i> Class Advisers Only
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="recipient_type[]" id="recGrade" value="grade">
                                 <label class="form-check-label" for="recGrade">Specific Grade(s)</label>
                             </div>
                             <div id="gradeCheckboxes" style="display:none;margin:10px 0 6px 0;">
@@ -1743,7 +1649,7 @@ if (isset($_GET['resend'])) {
                                 </div>
                             </div>
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" name="recipient_type" id="recIndividual" value="individual">
+                                <input class="form-check-input" type="checkbox" name="recipient_type[]" id="recIndividual" value="individual">
                                 <label class="form-check-label" for="recIndividual">Individual Students</label>
                             </div>
                             <div id="individualSearch" style="display:none;margin-top:10px;">
@@ -1814,7 +1720,7 @@ if (isset($_GET['resend'])) {
                             <?php foreach ($announcements as $ann): ?>
                             <tr>
                                 <td>
-                                    <?php $typeInfo = $templates[$ann['template_type'] ?? ''] ?? $templates['general']; $tc = $tplColors[$ann['template_type'] ?? ''] ?? $tplColors['general']; ?>
+                                    <?php $typeInfo = $templateMeta[$ann['template_type'] ?? ''] ?? $templateMeta['general']; $tc = $tplColors[$ann['template_type'] ?? ''] ?? $tplColors['general']; ?>
                                     <span class="type-badge" style="background:<?= $tc['bg'] ?>;color:<?= $tc['fg'] ?>;">
                                         <i class="bi <?= $typeInfo['icon'] ?>"></i>
                                         <?= $typeInfo['title'] ?>
@@ -1825,10 +1731,23 @@ if (isset($_GET['resend'])) {
                                 </td>
                                 <td>
                                     <?php
-                                    $recipients = json_decode($ann['recipients'] ?? '{}', true) ?: [];
-                                    if (!empty($recipients['all'])) echo '<span class="recipient-cell">All Parents</span>';
-                                    elseif (!empty($recipients['grades'])) echo '<span class="recipient-cell">Grades ' . implode(', ', $recipients['grades']) . '</span>';
-                                    elseif (!empty($recipients['student_ids'])) echo '<span class="recipient-cell">' . count($recipients['student_ids']) . ' student(s)</span>';
+                                    $recJson = json_decode($ann['recipients'] ?? '{}', true) ?: [];
+                                    $recTypes = explode(',', (string)($ann['recipient_type'] ?? ($recJson['recipient_type'] ?? '')));
+                                    $recLabels = [];
+                                    foreach ($recTypes as $rt) {
+                                        $rt = trim($rt);
+                                        if ($rt === 'all_parents' || $rt === 'all' || !empty($recJson['all'])) $recLabels[] = 'All Parents';
+                                        elseif ($rt === 'all_teachers') $recLabels[] = 'All Teachers';
+                                        elseif ($rt === 'advisers_only') $recLabels[] = 'Class Advisers Only';
+                                        elseif ($rt === 'advisory_class') $recLabels[] = 'Advisory Class';
+                                        elseif ($rt === 'grade') $recLabels[] = 'Grades ' . implode(', ', $recJson['grades'] ?? []);
+                                        elseif ($rt === 'individual') $recLabels[] = count($recJson['student_ids'] ?? []) . ' student(s)';
+                                    }
+                                    if (empty($recLabels)) {
+                                        if (!empty($recJson['grades'])) $recLabels[] = 'Grades ' . implode(', ', $recJson['grades']);
+                                        elseif (!empty($recJson['student_ids'])) $recLabels[] = count($recJson['student_ids']) . ' student(s)';
+                                    }
+                                    if (!empty($recLabels)) echo '<span class="recipient-cell">' . sanitize(implode(' + ', array_unique($recLabels))) . '</span>';
                                     else echo '<span style="font-size:12px;color:var(--hist-text-muted);">-</span>';
                                     ?>
                                 </td>
@@ -2137,7 +2056,9 @@ function showToast(type, message) {
                 var tplTypeInput = document.getElementById('ann-template_type');
                 var chEmail = document.getElementById('chEmail');
                 var chSMS = document.getElementById('chSMS');
-                var recAll = document.getElementById('recAll');
+                var recAllParents = document.getElementById('recAllParents');
+                var recAllTeachers = document.getElementById('recAllTeachers');
+                var recAdvisers = document.getElementById('recAdvisers');
                 var recGrade = document.getElementById('recGrade');
                 var recIndiv = document.getElementById('recIndividual');
                 var gradeBox = document.getElementById('gradeCheckboxes');
@@ -2165,12 +2086,17 @@ function showToast(type, message) {
 
                 var recipients = {};
                 try { recipients = JSON.parse(ann.recipients || '{}'); } catch(e) { recipients = {}; }
-                if (recipients.all && recAll) {
-                    recAll.checked = true;
-                } else if (recipients.grades && recipients.grades.length && recGrade) {
+                var rt = (ann.recipient_type || recipients.recipient_type || '').toString().split(',');
+                var hasRt = function(v) { return rt.indexOf(v) !== -1; };
+
+                if (recAllParents) recAllParents.checked = hasRt('all_parents') || hasRt('all') || !!recipients.all;
+                if (recAllTeachers) recAllTeachers.checked = hasRt('all_teachers');
+                if (recAdvisers) recAdvisers.checked = hasRt('advisers_only');
+
+                if ((hasRt('grade') || recipients.grades) && recGrade) {
                     recGrade.checked = true;
                     gradeBox.style.display = 'block';
-                    recipients.grades.forEach(function(g) {
+                    (recipients.grades || []).forEach(function(g) {
                         var cb = document.getElementById('g' + g);
                         if (cb) { cb.checked = true; var chip = document.getElementById('gradeChip' + g); if (chip) chip.classList.add('active'); }
                     });
@@ -2179,9 +2105,14 @@ function showToast(type, message) {
                         var gradeChips = document.querySelectorAll('.grade-chip input');
                         selectAll.checked = Array.from(gradeChips).every(function(c) { return c.checked; });
                     }
-                } else if (recipients.student_ids && recipients.student_ids.length && recIndiv) {
+                }
+                if ((hasRt('individual') || recipients.student_ids) && recIndiv) {
                     recIndiv.checked = true;
                     indivBox.style.display = 'block';
+                    (recipients.student_ids || []).forEach(function(id) {
+                        if (selMap && !selMap.has(parseInt(id))) selMap.set(parseInt(id), { name: 'Student #' + id, sid: '', grade: '' });
+                    });
+                    if (typeof renderStudents === 'function') renderStudents();
                 }
 
                 setTimeout(function() {
@@ -2263,11 +2194,15 @@ function showToast(type, message) {
     btnRemove.addEventListener('click', function(e) { e.stopPropagation(); attachInput.value = ''; resetStrip(); });
     function resetStrip() { attachText.style.display = 'inline'; attachFile.style.display = 'none'; strip.classList.remove('has-file'); }
 
-    // ─── Recipients ─────────────────────────────────────────────────────
-    var recAll = document.getElementById('recAll'), recGrade = document.getElementById('recGrade'), recIndiv = document.getElementById('recIndividual');
+    // ─── Recipients (multi-select scoping) ───────────────────────────────
+    var recAllParents  = document.getElementById('recAllParents');
+    var recAllTeachers = document.getElementById('recAllTeachers');
+    var recAdvisers    = document.getElementById('recAdvisers');
+    var recGrade       = document.getElementById('recGrade');
+    var recIndiv       = document.getElementById('recIndividual');
     var gradeBox = document.getElementById('gradeCheckboxes'), indivBox = document.getElementById('individualSearch');
     function recUI() { gradeBox.style.display = recGrade.checked ? 'block' : 'none'; indivBox.style.display = recIndiv.checked ? 'block' : 'none'; }
-    [recAll, recGrade, recIndiv].forEach(function(r) { r.addEventListener('change', recUI); });
+    [recAllParents, recAllTeachers, recAdvisers, recGrade, recIndiv].forEach(function(r) { if (r) r.addEventListener('change', recUI); });
     var selectAll = document.getElementById('selectAllGrades');
     var gradeChips = document.querySelectorAll('.grade-chip');
     gradeChips.forEach(function(chip) {
@@ -2351,10 +2286,16 @@ document.getElementById('btnPreviewSend').addEventListener('click', function() {
     if (!document.getElementById('chEmail').checked && !document.getElementById('chSMS').checked) { showToast('warning', 'Select at least one channel.'); return; }
     document.getElementById('preview-subject').textContent = subjectInput.value;
     document.getElementById('preview-body').innerHTML = quill.root.innerHTML;
-    var rec = 'All Parents';
-    if (recGrade.checked) { var g = Array.from(document.querySelectorAll('.grade-chip input:checked')).map(function(c) { return 'Grade '+c.value; }); rec = g.length ? g.join(', ') : 'No grades selected'; }
-    else if (recIndiv.checked) rec = selMap.size + ' individual student(s)';
-    document.getElementById('preview-recipients').textContent = rec;
+    var recParts = [];
+    if (recAllParents.checked) recParts.push('All Parents');
+    if (recAllTeachers.checked) recParts.push('All Teachers');
+    if (recAdvisers.checked) recParts.push('Class Advisers Only');
+    if (recGrade.checked) {
+        var g = Array.from(document.querySelectorAll('.grade-chip input:checked')).map(function(c) { return 'Grade ' + c.value; });
+        recParts.push(g.length ? 'Grades: ' + g.join(', ') : 'No grades selected');
+    }
+    if (recIndiv.checked) recParts.push(selMap.size + ' individual student(s)');
+    document.getElementById('preview-recipients').textContent = recParts.length ? recParts.join(' + ') : 'No recipients selected';
     var ch = [];
     if (document.getElementById('chEmail').checked) ch.push('Email');
     if (document.getElementById('chSMS').checked) ch.push('SMS');
@@ -2409,22 +2350,41 @@ document.getElementById('viewModalClose').addEventListener('click', function(){c
 document.getElementById('viewModalCancel').addEventListener('click', function(){closeModal(document.getElementById('viewAnnouncementOverlay'));});
 
 // ─── View Announcement ──────────────────────────────────────────────
+function describeRecipients(ann) {
+    var rec = {};
+    try { rec = JSON.parse(ann.recipients || '{}'); } catch(e) { rec = {}; }
+    var rt = (ann.recipient_type || rec.recipient_type || '').toString().split(',');
+    var parts = [];
+    rt.forEach(function(v) {
+        v = v.trim();
+        if (v === 'all_parents' || v === 'all' || rec.all) parts.push('All Parents');
+        else if (v === 'all_teachers') parts.push('All Teachers');
+        else if (v === 'advisers_only') parts.push('Class Advisers Only');
+        else if (v === 'advisory_class') parts.push('Advisory Class');
+        else if (v === 'grade') parts.push('Grades: ' + (rec.grades || []).join(', '));
+        else if (v === 'individual') parts.push((rec.student_ids || []).length + ' individual student(s)');
+    });
+    if (!parts.length) {
+        if (rec.all) parts.push('All Parents');
+        if (rec.grades && rec.grades.length) parts.push('Grades: ' + rec.grades.join(', '));
+        if (rec.student_ids && rec.student_ids.length) parts.push(rec.student_ids.length + ' individual student(s)');
+    }
+    return parts.length ? parts.join(' + ') : 'N/A';
+}
 var viewOverlay = document.getElementById('viewAnnouncementOverlay');
 document.querySelectorAll('.view-announcement-trigger').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
         if (!this.dataset.announcement) return;
         var ann = JSON.parse(this.dataset.announcement);
-        var rec = JSON.parse(ann.recipients || '{}');
-        var ch = JSON.parse(ann.channels || '[]');
-        var recH = 'All Parents';
-        if (rec.grades && rec.grades.length) recH = 'Grades: ' + rec.grades.join(', ');
-        else if (rec.student_ids && rec.student_ids.length) recH = rec.student_ids.length + ' individual student(s)';
+        var recH = describeRecipients(ann);
+        var ch = [];
+        try { ch = JSON.parse(ann.channels || '[]'); } catch(err) { ch = []; }
         var chH = (ch||[]).map(function(c) { return '<span class="ch-badge '+c+'"><i class="bi bi-'+(c==='email'?'envelope':'chat-dots')+'"></i> '+c.toUpperCase()+'</span>'; }).join(' ');
         var body = ann.body_html || (ann.body||'').replace(/\n/g,'<br>');
         document.getElementById('view-announcement-content').innerHTML =
             '<h5 style="font-size:18px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px;">'+esc(ann.subject||ann.title||'Untitled')+'</h5>' +
             '<div style="display:flex;gap:16px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,0.55);"><span><i class="bi bi-clock" style="margin-right:4px;"></i>'+esc(ann.created_at||'N/A')+'</span><span><i class="bi bi-person" style="margin-right:4px;"></i>'+esc(ann.created_by_email||'System')+'</span></div>' +
-            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;"><span style="background:rgba(255,255,255,0.06);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.55);">'+recH+'</span>'+chH+'</div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;"><span style="background:rgba(255,255,255,0.06);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.55);">'+esc(recH)+'</span>'+chH+'</div>' +
             '<div style="border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:20px;line-height:1.85;font-size:14px;background:rgba(255,255,255,0.04);">'+body+'</div>' +
             (ann.attachment_path ? '<div style="margin-top:16px;"><img src="<?= BASE_URL ?>/'+ann.attachment_path+'" style="max-height:200px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);" alt="Attachment"></div>' : '');
         openModal(viewOverlay);

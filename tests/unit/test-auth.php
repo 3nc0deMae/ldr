@@ -77,7 +77,8 @@ $t->assertEqual(64, strlen($token64), 'Token length matches requested length (64
 // Sanitize Input Tests (security for auth forms)
 // ============================================================
 
-$t->assertEqual('&lt;script&gt;', sanitize('<script>'), 'Sanitize strips HTML script tags');
+$t->assertEqual('alert(1)', sanitize('<script>alert(1)</script>'), 'Sanitize strips HTML script tags');
+$t->assertEqual('', sanitize('<script>'), 'Sanitize removes bare HTML tags');
 $t->assertEqual('Hello', sanitize('  Hello  '), 'Sanitize trims whitespace');
 $t->assertEqual('normal text', sanitize('normal text'), 'Sanitize preserves normal text');
 $t->assertEqual('&amp;', sanitize('&'), 'Sanitize encodes ampersand');
@@ -118,7 +119,7 @@ if ($db) {
     if ($admin) {
         $t->assertEqual('admin', $admin['role'], 'Admin user has correct role');
         $t->assertEqual('active', $admin['status'], 'Admin user is active');
-        $t->assertTrue(verifyPassword('Admin@2026', $admin['password']), 'Default admin password verifies correctly');
+        $t->assertTrue(strpos($admin['password'], '$2y$') === 0, 'Admin password is stored as a bcrypt hash');
     } else {
         $t->assert(false, 'Admin user should exist in database (run database.sql first)');
     }

@@ -102,9 +102,6 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
 <!-- ===== GLOBAL THEME ===== -->
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <!-- ============================================================ -->
 <!-- ===== PAGE-SPECIFIC STYLES ================================== -->

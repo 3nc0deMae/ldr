@@ -157,9 +157,6 @@ foreach ($allRecords as $r) {
 }
 ?>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-navbar.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">
@@ -784,7 +781,7 @@ foreach ($allRecords as $r) {
 
 <!-- CHARTS -->
 <script src="<?= BASE_URL ?>/assets/js/generate_report_print.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
 <script>
 function printReport() {
     var area = document.getElementById('printReportArea');

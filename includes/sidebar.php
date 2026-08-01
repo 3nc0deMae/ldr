@@ -148,6 +148,12 @@ if (isset($db) && $currentRole) {
                     <span>My Calendar</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link <?= $currentPage === 'advisory' ? 'active' : '' ?>" href="<?= BASE_URL ?>/teacher/advisory.php">
+                    <i class="bi bi-megaphone"></i>
+                    <span>Class Advisories</span>
+                </a>
+            </li>
         </ul>
 
         <div class="nav-section-title">Attendance</div>

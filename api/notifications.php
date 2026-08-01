@@ -50,7 +50,7 @@ switch ($action) {
 
         jsonResponse([
             'success' => $success,
-            'message' => $success ? 'Notification sent successfully' : 'Failed to send notification'
+            'message' => $success ? 'Notification sent successfully' : 'Failed to send notification. ' . getLastEmailError()
         ]);
         break;
 
@@ -122,7 +122,7 @@ switch ($action) {
 
         jsonResponse([
             'success' => $success,
-            'message' => $success ? 'Test email sent successfully' : 'Failed to send test email. Check SMTP settings.'
+            'message' => $success ? 'Test email sent successfully' : 'Failed to send test email. ' . getLastEmailError()
         ]);
         break;
 

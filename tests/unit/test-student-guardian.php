@@ -62,3 +62,5 @@ if ($db) {
 }
 
 $t->printResults();
+
+return $t;

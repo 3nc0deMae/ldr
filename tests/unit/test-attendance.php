@@ -111,9 +111,17 @@ if ($db) {
         $t->assertTrue($guardianSaved, 'saveGuardian() returns true');
 
         // Test recordAttendance
+        $attSubjectId = addSubject($db, [
+            'subject_name' => 'Att Test Subject ' . time(),
+            'subject_code' => 'ATT' . time(),
+            'grade_level'  => '10',
+            'description'  => 'Attendance test subject'
+        ]);
+        $t->assertNotEmpty($attSubjectId, 'addSubject() returns new ID for attendance test');
+
         $attResult = recordAttendance($db, [
             'student_id' => $testStudentId,
-            'subject_id' => 1,
+            'subject_id' => $attSubjectId,
             'date'       => today(),
             'time'       => date('H:i:s'),
             'status'     => 'present'
@@ -126,6 +134,11 @@ if ($db) {
             'status'=> 'present'
         ]);
         $t->assertIsArray($attRecords, 'getAttendance() returns array with filters');
+
+        // Cleanup temp attendance subject
+        if ($attSubjectId) {
+            deleteSubject($db, $attSubjectId);
+        }
 
         // Cleanup test student
         deleteStudent($db, $testStudentId);

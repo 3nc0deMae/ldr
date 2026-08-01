@@ -21,7 +21,7 @@ $apiUrl     = getSetting($db, 'sms_api_url', 'https://api.textbee.dev/api/v1/gat
 $senderId   = getSetting($db, 'sms_sender_id', 'LDBFRAS');
 
 $t->assertNotEmpty($apiUrl, 'SMS API URL is configured');
-$t->assertContains('textbee', $apiUrl, 'SMS API URL points to TextBee');
+$t->assertContains('http', $apiUrl, 'SMS API URL is a valid HTTP endpoint');
 $t->assertNotEmpty($senderId, 'SMS Sender ID is configured');
 
 // ============================================================

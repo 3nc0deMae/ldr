@@ -8,17 +8,15 @@
     <title><?= $pageTitle ?? APP_NAME ?> - <?= APP_FULL_NAME ?></title>
 
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/vendor/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <!-- DataTables CSS -->
-    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/vendor/dataTables/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- App typeface (used by the page theme / navbar design tokens) -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="<?= BASE_URL ?>/assets/vendor/js/chart.umd.min.js"></script>
+    <!-- Google Fonts (self-hosted) -->
+    <link href="<?= BASE_URL ?>/assets/vendor/fonts/fonts.css" rel="stylesheet">
     <!-- LDB-FRAS Design System -->
     <link href="<?= BASE_URL ?>/assets/css/style.css" rel="stylesheet">
 

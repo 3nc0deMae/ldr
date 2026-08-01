@@ -55,9 +55,10 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Face Registration Kiosk - <?= APP_NAME ?></title>
     <meta name="csrf-token" content="<?= generateCSRFToken() ?>">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/vendor/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/vendor/fonts/fonts.css" rel="stylesheet">
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -1073,7 +1074,7 @@ try {
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= BASE_URL ?>/assets/vendor/js/bootstrap.bundle.min.js"></script>
     <!-- MediaPipe FaceMesh (liveness / anti-spoofing) - served locally for offline use -->
     <script>window.FACE_MESH_BASE = '<?= BASE_URL ?>/assets/vendor/face_mesh';</script>
     <script src="<?= BASE_URL ?>/assets/vendor/face_mesh/face_mesh.js"></script>

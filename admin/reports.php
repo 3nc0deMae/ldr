@@ -105,9 +105,6 @@ ksort($dailyTrend);
 $baseUrl = BASE_URL;
 ?>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1250,7 +1247,7 @@ $baseUrl = BASE_URL;
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 <script>
 function printReport() {
     var area = document.getElementById('printReportArea');

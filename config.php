@@ -30,6 +30,49 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/session.php';
 require_once __DIR__ . '/includes/security.php';
 
+// Global database connection (used by pages that reference $db directly)
+$db = getDB();
+
+// ============================================================
+// SCHEMA MIGRATIONS (idempotent, safe to run on every request)
+// ============================================================
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS calendar_events (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        event_date DATE NOT NULL,
+        event_time TIME DEFAULT NULL,
+        event_type ENUM('meeting','deadline','reminder','general') DEFAULT 'general',
+        created_by INT DEFAULT NULL,
+        is_completed TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_event_date (event_date),
+        INDEX idx_created_by (created_by)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+} catch (Exception $e) { error_log('mig calendar_events: ' . $e->getMessage()); }
+
+try {
+    $col = $db->query("SHOW COLUMNS FROM teachers LIKE 'advisory_section_id'")->fetchAll();
+    if (empty($col)) $db->exec("ALTER TABLE teachers ADD COLUMN advisory_section_id INT DEFAULT NULL AFTER advisory_class");
+} catch (Exception $e) { error_log('mig advisory_section_id: ' . $e->getMessage()); }
+
+// Convert uncaught exceptions in API endpoints to clean JSON responses
+set_exception_handler(function (Throwable $e) {
+    $script = $_SERVER['SCRIPT_NAME'] ?? '';
+    if (stripos($script, '/api/') !== false) {
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    } else {
+        http_response_code(500);
+        echo 'An unexpected error occurred.';
+    }
+    error_log('Uncaught exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    exit;
+});
+
 // Dynamic Base URL Detection
 $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
 $baseDir = dirname($scriptName);

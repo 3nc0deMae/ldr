@@ -384,12 +384,12 @@ function addStudent($db, $data) {
         ':middle_name'  => $data['middle_name'] ?? '',
         ':last_name'    => $data['last_name'],
         ':name_extension' => $data['name_extension'] ?? '',
-        ':age'          => $data['age'],
-        ':gender'       => $data['gender'],
-        ':address'      => $data['address'],
-        ':email'        => $data['email'],
-        ':grade_level'  => $data['grade_level'],
-        ':section'      => $data['section']]
+        ':age'          => $data['age'] ?? '',
+        ':gender'       => $data['gender'] ?? '',
+        ':address'      => $data['address'] ?? '',
+        ':email'        => $data['email'] ?? '',
+        ':grade_level'  => $data['grade_level'] ?? '',
+        ':section'      => $data['section'] ?? '']
     ) ? $db->lastInsertId() : false;
 }
 
@@ -411,12 +411,12 @@ function updateStudent($db, $id, $data) {
         ':name_extension' => $data['name_extension'] ?? '',
         ':middle_name'  => $data['middle_name'] ?? '',
         ':last_name'    => $data['last_name'],
-        ':age'          => $data['age'],
-        ':gender'       => $data['gender'],
-        ':address'      => $data['address'],
-        ':email'        => $data['email'],
-        ':grade_level'  => $data['grade_level'],
-        ':section'      => $data['section'],
+        ':age'          => $data['age'] ?? '',
+        ':gender'       => $data['gender'] ?? '',
+        ':address'      => $data['address'] ?? '',
+        ':email'        => $data['email'] ?? '',
+        ':grade_level'  => $data['grade_level'] ?? '',
+        ':section'      => $data['section'] ?? '',
         ':id'           => $id
     ]);
 }
@@ -635,6 +635,126 @@ function formatAdvisoryClassLabel($gradeLevel, $sectionName = '', $strandName = 
     }
 
     return $label;
+}
+
+/**
+ * Resolve an advisory class label (e.g. "Grade 10-St. Peter", "10St. Peter",
+ * "11STEM-A - STEM") back to its matching row id in the `sections` table.
+ *
+ * @param PDO    $db
+ * @param string $label
+ * @return int|null
+ */
+function resolveAdvisorySection($db, $label) {
+    $label = trim((string)$label);
+    if ($label === '') return null;
+
+    $grade = null;
+    if (preg_match('/(?:Grade\s+)?(\d{1,2})\b/i', $label, $m)) {
+        $grade = $m[1];
+    }
+    if ($grade === null) return null;
+
+    // Candidate section names derived from the label
+    $candidates = [];
+    $rest = trim(preg_replace('/^\s*(?:Grade\s+)?\d{1,2}\b\s*[- ]?/i', '', $label));
+    if ($rest !== '') {
+        $candidates[] = trim($rest, " \t\r\n-");
+        // Strip a strand suffix such as " - STEM" or " - ABM"
+        $withoutStrand = trim(preg_replace('/\s*-\s*[^\-]*$/u', '', $rest));
+        if ($withoutStrand !== '' && $withoutStrand !== $rest) {
+            $candidates[] = $withoutStrand;
+        }
+    }
+
+    $stmt = $db->prepare("SELECT id FROM sections WHERE grade_level = ? AND section_name = ? ORDER BY id LIMIT 1");
+    foreach (array_unique($candidates) as $cand) {
+        if ($cand === '') continue;
+        $stmt->execute([$grade, $cand]);
+        $id = $stmt->fetchColumn();
+        if ($id) return (int)$id;
+    }
+
+    // Last resort: the section is recorded but we could not parse its name.
+    $stmt = $db->prepare("SELECT id FROM sections WHERE grade_level = ? ORDER BY id LIMIT 1");
+    $stmt->execute([$grade]);
+    $id = $stmt->fetchColumn();
+    return $id ? (int)$id : null;
+}
+
+/**
+ * Resolve the currently logged-in teacher's advisory section id.
+ * Also caches the result in the session for quick access.
+ *
+ * @param PDO $db
+ * @return int|null
+ */
+function getAdvisorySectionId($db) {
+    $uid = getCurrentUserId();
+    if (!$uid) return null;
+
+    if (isset($_SESSION['advisory_section_id']) && !empty($_SESSION['advisory_section_id'])) {
+        return (int)$_SESSION['advisory_section_id'];
+    }
+
+    $stmt = $db->prepare(
+        "SELECT advisory_class, advisory_section_id FROM teachers
+         WHERE user_id = ? AND status = 'active'
+           AND (advisory_class IS NOT NULL AND advisory_class != '')
+         LIMIT 1"
+    );
+    $stmt->execute([$uid]);
+    $teacher = $stmt->fetch();
+
+    $sectionId = null;
+    if ($teacher) {
+        if (!empty($teacher['advisory_section_id'])) {
+            $sectionId = (int)$teacher['advisory_section_id'];
+        } elseif (!empty($teacher['advisory_class'])) {
+            $sectionId = resolveAdvisorySection($db, $teacher['advisory_class']);
+        }
+    }
+    if ($sectionId) {
+        $_SESSION['advisory_section_id'] = $sectionId;
+    }
+    return $sectionId;
+}
+
+/**
+ * Fetch the advisory section record (id, grade_level, section_name, strand) for
+ * the currently logged-in teacher.
+ *
+ * @param PDO $db
+ * @return array|null
+ */
+function getAdvisorySectionRecord($db) {
+    $sectionId = getAdvisorySectionId($db);
+    if (!$sectionId) return null;
+
+    $stmt = $db->prepare(
+        "SELECT s.id, s.grade_level, s.section_name, st.strand_name, st.strand_code
+         FROM sections s
+         LEFT JOIN strands st ON s.strand_id = st.id
+         WHERE s.id = ? LIMIT 1"
+    );
+    $stmt->execute([$sectionId]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+/**
+ * Fetch the currently logged-in teacher's profile record.
+ *
+ * @param PDO $db
+ * @return array|null
+ */
+function getCurrentTeacherRecord($db) {
+    $uid = getCurrentUserId();
+    if (!$uid) return null;
+    $stmt = $db->prepare("SELECT t.* FROM teachers t JOIN users u ON t.user_id = u.id WHERE u.id = ? LIMIT 1");
+    $stmt->execute([$uid]);
+    $row = $stmt->fetch();
+    return $row ?: null;
 }
 
 /**
@@ -1454,9 +1574,14 @@ function getAllSubjects($db) {
 function getDashboardStats($db) {
     $stats = [];
 
-    $stats['total_students']  = $db->query("SELECT COUNT(*) FROM students")->fetchColumn();
-    $stats['total_teachers']  = $db->query("SELECT COUNT(*) FROM teachers")->fetchColumn();
-    $stats['total_subjects']  = $db->query("SELECT COUNT(*) FROM subjects")->fetchColumn();
+    $row = $db->query(
+        "SELECT (SELECT COUNT(*) FROM students) AS students,
+                (SELECT COUNT(*) FROM teachers) AS teachers,
+                (SELECT COUNT(*) FROM subjects) AS subjects"
+    )->fetch();
+    $stats['total_students'] = (int)($row['students'] ?? 0);
+    $stats['total_teachers'] = (int)($row['teachers'] ?? 0);
+    $stats['total_subjects'] = (int)($row['subjects'] ?? 0);
 
     $attendanceStats = getAttendanceStats($db);
     $stats['present_today'] = $attendanceStats['present_today'] ?? 0;

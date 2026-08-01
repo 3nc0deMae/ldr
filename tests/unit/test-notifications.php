@@ -54,8 +54,8 @@ $t->assertContains('639', $ph2, 'formatPhoneNumber handles dashes');
 $ph3 = formatPhoneNumber('+639171234567');
 $t->assertContains('639', $ph3, 'formatPhoneNumber handles +63 prefix');
 
-$ph4 = formatPhoneNumber('');
-$t->assertNotEmpty($ph4 === '' ? '' : $ph4, 'formatPhoneNumber handles empty string');
+        $ph4 = formatPhoneNumber('');                                                               
+        $t->assertEqual('', $ph4, 'formatPhoneNumber handles empty string');
 
 // ============================================================
 // Email Template Tests

@@ -15,31 +15,102 @@ $recentStudents = [];
 try { $stmt = $db->query("SELECT * FROM students ORDER BY created_at DESC LIMIT 5"); $recentStudents = $stmt->fetchAll(); } catch (Exception $e) {}
 
 $weeklyData = [];
-for ($i = 6; $i >= 0; $i--) {
-    $date = date('Y-m-d', strtotime("-{$i} days"));
-    $stmt = $db->prepare("SELECT SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late FROM (SELECT status FROM attendance WHERE date=? UNION ALL SELECT status FROM attendance_records WHERE DATE(scan_time)=?) records");
-    $stmt->execute([$date,$date]);
-    $row = $stmt->fetch();
-    $weeklyData[] = ['day'=>date('D',strtotime("-{$i} days")),'present'=>(int)($row['present']??0),'absent'=>(int)($row['absent']??0),'late'=>(int)($row['late']??0)];
+$weekAgo = date('Y-m-d', strtotime('-6 days'));
+try {
+    $stmt = $db->prepare(
+        "SELECT DATE(d) as day,
+                SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present,
+                SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent,
+                SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late
+         FROM (
+             SELECT date AS d, status FROM attendance WHERE date >= ?
+             UNION ALL
+             SELECT DATE(scan_time) AS d, status FROM attendance_records WHERE scan_time >= ?
+         ) t GROUP BY DATE(d)"
+    );
+    $stmt->execute([$weekAgo, $weekAgo . ' 00:00:00']);
+    $weeklyByDay = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $weeklyByDay[$row['day']] = $row;
+    }
+    for ($i = 6; $i >= 0; $i--) {
+        $date = date('Y-m-d', strtotime("-{$i} days"));
+        $row = $weeklyByDay[$date] ?? [];
+        $weeklyData[] = [
+            'day' => date('D', strtotime("-{$i} days")),
+            'present' => (int)($row['present'] ?? 0),
+            'absent' => (int)($row['absent'] ?? 0),
+            'late' => (int)($row['late'] ?? 0)
+        ];
+    }
+} catch (Exception $e) {
+    $weeklyData = [];
 }
 
 $monthlyDailyData = [];
-for ($i = 29; $i >= 0; $i--) {
-    $date = date('Y-m-d', strtotime("-{$i} days"));
-    $stmt = $db->prepare("SELECT SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late FROM (SELECT status FROM attendance WHERE date=? UNION ALL SELECT status FROM attendance_records WHERE DATE(scan_time)=?) records");
-    $stmt->execute([$date,$date]);
-    $row = $stmt->fetch();
-    $monthlyDailyData[] = ['day'=>date('M j',strtotime("-{$i} days")),'present'=>(int)($row['present']??0),'absent'=>(int)($row['absent']??0),'late'=>(int)($row['late']??0)];
+$daysAgo30 = date('Y-m-d', strtotime('-29 days'));
+try {
+    $stmt = $db->prepare(
+        "SELECT DATE(d) as day,
+                SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present,
+                SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent,
+                SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late
+         FROM (
+             SELECT date AS d, status FROM attendance WHERE date >= ?
+             UNION ALL
+             SELECT DATE(scan_time) AS d, status FROM attendance_records WHERE scan_time >= ?
+         ) t GROUP BY DATE(d)"
+    );
+    $stmt->execute([$daysAgo30, $daysAgo30 . ' 00:00:00']);
+    $monthlyByDay = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $monthlyByDay[$row['day']] = $row;
+    }
+    for ($i = 29; $i >= 0; $i--) {
+        $date = date('Y-m-d', strtotime("-{$i} days"));
+        $row = $monthlyByDay[$date] ?? [];
+        $monthlyDailyData[] = [
+            'day' => date('M j', strtotime("-{$i} days")),
+            'present' => (int)($row['present'] ?? 0),
+            'absent' => (int)($row['absent'] ?? 0),
+            'late' => (int)($row['late'] ?? 0)
+        ];
+    }
+} catch (Exception $e) {
+    $monthlyDailyData = [];
 }
 
 $monthlyData = [];
-for ($i = 5; $i >= 0; $i--) {
-    $month = date('Y-m', strtotime("-{$i} months"));
-    $stmt = $db->prepare("SELECT COUNT(*) as total, SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present FROM (SELECT status FROM attendance WHERE DATE_FORMAT(date,'%Y-%m')=? UNION ALL SELECT status FROM attendance_records WHERE DATE_FORMAT(scan_time,'%Y-%m')=?) records");
-    $stmt->execute([$month,$month]);
-    $row = $stmt->fetch();
-    $total = (int)($row['total']??0); $present = (int)($row['present']??0);
-    $monthlyData[] = ['month'=>date('M Y',strtotime("-{$i} months")),'rate'=>$total>0?round(($present/$total)*100,1):0,'total'=>$total];
+$monthsAgo6 = date('Y-m-01', strtotime('-5 months'));
+try {
+    $stmt = $db->prepare(
+        "SELECT DATE_FORMAT(d, '%Y-%m') as month,
+                COUNT(*) as total,
+                SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present
+         FROM (
+             SELECT date AS d, status FROM attendance WHERE date >= ?
+             UNION ALL
+             SELECT scan_time AS d, status FROM attendance_records WHERE scan_time >= ?
+         ) t GROUP BY DATE_FORMAT(d, '%Y-%m')"
+    );
+    $stmt->execute([$monthsAgo6, $monthsAgo6 . ' 00:00:00']);
+    $monthlyByMonth = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $monthlyByMonth[$row['month']] = $row;
+    }
+    for ($i = 5; $i >= 0; $i--) {
+        $month = date('Y-m', strtotime("-{$i} months"));
+        $row = $monthlyByMonth[$month] ?? [];
+        $total = (int)($row['total'] ?? 0);
+        $present = (int)($row['present'] ?? 0);
+        $monthlyData[] = [
+            'month' => date('M Y', strtotime("-{$i} months")),
+            'rate' => $total > 0 ? round(($present / $total) * 100, 1) : 0,
+            'total' => $total
+        ];
+    }
+} catch (Exception $e) {
+    $monthlyData = [];
 }
 
 $totalToday = $stats['present_today'] + $stats['absent_today'] + $stats['late_today'];
@@ -50,9 +121,6 @@ require_once __DIR__ . '/../includes/sidebar.php';
 ?>
 
 <!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <!-- Stylesheets — pages-theme.css first (sidebar lives there), pages-navbar.css second (everything else) -->
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
