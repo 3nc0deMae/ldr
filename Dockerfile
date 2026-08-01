@@ -67,5 +67,9 @@ EOF
 RUN chmod +x /usr/local/bin/port-entrypoint.sh
 
 ENV PORT=3000
-EXPOSE 3000
+# Railway health-checks the port declared by EXPOSE (it uses the last EXPOSE
+# line). The entrypoint listens on $PORT AND port 80, so we must declare an
+# EXPOSE port that Apache actually binds to, otherwise Railway marks the
+# container unhealthy and stops it ~5s after start.
+EXPOSE 80
 CMD ["/usr/local/bin/port-entrypoint.sh"]
