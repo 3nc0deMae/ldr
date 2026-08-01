@@ -108,15 +108,6 @@ if (isset($db) && $currentRole) {
                     <span>Announcements</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link <?= $currentPage === 'notifications' ? 'active' : '' ?>" href="<?= BASE_URL ?>/admin/notifications.php">
-                    <i class="bi bi-bell"></i>
-                    <span>Notifications</span>
-                    <?php if (($$__navUnread ?? 0) > 0): ?>
-                        <span class="badge bg-danger ms-auto" style="font-size:10px;padding:3px 7px;border-radius:10px;"><?= (int)$__navUnread ?></span>
-                    <?php endif; ?>
-                </a>
-            </li>
         </ul>
 
         <div class="nav-section-title">System</div>

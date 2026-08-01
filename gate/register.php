@@ -61,10 +61,23 @@ try {
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
+            position: relative;
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0A224C 0%, #1a3a6d 100%);
+            background: transparent;
             min-height: 100vh;
             color: #fff;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a url('../assets/images/background.png') center center / cover no-repeat fixed;
+            filter: blur(8px);
+            -webkit-filter: blur(8px);
+            z-index: -1;
         }
         .kiosk-container {
             max-width: 1200px;
@@ -112,16 +125,16 @@ try {
             font-size: 1rem;
         }
         .progress-bar-container {
-            background: rgba(255,255,255,0.08);
+            background: rgba(10, 34, 76, 0.50);
             border-radius: 50px;
             padding: 15px 25px;
             margin: 20px 0;
             display: flex;
             align-items: center;
             gap: 20px;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            border: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
+            border: 1px solid rgba(255,255,255,0.12);
         }
         .progress-bar-container .progress {
             flex: 1;
@@ -161,33 +174,33 @@ try {
            DARKER CONTAINERS FOR BETTER READABILITY
            ============================================================ */
         .camera-section {
-            background: rgba(8, 16, 35, 0.92);
+            background: rgba(10, 34, 76, 0.50);
             border-radius: 16px;
             padding: 25px;
-            border: 1px solid rgba(255,255,255,0.08);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         .student-info-card {
-            background: rgba(8, 16, 35, 0.92);
+            background: rgba(10, 34, 76, 0.50);
             border-radius: 16px;
             padding: 25px;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
             min-height: 200px;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         .recent-card {
-            background: rgba(8, 16, 35, 0.92);
+            background: rgba(10, 34, 76, 0.50);
             border-radius: 16px;
             padding: 20px;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
             flex: 1;
             overflow-y: auto;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         
@@ -228,9 +241,9 @@ try {
             bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.50);
+            backdrop-filter: blur(16px) saturate(1.6);
+            -webkit-backdrop-filter: blur(16px) saturate(1.6);
             padding: 8px 20px;
             border-radius: 50px;
             font-size: 0.85rem;
@@ -293,27 +306,6 @@ try {
             opacity: 0.5;
             transform: none;
             box-shadow: none;
-        }
-        .btn-capture-face {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            border-radius: 12px;
-            margin-top: 15px;
-            background: linear-gradient(135deg, #0066FE, #00a2ff);
-            border: none;
-            color: #fff;
-            transition: all 0.3s ease;
-            animation: pulseBtn 2s infinite;
-        }
-        .btn-capture-face:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0,102,254,0.4);
-        }
-        @keyframes pulseBtn {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(0,102,254,0.4); }
-            50% { box-shadow: 0 0 0 8px rgba(0,102,254,0); }
         }
         .btn-retake {
             flex: 1;
@@ -432,9 +424,9 @@ try {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.60);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
             display: none;
             align-items: center;
             justify-content: center;
@@ -442,15 +434,15 @@ try {
         }
         .result-overlay.show { display: flex; }
         .result-card {
-            background: rgba(8, 16, 35, 0.95);
+            background: rgba(10, 34, 76, 0.75);
             border-radius: 20px;
             padding: 50px;
             text-align: center;
             max-width: 500px;
             animation: popIn 0.3s ease;
-            border: 1px solid rgba(255,255,255,0.08);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
         }
         @keyframes popIn {
             from { transform: scale(0.8); opacity: 0; }
@@ -463,13 +455,13 @@ try {
         .result-card p { opacity: 0.8; }
         .capture-preview { display: none; }
         .instructions {
-            background: rgba(0,102,254,0.15);
+            background: rgba(0,102,254,0.20);
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 20px;
             border-left: 4px solid #0066FE;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
         }
         .instructions h6 { margin-bottom: 8px; }
         .instructions ol { margin: 0; padding-left: 20px; }
@@ -593,7 +585,7 @@ try {
                 padding: 14px 16px;
                 border-radius: 10px;
             }
-            .btn-register, .btn-capture-face {
+            .btn-register {
                 padding: 14px;
                 font-size: 1rem;
                 border-radius: 10px;
@@ -717,7 +709,7 @@ try {
                 padding: 12px 14px;
                 letter-spacing: 1px;
             }
-            .btn-register, .btn-capture-face {
+            .btn-register {
                 padding: 12px;
                 font-size: 0.9rem;
             }
@@ -761,9 +753,9 @@ try {
         .event-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(26, 29, 46, 0.55);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.50);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
             z-index: 9998;
             display: none;
             align-items: center;
@@ -781,8 +773,10 @@ try {
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: rgba(10, 34, 76, 0.90);
+            background: rgba(10, 34, 76, 0.75);
             border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
             box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
             animation: modalSlideIn 0.35s cubic-bezier(.34,1.56,.64,1);
         }
@@ -930,7 +924,8 @@ try {
                     <ol>
                         <li>Enter your Student LRN below</li>
                         <li>Click "Capture &amp; Register" to start the camera</li>
-                        <li>Position your face in the circle, then click "Capture Face"</li>
+                        <li>Blink when prompted to verify you are present</li>
+                        <li>The system will automatically capture your face once verified</li>
                         <li>Review the photo, then click "Register" (or "Retake" to try again)</li>
                     </ol>
                 </div>
@@ -962,12 +957,6 @@ try {
                     <div id="btnGroup-initial">
                         <button type="button" class="btn btn-register" id="registerBtn" onclick="startCameraAndCapture()" disabled>
                             <i class="bi bi-camera-fill"></i> Capture & Register
-                        </button>
-                    </div>
-                    <!-- State: Camera Active - Ready to Capture -->
-                    <div id="btnGroup-cameraActive" style="display:none;">
-                        <button type="button" class="btn btn-capture-face" id="captureFaceBtn" onclick="captureFace()">
-                            <i class="bi bi-camera"></i> Capture Face
                         </button>
                     </div>
                     <!-- State: Image Captured - Preview with Retake/Register -->
@@ -1097,10 +1086,11 @@ try {
         let currentStudentId = null;
         let isProcessing = false;
         let currentStudentHasFace = false;
-        let consentGiven = false;
-        let capturedImageBase64 = null;
-        let liveness = null;        // liveness (anti-spoofing) watcher
-        let livenessOk = false;     // becomes true once a real blink is verified
+         let consentGiven = false;
+         let capturedImageBase64 = null;
+         let liveness = null;        // liveness (anti-spoofing) watcher
+         let livenessOk = false;     // becomes true once a real blink is verified
+         let autoCaptureDone = false; // prevents duplicate auto-capture per liveness cycle
 
         // State: 'idle' | 'cameraActive' | 'preview' | 'processing'
         let appState = 'idle';
@@ -1109,40 +1099,36 @@ try {
         // STATE MANAGEMENT
         // ============================================
         function setState(newState) {
-            appState = newState;
-            const btnInitial = document.getElementById('btnGroup-initial');
-            const btnCamera = document.getElementById('btnGroup-cameraActive');
-            const btnPreview = document.getElementById('btnGroup-preview');
-            const btnProcessing = document.getElementById('btnGroup-processing');
-            const previewOverlay = document.getElementById('capturedPreviewOverlay');
+             appState = newState;
+             const btnInitial = document.getElementById('btnGroup-initial');
+             const btnPreview = document.getElementById('btnGroup-preview');
+             const btnProcessing = document.getElementById('btnGroup-processing');
+             const previewOverlay = document.getElementById('capturedPreviewOverlay');
 
-            btnInitial.style.display = 'none';
-            btnCamera.style.display = 'none';
-            btnPreview.style.display = 'none';
-            btnProcessing.style.display = 'none';
-            previewOverlay.style.display = 'none';
+             btnInitial.style.display = 'none';
+             btnPreview.style.display = 'none';
+             btnProcessing.style.display = 'none';
+             previewOverlay.style.display = 'none';
 
-            switch (newState) {
-                case 'idle':
-                    btnInitial.style.display = '';
-                    updateRegisterButton();
-                    break;
-                case 'cameraActive':
-                    btnCamera.style.display = '';
-                    document.getElementById('cameraStatus').textContent = '👁️ Please blink to verify you are present';
-                    updateCaptureButton();
-                    break;
-                case 'preview':
-                    btnPreview.style.display = '';
-                    previewOverlay.style.display = '';
-                    document.getElementById('cameraStatus').textContent = 'Preview - Check your photo';
-                    break;
-                case 'processing':
-                    btnProcessing.style.display = '';
-                    document.getElementById('cameraStatus').textContent = 'Processing...';
-                    break;
-            }
-        }
+             switch (newState) {
+                 case 'idle':
+                     btnInitial.style.display = '';
+                     updateRegisterButton();
+                     break;
+                 case 'cameraActive':
+                     document.getElementById('cameraStatus').textContent = '👁️ Please blink to verify you are present';
+                     break;
+                 case 'preview':
+                     btnPreview.style.display = '';
+                     previewOverlay.style.display = '';
+                     document.getElementById('cameraStatus').textContent = 'Preview - Check your photo';
+                     break;
+                 case 'processing':
+                     btnProcessing.style.display = '';
+                     document.getElementById('cameraStatus').textContent = 'Processing...';
+                     break;
+             }
+         }
 
         function updateRegisterButton() {
             const btn = document.getElementById('registerBtn');
@@ -1176,20 +1162,20 @@ try {
                 }
             });
 
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !isProcessing) {
-                    e.preventDefault();
-                    if (appState === 'idle') startCameraAndCapture();
-                    else if (appState === 'cameraActive') captureFace();
-                    else if (appState === 'preview') confirmRegister();
-                }
-            });
+             input.addEventListener('keypress', (e) => {
+                 if (e.key === 'Enter' && !isProcessing) {
+                     e.preventDefault();
+                     if (appState === 'idle') startCameraAndCapture();
+                     else if (appState === 'preview') confirmRegister();
+                 }
+             });
         }
 
         // ============================================
         // STUDENT LOOKUP
         // ============================================
         async function lookupStudent(studentId) {
+            console.log('Looking up student:', studentId);
             try {
                 const formData = new FormData();
                 formData.append('csrf_token', CSRF_TOKEN);
@@ -1202,13 +1188,17 @@ try {
                     body: formData
                 });
 
+                console.log('Lookup response status:', response.status, response.statusText);
+
                 if (!response.ok) {
+                    console.error('Lookup failed: HTTP', response.status);
                     clearStudentInfo();
                     return;
                 }
 
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Lookup failed: Invalid content type', contentType);
                     clearStudentInfo();
                     return;
                 }
@@ -1217,9 +1207,12 @@ try {
                 try {
                     data = await response.json();
                 } catch (e) {
+                    console.error('Lookup failed: JSON parse error', e);
                     clearStudentInfo();
                     return;
                 }
+
+                console.log('Lookup response data:', data);
 
                 if (data.success && data.student) {
                     showStudentInfo(data.student);
@@ -1227,7 +1220,9 @@ try {
                     currentStudentHasFace = data.student.has_face || false;
                     document.getElementById('registerBtn').disabled = false;
                     updateRegisterButton();
+                    console.log('Student found, button enabled. currentStudentId:', currentStudentId);
                 } else {
+                    console.warn('Lookup returned no student:', data);
                     clearStudentInfo();
                 }
             } catch (err) {
@@ -1280,6 +1275,9 @@ try {
             setState('idle');
             stopCamera();
 
+            const btn = document.getElementById('registerBtn');
+            if (btn) btn.disabled = true;
+
             document.getElementById('studentInfo').innerHTML = `
                 <div class="text-center py-4" style="opacity: 0.5;">
                     <i class="bi bi-search" style="font-size: 40px;"></i>
@@ -1311,16 +1309,17 @@ try {
             }
         }
 
-        function stopCamera() {
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(track => track.stop());
-                cameraStream = null;
-            }
-            const video = document.getElementById('cameraVideo');
-            video.srcObject = null;
-            if (liveness) { liveness.stop(); liveness = null; }
-            livenessOk = false;
-        }
+         function stopCamera() {
+             if (cameraStream) {
+                 cameraStream.getTracks().forEach(track => track.stop());
+                 cameraStream = null;
+             }
+             const video = document.getElementById('cameraVideo');
+             video.srcObject = null;
+             if (liveness) { liveness.stop(); liveness = null; }
+             livenessOk = false;
+             autoCaptureDone = false;
+         }
 
         async function waitForCamera(video) {
             return new Promise((resolve) => {
@@ -1339,9 +1338,14 @@ try {
         // CAPTURE FLOW
         // ============================================
         async function startCameraAndCapture() {
-            if (isProcessing || !currentStudentId) return;
+            console.log('startCameraAndCapture called. isProcessing:', isProcessing, 'currentStudentId:', currentStudentId, 'consentGiven:', consentGiven);
+            if (isProcessing || !currentStudentId) {
+                console.warn('startCameraAndCapture blocked: isProcessing=', isProcessing, 'currentStudentId=', currentStudentId);
+                return;
+            }
             
             if (!consentGiven) {
+                console.log('Showing consent modal');
                 showConsentModal();
                 return;
             }
@@ -1357,80 +1361,97 @@ try {
             await waitForCamera(video);
             setState('cameraActive');
 
-            // Start liveness (anti-spoofing) so an ID photo cannot be registered.
-            livenessOk = false;
-            liveness = new Liveness({
+             // Start liveness (anti-spoofing) so an ID photo cannot be registered.
+             livenessOk = false;
+             autoCaptureDone = false;
+             liveness = new Liveness({
                 video: video,
                 onStatus: onRegisterLivenessStatus
             });
             await liveness.start();
         }
 
-        // Liveness prompt + button gating for the registration kiosk.
-        function onRegisterLivenessStatus(status, isLive) {
-            if (appState !== 'cameraActive') return;
-            const statusEl = document.getElementById('cameraStatus');
-            if (isLive) {
-                livenessOk = true;   // a real blink was verified; keep it latched
-            }
-            if (livenessOk) {
-                statusEl.textContent = 'Verified live - you may capture your face';
-            } else if (status === 'no_face') {
-                statusEl.textContent = 'Position your face in the circle...';
-            } else {
-                statusEl.textContent = '👁️ Please blink to verify you are present';
-            }
-            updateCaptureButton();
-        }
+         // Auto-capture when liveness is verified. If MediaPipe
+         // failed to load, liveness is disabled (fail-open) and capture triggers
+         // immediately once the camera is active.
+         function onRegisterLivenessStatus(status, isLive) {
+             if (appState !== 'cameraActive') return;
+             const statusEl = document.getElementById('cameraStatus');
+             if (isLive) {
+                 livenessOk = true;
+             }
+             if (livenessOk && !autoCaptureDone) {
+                 autoCaptureDone = true;
+                 statusEl.textContent = 'Capturing face...';
+                 autoCaptureFace();
+             } else if (livenessOk) {
+                 statusEl.textContent = '✅ Live verified - face captured';
+             } else if (status === 'no_face') {
+                 statusEl.textContent = 'Position your face in the circle...';
+             } else {
+                 statusEl.textContent = '👁️ Please blink to verify you are present';
+             }
+         }
 
-        // Enable "Capture Face" only after liveness is verified. If MediaPipe
-        // failed to load, liveness is disabled (fail-open) and capture stays on.
-        function updateCaptureButton() {
-            const btn = document.getElementById('captureFaceBtn');
-            if (!btn) return;
-            const enforce = liveness && !liveness._failOpen;
-            const allow = !enforce || livenessOk;
-            btn.disabled = !allow;
-            btn.style.opacity = allow ? '' : '0.5';
-            btn.style.cursor = allow ? '' : 'not-allowed';
-        }
+         // Capture the face region from the bounding box provided by liveness.
+         // Falls back to the center zone if the bounding box is unavailable.
+         function captureFrameFromFaceBox(videoId, livenessObj, padding = 0.10) {
+             const video = document.getElementById(videoId);
+             if (!video) return null;
+             const vw = video.videoWidth;
+             const vh = video.videoHeight;
+             if (vw <= 0 || vh <= 0) return null;
 
-        function captureFace() {
-            if (appState !== 'cameraActive') return;
+             const bbox = livenessObj && livenessObj.getBoundingBox
+                 ? livenessObj.getBoundingBox()
+                 : null;
 
-            // Anti-spoofing: block capture until a genuine live blink is verified.
-            const enforce = liveness && !liveness._failOpen;
-            if (enforce && !livenessOk) {
-                document.getElementById('cameraStatus').textContent =
-                    '👁️ Please blink first so we can verify you are present';
-                return;
-            }
+             let x, y, w, h;
+             if (bbox && bbox.width > 0 && bbox.height > 0) {
+                 const p = padding;
+                 x = Math.floor(vw * Math.max(0, bbox.x - p));
+                 y = Math.floor(vh * Math.max(0, bbox.y - p));
+                 w = Math.floor(vw * Math.min(1 - (bbox.x - p), bbox.width + 2 * p));
+                 h = Math.floor(vh * Math.min(1 - (bbox.y - p), bbox.height + 2 * p));
+             } else {
+                 const zoneMargin = 0.15;
+                 x = Math.floor(vw * zoneMargin);
+                 y = Math.floor(vh * zoneMargin);
+                 w = Math.floor(vw * (1.0 - 2 * zoneMargin));
+                 h = Math.floor(vh * (1.0 - 2 * zoneMargin));
+             }
 
-            const video = document.getElementById('cameraVideo');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-            capturedImageBase64 = captureFrameInZone('cameraVideo', 0.15);
+             if (w <= 0 || h <= 0) return null;
 
-            if (!capturedImageBase64) {
-                document.getElementById('cameraStatus').textContent =
-                    'Camera error. Please try again.';
-                return;
-            }
+             const canvas = document.createElement('canvas');
+             canvas.width = w;
+             canvas.height = h;
+             const ctx = canvas.getContext('2d');
+             ctx.drawImage(video, x, y, w, h, 0, 0, w, h);
+             return canvas.toDataURL('image/jpeg', 0.7);
+         }
 
-            document.getElementById('capturedPreviewImg').src = capturedImageBase64;
-            setState('preview');
-        }
+         function autoCaptureFace() {
+             if (appState !== 'cameraActive') return;
+             capturedImageBase64 = captureFrameFromFaceBox('cameraVideo', liveness);
+             if (!capturedImageBase64) {
+                 document.getElementById('cameraStatus').textContent =
+                     'Camera error. Please try again.';
+                 autoCaptureDone = false;
+                 return;
+             }
+             document.getElementById('capturedPreviewImg').src = capturedImageBase64;
+             setState('preview');
+         }
 
-        function retakePhoto() {
-            capturedImageBase64 = null;
-            livenessOk = false;
-            if (liveness) liveness.reset();
-            setState('cameraActive');
-            hideUpdateFaceModal();
-        }
+         function retakePhoto() {
+             capturedImageBase64 = null;
+             livenessOk = false;
+             autoCaptureDone = false;
+             if (liveness) liveness.reset();
+             setState('cameraActive');
+             hideUpdateFaceModal();
+         }
 
         function showUpdateFaceModal() {
             var modal = document.getElementById('updateFaceModal');

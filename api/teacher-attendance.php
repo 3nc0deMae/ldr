@@ -544,7 +544,7 @@ try {
             $studentIdInput = sanitize($_POST['student_id'] ?? '');
             $newStatus      = sanitize($_POST['status'] ?? '');
 
-            if (!$sessionId || empty($studentIdInput) || !in_array($newStatus, ['present', 'late', 'absent', 'pending'])) {
+            if (!$sessionId || empty($studentIdInput) || !in_array($newStatus, ['present', 'late', 'absent', 'pending', 'excused'])) {
                 echo json_encode(['success' => false, 'error' => 'Invalid parameters.']);
                 exit;
             }
@@ -726,4 +726,4 @@ function callTeacherFaceAPI($endpoint, $data = []) {
     }
     return json_decode($response, true) ?: ['error' => 'Invalid API response.'];
 }
-?>
+

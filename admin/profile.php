@@ -200,6 +200,7 @@ $userInitial = 'A';
     .content-area { padding: 10px 12px 28px; }
     .profile-avatar { width: 72px; height: 72px; font-size: 30px; border-radius: 16px; }
     .profile-name { font-size: 18px; }
+    .mobile-title { display: block; }
 }
 .status-dot {
     height: 10px; width: 10px; border-radius: 50%; display: inline-block;
@@ -214,17 +215,6 @@ $userInitial = 'A';
 .account-id {
     font-family: var(--prof-mono); font-size: 13px; font-weight: 500;
     color: rgba(255,255,255,0.5); letter-spacing: 0.02em;
-}
-@media (max-width: 767px) {
-    .content-area { padding: 10px 12px 28px; }
-    .profile-avatar { width: 72px; height: 72px; font-size: 30px; border-radius: 16px; }
-    .profile-name { font-size: 18px; }
-    .mobile-title-left h5 { font-size: 17px; }
-    .mobile-title-left small { font-size: 12px; }
-}
-@media (max-width: 576px) {
-    .mobile-title-left h5 { font-size: 15px; }
-    .mobile-title-left small { font-size: 11px; }
 }
 </style>
 
@@ -327,19 +317,19 @@ $userInitial = 'A';
             <div class="card-header"><span style="display:inline-flex;align-items:center;gap:4px;"><i class="bi bi-activity"></i> Administration Activity Tracker</span></div>
             <div class="card-body">
                 <div class="row g-3 mb-3">
-                    <div class="col-md-4">
+                    <div class="col-4">
                         <div class="profile-info-item text-center">
                             <div style="font-size:28px; font-weight:800; color:var(--prof-primary);"><?= number_format($adminStats['total_actions']) ?></div>
                             <div class="profile-info-label" style="margin-top:4px;">Total Actions</div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-4">
                         <div class="profile-info-item text-center">
                             <div style="font-size:28px; font-weight:800; color:var(--prof-success);"><?= number_format($adminStats['login_count']) ?></div>
                             <div class="profile-info-label" style="margin-top:4px;">Total Logins</div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-4">
                         <div class="profile-info-item text-center">
                             <div style="font-size:28px; font-weight:800; color:#f0ece4;"><?= date('Y') ?></div>
                             <div class="profile-info-label" style="margin-top:4px;">Current Year</div>

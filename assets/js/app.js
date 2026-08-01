@@ -7,7 +7,7 @@ const APP = {
 // ============================================================
 // STYLED ALERT MODAL
 // Replaces native browser alert() with a modal that matches the
-// design/colors of the other modals (e.g. privacyModal).
+// design/colors of the admin teacher modal.
 // ============================================================
 function showAlertModal(message, options = {}) {
     options = options || {};
@@ -17,25 +17,26 @@ function showAlertModal(message, options = {}) {
 
     const typeColors = {
         primary: 'var(--prof-primary, #0066fe)',
-        success: '#28a745',
-        warning: '#FFC107',
-        danger:  '#DC3545',
-        info:    '#17A2B8'
+        success: '#10b981',
+        warning: '#f59e0b',
+        danger:  '#ef4444',
+        info:    '#3b82f6'
     };
     const accent = typeColors[type] || typeColors.primary;
 
     let modal = document.getElementById('appAlertModal');
     if (!modal) {
         const backdrop = '<div class="modal fade" id="appAlertModal" tabindex="-1" aria-hidden="true">' +
-            '<div class="modal-dialog modal-dialog-centered">' +
-            '<div class="modal-content" style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); color:#f0ece4;">' +
-            '<div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.1);">' +
-            '<h5 class="modal-title" id="appAlertModalTitle" style="font-weight:700;"></h5>' +
+            '<div class="modal-dialog modal-dialog-centered modal-sm">' +
+            '<div class="modal-content" style="background:rgba(10,34,76,0.95); border:1px solid rgba(255,255,255,0.12); color:#ffffff; border-radius:20px; box-shadow:0 24px 80px rgba(0,0,0,0.4);">' +
+            '<div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08); padding:14px 18px;">' +
+            '<h5 class="modal-title" id="appAlertModalTitle" style="font-weight:800; font-size:15px; letter-spacing:-0.02em;"></h5>' +
             '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>' +
             '</div>' +
-            '<div class="modal-body" id="appAlertModalBody" style="font-size:14px; line-height:1.6;"></div>' +
-            '<div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.1);">' +
-            '<button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="appAlertModalOk">OK</button>' +
+            '<div class="modal-body" id="appAlertModalBody" style="font-size:13px; line-height:1.6; padding:14px 18px;"></div>' +
+            '<div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.08); padding:10px 18px; gap:8px;">' +
+            '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:8px; font-size:12px; padding:8px 16px; border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); background:transparent;">Cancel</button>' +
+            '<button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="appAlertModalOk" style="border-radius:8px; font-size:12px; padding:8px 16px; font-weight:700;">OK</button>' +
             '</div>' +
             '</div></div></div>';
         document.body.insertAdjacentHTML('beforeend', backdrop);
@@ -262,6 +263,7 @@ function getStatusBadge(status) {
         present:  '<span class="badge-status badge-present">Present</span>',
         absent:   '<span class="badge-status badge-absent">Absent</span>',
         late:     '<span class="badge-status badge-late">Late</span>',
+        excused:  '<span class="badge-status badge-active">Excused</span>',
         active:   '<span class="badge-status badge-active">Active</span>',
         inactive: '<span class="badge-status badge-inactive">Inactive</span>',
         'time-in':  '<span class="badge-status badge-present">Time-In</span>',
@@ -359,7 +361,7 @@ function captureFrame(videoId) {
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
-    return canvas.toDataURL('image/jpeg', 0.9);
+    return canvas.toDataURL('image/jpeg', 0.7);
 }
 
 /**
@@ -391,7 +393,7 @@ function captureFrameInZone(videoId, zoneMargin = 0.15) {
     canvas.height = zoneH;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, zoneX, zoneY, zoneW, zoneH, 0, 0, zoneW, zoneH);
-    return canvas.toDataURL('image/jpeg', 0.9);
+    return canvas.toDataURL('image/jpeg', 0.7);
 }
 
 // ============================================================

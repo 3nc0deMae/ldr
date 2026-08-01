@@ -98,8 +98,16 @@ if (!empty($assignedSectionIds)) {
 }
 
 // Get teacher name for print
-$teacherName = $teacher['full_name'] ?? 'ANGELYN S. PARRABA';
-$principalName = 'ELENITA B. BESABE';
+$teacherName = '';
+if ($teacher) {
+    $teacherName = $teacher['first_name'] ?? '';
+    if (!empty($teacher['middle_name'])) {
+        $teacherName .= ' ' . strtoupper($teacher['middle_name'][0]) . '.';
+    }
+    $teacherName .= ' ' . ($teacher['last_name'] ?? '');
+}
+if (empty($teacherName)) $teacherName = 'ANGELYN S. PARRABA';
+$principalName = 'ERWIN M. ESPENILLA';
 ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -196,16 +204,15 @@ $principalName = 'ELENITA B. BESABE';
         .filter-group { min-width: 100%; }
         .btn-filter { width: 100%; justify-content: center; }
         .mobile-title { display: block; }
-        .mobile-title-left h5 { font-size: 17px; }
-        .mobile-title-left small { font-size: 12px; }
     }
 
     /* ===== PRINT LAYOUT: Portrait mode matching the image ===== */
     #printMasterArea { display: none; }
-
-    @media (max-width: 576px) {
-        .mobile-title-left h5 { font-size: 15px; }
-        .mobile-title-left small { font-size: 11px; }
+    .print-header-img { display: none; }
+    @media print {
+        .print-header-img { display: block !important; margin-bottom: 25px; }
+        body { padding: 0 !important; }
+        @page { margin-top: 0; }
     }
 </style>
 
@@ -290,6 +297,10 @@ $principalName = 'ELENITA B. BESABE';
                             <i class="bi bi-search"></i> Show Master List
                         </button>
                         <div class="d-flex gap-2">
+                            <select id="printOrientation" class="form-select" style="width:auto;display:inline-block;appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.4)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;background-size:12px;padding-right:32px;cursor:pointer;">
+                                <option value="portrait">Portrait</option>
+                                <option value="landscape">Landscape</option>
+                            </select>
                             <button type="button" class="btn btn-outline-secondary btn-print-master d-none d-md-flex" id="printMasterBtn" disabled>
                                 <i class="bi bi-printer me-1"></i> Print
                             </button>
@@ -317,11 +328,7 @@ $principalName = 'ELENITA B. BESABE';
         <div id="printMasterArea" aria-hidden="true"></div>
         <!-- Hidden print header for reuse in JS -->
         <div id="printHeaderClone" style="display:none;" aria-hidden="true">
-        <?php
-        $printDocTitle = 'CLASS MASTERLIST';
-        $printDocMeta  = '<span>School Year: SY 2025 – 2026</span>';
-        include __DIR__ . '/../includes/print-header.php';
-        ?>
+            <img src="<?= BASE_URL ?>/assets/images/header.jpg" alt="Header" class="print-header-img" style="width:100%;max-height:180px;object-fit:contain;">
         </div>
         <?php endif; ?>
     </div>
@@ -529,15 +536,16 @@ $principalName = 'ELENITA B. BESABE';
     function buildPrintReport(data) {
         const schoolYear = 'SY 2025 – 2026';
         const gradeLevel = data.grade_level || '';
-        const sectionName = data.section && data.section.section_name ? data.section.section_name : '';
-        const strandName = selectedStrandName || (data.section && data.section.strand_name) || '';
+        const sectionName = data.section || '';
+        const strandName = selectedStrandName || '';
         
         let gradeSectionHeader = 'GRADE ' + gradeLevel;
+        
+        if (sectionName) {
+            gradeSectionHeader += '-' + sectionName;
+        }
         if (strandName) {
             gradeSectionHeader += ' - ' + strandName;
-        }
-        if (sectionName) {
-            gradeSectionHeader += ' (' + sectionName + ')';
         }
 
         const boyCount = (data.boys || []).length;
@@ -550,7 +558,7 @@ $principalName = 'ELENITA B. BESABE';
             maleRows = '<tr><td colspan="2" style="border:1px solid #333;padding:8px 6px;text-align:center;font-size:10px;">No male students found.</td></tr>';
         } else {
             data.boys.forEach(function(s, i) {
-                const fullName = s.last_name + ', ' + s.first_name + (s.middle_name ? ' ' + s.middle_name.charAt(0).toUpperCase() + '.' : '');
+                const fullName = s.last_name + ', ' + s.first_name + (s.name_extension ? ' ' + s.name_extension : '') + (s.middle_name ? ' ' + s.middle_name.charAt(0).toUpperCase() + '.' : '');
                 maleRows += '<tr>' +
                     '<td style="border:1px solid #333;padding:4px 6px;text-align:center;width:40px;">' + (i + 1) + '</td>' +
                     '<td style="border:1px solid #333;padding:4px 6px;">' + escapeHtml(fullName) + '</td>' +
@@ -564,7 +572,7 @@ $principalName = 'ELENITA B. BESABE';
             femaleRows = '<tr><td colspan="2" style="border:1px solid #333;padding:8px 6px;text-align:center;font-size:10px;">No female students found.</td></tr>';
         } else {
             data.girls.forEach(function(s, i) {
-                const fullName = s.last_name + ', ' + s.first_name + (s.middle_name ? ' ' + s.middle_name.charAt(0).toUpperCase() + '.' : '');
+                const fullName = s.last_name + ', ' + s.first_name + (s.name_extension ? ' ' + s.name_extension : '') + (s.middle_name ? ' ' + s.middle_name.charAt(0).toUpperCase() + '.' : '');
                 femaleRows += '<tr>' +
                     '<td style="border:1px solid #333;padding:4px 6px;text-align:center;width:40px;">' + (i + 1) + '</td>' +
                     '<td style="border:1px solid #333;padding:4px 6px;">' + escapeHtml(fullName) + '</td>' +
@@ -611,19 +619,21 @@ $principalName = 'ELENITA B. BESABE';
                         <div style="margin-top:4px;font-weight:700;font-size:11px;">FEMALE - ${girlCount}</div>
                     </div>
                 </div>
-                
-                <div class="ml-totals">TOTAL - ${totalCount}</div>
-                
-                <div class="ml-signature-row">
-                    <div class="ml-signature-block">
-                        <div class="ml-signature-line">Prepared by:</div>
-                        <div class="ml-signature-name">${escapeHtml(teacherName)}</div>
-                        <div class="ml-signature-title">Class Adviser</div>
-                    </div>
-                    <div class="ml-signature-block">
-                        <div class="ml-signature-line">Noted:</div>
-                        <div class="ml-signature-name">${escapeHtml(principalName)}</div>
-                        <div class="ml-signature-title">Principal II</div>
+
+                <div style="text-align:center;font-weight:700;font-size:12px;font-family:Arial,sans-serif;margin-top:12px;">TOTAL — ${totalCount}</div>
+
+<div style="margin-top:20px;padding-top:8px;">
+                <div style="display:flex;justify-content:space-between;gap:30px;">
+                        <div style="flex:1;text-align:center;">
+                            <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">
+                            <strong>${teacherName}</strong><br>
+                            <span>Subject Teacher</span>
+                        </div>
+                        <div style="flex:1;text-align:center;">
+                            <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">
+                            <strong>${principalName}</strong><br>
+                            <span>OIC/Assistant Principal</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -632,13 +642,19 @@ $principalName = 'ELENITA B. BESABE';
 
     function printMasterList() {
         if (!lastMasterData) { return; }
+        const orient = (document.getElementById('printOrientation') || {}).value || 'portrait';
+        const isLandscape = orient === 'landscape';
         printArea.innerHTML = buildPrintReport(lastMasterData);
-        var pw = window.open('', '_blank', 'width=900,height=700');
+        var pw = window.open('', '_blank', 'width=' + (isLandscape ? '1200' : '900') + ',height=' + (isLandscape ? '800' : '700'));
+        var pageSize = isLandscape ? 'A4 landscape' : 'A4 portrait';
+        var bodyPad = isLandscape ? '12px 15px' : '20px 25px';
         pw.document.write(
             '<!DOCTYPE html><html><head><title>Class Masterlist</title>' +
             '<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">' +
             '<style>' +
-            'body.print-new-window{margin:0;padding:20px 25px;background:#fff;font-family:"Segoe UI",Arial,sans-serif;color:#333;}' +
+            'body.print-new-window{margin:0;padding:' + bodyPad + ';background:#fff;font-family:"Segoe UI",Arial,sans-serif;color:#333;}' +
+            '@page{size:' + pageSize + ';margin:0 12mm 15mm 12mm;}' +
+            '.print-header-img{width:100%;max-height:160px;object-fit:contain;display:block;margin-bottom:20px;}' +
             '.ml-report-container{max-width:100%;padding:0;}' +
             '.ml-report-title{text-align:center;font-size:18px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:2px;font-family:Arial,sans-serif;}' +
             '.ml-report-meta{text-align:center;font-size:13px;font-weight:600;margin-bottom:2px;color:#000;font-family:Arial,sans-serif;}' +
@@ -648,17 +664,11 @@ $principalName = 'ELENITA B. BESABE';
             '.ml-print-table th{border:1px solid #333;padding:4px 6px;background:#f1f1f1;font-weight:700;text-transform:uppercase;font-size:10px;text-align:center;}' +
             '.ml-print-table td{border:1px solid #333;padding:4px 6px;font-size:10px;font-family:Arial,sans-serif;}' +
             '.ml-print-table tr:nth-child(even){background:#fafafa;}' +
-            '.ml-print-table th:first-child,.ml-print-table td:first-child{width:40px;text-align:center;}' +
-            '.ml-totals{margin-top:8px;font-weight:700;text-align:center;font-size:12px;font-family:Arial,sans-serif;}' +
-            '.ml-signature-row{margin-top:25px;display:flex;justify-content:space-between;font-size:10px;font-family:Arial,sans-serif;}' +
-            '.ml-signature-block{width:200px;text-align:center;}' +
-            '.ml-signature-line{border-top:1px solid #000;padding-top:4px;font-weight:600;}' +
-            '.ml-signature-name{margin-top:4px;font-weight:700;font-size:11px;}' +
-            '.ml-signature-title{font-size:9px;}' +
-            '.ml-col-header-male{background:#e8f0fe;}' +
-            '.ml-col-header-female{background:#fde7f3;}' +
-            '@media print{body.print-new-window{padding:0;}.ml-print-row{gap:10px;}}' +
-            '</style></head>' +
+'.ml-print-table th:first-child,.ml-print-table td:first-child{width:40px;text-align:center;}' +
+              '.ml-col-header-male{background:#e8f0fe;}' +
+             '.ml-col-header-female{background:#fde7f3;}' +
+             '@media print{body.print-new-window{padding:0 !important;margin:0;}.ml-print-row{gap:10px;}}' +
+             '</style></head>' +
             '<body class="print-new-window">' +
             printArea.innerHTML +
             '<script>window.onload=function(){setTimeout(function(){window.print();},100);};<\/script>' +

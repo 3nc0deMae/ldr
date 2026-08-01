@@ -395,9 +395,6 @@ require_once __DIR__ . '/../includes/sidebar.php';
        ===================================================== */
     @media (max-width: 576px) {
         .content-area { padding: 6px 6px 24px; }
-        .page-header-mobile h5 { font-size: 15px; }
-        .page-header-mobile small { font-size: 11px; }
-
         .card-body { padding: 12px !important; }
         .form-section-title { font-size: 12px; }
         .form-field-label { font-size: 10px; }
@@ -417,6 +414,8 @@ require_once __DIR__ . '/../includes/sidebar.php';
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
+<!-- ═══ TOP NAVBAR ═══ -->
+<?php require_once __DIR__ . '/../includes/pages-topnavbar.php'; ?>
 <div class="main-content">
 
     <!-- ═══ CONTENT ═══ -->

@@ -277,7 +277,6 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
         .content-area { padding: 8px 10px 28px; }
         .page-header-section { padding: 8px 2px 12px; }
-        .page-header-section h5 { font-size: 17px; }
         .page-header-section .mobile-student-meta { font-size: 11px; }
         .page-header-section .student-code { font-size: 11px; padding: 1px 6px; }
 
@@ -313,7 +312,6 @@ require_once __DIR__ . '/../includes/sidebar.php';
         .nav-action-icon { width: 32px; height: 32px; font-size: 13px; }
         #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
         .content-area { padding: 6px 6px 24px; }
-        .page-header-section h5 { font-size: 15px; }
         .page-header-section .mobile-student-meta { font-size: 10px; }
         .card-body { padding: 12px !important; }
         .form-section-title { font-size: 12px; }
@@ -347,6 +345,8 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-navbar.css">
 
+<!-- ═══ TOP NAVBAR ═══ -->
+<?php require_once __DIR__ . '/../includes/pages-topnavbar.php'; ?>
 <div class="main-content">
     <div class="content-area">
 
@@ -449,7 +449,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                         </div>
                         <div class="col-6 col-md-2">
                             <label class="form-field-label">Age</label>
-                            <input type="number" class="form-input" name="age" min="5" max="25"
+                            <input type="number" class="form-input" name="age" min="7" max="100"
                                    value="<?= sanitize($student['age']) ?>">
                         </div>
                         <div class="col-6 col-md-3">

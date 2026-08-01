@@ -67,7 +67,7 @@ if ($userId && in_array($role, ['teacher', 'gate'], true)) {
     if ($role === 'teacher') {
         try {
             $stmt = $db->prepare(
-                "SELECT t.first_name, t.last_name, t.employee_id, t.department, t.email AS t_email,
+                "SELECT t.first_name, t.middle_name, t.last_name, t.employee_id, t.department, t.email AS t_email,
                         t.subjects_handled, t.advisory_class, u.last_login
                  FROM teachers t
                  JOIN users u ON u.id = t.user_id
@@ -76,7 +76,9 @@ if ($userId && in_array($role, ['teacher', 'gate'], true)) {
             $stmt->execute([$userId]);
             $tRow = $stmt->fetch();
             if ($tRow) {
-                $profileName      = trim($tRow['first_name'] . ' ' . $tRow['last_name']);
+                $profileName = trim(($tRow['first_name'] ?? '')
+                    . (!empty($tRow['middle_name']) ? ' ' . strtoupper($tRow['middle_name'][0]) . '.' : '')
+                    . ' ' . ($tRow['last_name'] ?? ''));
                 $profileId        = $tRow['employee_id'] ?? '';
                 $profileDept      = $tRow['department'] ?? '';
                 $profileExtra     = $tRow['advisory_class'] ?? '';
@@ -368,7 +370,7 @@ $baseUrl = BASE_URL;
     .navbar-brand-sub { font-size: 9px; opacity: 0.45; }
     .desktop-title { display: none !important; }
     .desktop-date { display: none !important; }
-    .mobile-title { display: block; }
+    .mobile-title { display: block !important; }
     .navbar-actions { gap: 6px; flex-shrink: 0; }
     .nav-icon-btn { width: 38px; height: 38px; font-size: 15px; }
 
@@ -560,8 +562,6 @@ $baseUrl = BASE_URL;
     .navbar-actions { gap: 4px; }
     .nav-icon-btn { width: 34px; height: 34px; font-size: 14px; }
     #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
-    .mobile-title-left h5 { font-size: 15px; }
-    .mobile-title-left small { font-size: 11px; }
     .mobile-date { font-size: 10px; padding: 5px 8px; }
     .content-area { padding: 8px 8px 24px; }
     .card { border-radius: 10px; }
@@ -598,6 +598,24 @@ $baseUrl = BASE_URL;
 .card-header { background: transparent; border-bottom: 1px solid var(--set-border); padding: 14px 20px; font-size: 14px; font-weight: 700; color: var(--set-text); letter-spacing: -0.01em; display: flex; align-items: center; }
 .card-header i { color: #ffffff; font-size: 15px; }
 .card-body { padding: 20px; color: var(--set-text); }
+.profile-card { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.profile-avatar {
+    width: 72px; height: 72px; border-radius: 16px; flex-shrink: 0;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800; color: #fff;
+    font-family: var(--set-font);
+}
+.profile-info { flex: 1; min-width: 0; }
+.profile-info h6 { font-size: 18px; font-weight: 800; color: var(--set-text); margin: 0 0 4px; letter-spacing: -.02em; }
+.profile-role {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: .04em;
+    background: rgba(79,70,229,.15); color: #818cf8;
+}
+.profile-detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-top: 16px; }
+.profile-field .pf-label { font-size: 11px; font-weight: 600; color: var(--set-text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.profile-field .pf-value { font-size: 14px; font-weight: 600; color: var(--set-text); }
 </style>
 
 <div class="toast-container" id="toastContainer"></div>
@@ -774,20 +792,6 @@ $baseUrl = BASE_URL;
                                 <input type="text" class="set-input" name="setting_smtp_from_name" value="<?= htmlspecialchars($settings['smtp_from_name'] ?? 'LDB-FRAS', ENT_QUOTES, 'UTF-8') ?>">
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="field-group">
-                                <label class="set-label">Email Monitor</label>
-                                <div id="emailMonitorBox" style="display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:var(--set-radius-sm);background:var(--set-surface);border:1px solid var(--set-border);">
-                                    <div id="emailMonitorIcon" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4f46e5,#7c3aed);flex-shrink:0;">
-                                        <i class="bi bi-envelope-check" style="font-size:20px;color:#fff;"></i>
-                                    </div>
-                                    <div style="flex:1;min-width:0;">
-                                        <div style="font-size:26px;font-weight:800;color:var(--set-text);letter-spacing:-0.03em;line-height:1.1;" id="emailQuotaText">0</div>
-                                        <div style="font-size:12px;font-weight:500;color:var(--set-text-secondary);margin-top:2px;" id="emailQuotaStatus">No emails sent today</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="d-flex justify-content-end mt-3 animate-in" style="animation-delay:0.05s;">
@@ -848,29 +852,6 @@ $baseUrl = BASE_URL;
                                 <label class="set-label">Device ID</label>
                                 <input type="text" class="set-input" name="setting_sms_device_id" value="<?= htmlspecialchars($settings['sms_device_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="e.g. 6a5c9a37806d...">
                                 <span class="set-hint">Android device ID from <a href="https://textbee.dev/dashboard" target="_blank">dashboard</a></span>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <div class="field-group">
-                                <label class="set-label">Subscription Plan Tier</label>
-                                <select name="notif_sms_subscription_tier" class="set-select">
-                                    <option value="free_50" <?= ($notifConfig['sms_subscription_tier'] ?? 'free_50') === 'free_50' ? 'selected' : '' ?>>Free Tier (50 msgs/day)</option>
-                                    <option value="monthly_unlimited" <?= ($notifConfig['sms_subscription_tier'] ?? '') === 'monthly_unlimited' ? 'selected' : '' ?>>Monthly Unlimited</option>
-                                    <option value="yearly_unlimited" <?= ($notifConfig['sms_subscription_tier'] ?? '') === 'yearly_unlimited' ? 'selected' : '' ?>>Yearly Unlimited</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="field-group">
-                                <label class="set-label">Daily Quota Monitor</label>
-                                <div style="display:flex;align-items:center;gap:12px;">
-                                    <div style="flex:1;height:10px;border-radius:10px;background:rgba(255,255,255,0.06);overflow:hidden;">
-                                        <div id="smsQuotaBar" style="height:100%;border-radius:10px;background:linear-gradient(90deg,#4f46e5,#7c3aed);transition:width 0.4s ease;width:0%;"></div>
-                                    </div>
-                                    <span id="smsQuotaText" style="font-size:12px;font-weight:700;color:var(--set-text-secondary);white-space:nowrap;">0/50</span>
-                                </div>
-                                <span class="set-hint" id="smsQuotaStatus">Resets daily at midnight</span>
                             </div>
                         </div>
                     </div>
@@ -1568,70 +1549,6 @@ $baseUrl = BASE_URL;
         }
     });
 
-    function updateSmsQuotaBar() {
-        var bar = document.getElementById('smsQuotaBar');
-        var text = document.getElementById('smsQuotaText');
-        var status = document.getElementById('smsQuotaStatus');
-        if (!bar || !text || !status) return;
-
-        var dailyCount = <?= (int)($notifConfig['sms_daily_count'] ?? 0) ?>;
-        var tier = '<?= htmlspecialchars($notifConfig['sms_subscription_tier'] ?? 'free_50', ENT_QUOTES, 'UTF-8') ?>';
-        var limit = tier === 'free_50' ? 50 : 9999;
-
-        if (tier !== 'free_50') {
-            bar.style.width = '0%';
-            bar.style.background = 'linear-gradient(90deg,#10b981,#34d399)';
-            text.textContent = 'Unlimited';
-            status.textContent = 'Unlimited plan active';
-            status.style.color = '#34d399';
-            return;
-        }
-
-        var pct = Math.min(100, Math.round((dailyCount / limit) * 100));
-        bar.style.width = pct + '%';
-        text.textContent = dailyCount + '/' + limit;
-
-        if (dailyCount >= limit) {
-            bar.style.background = 'linear-gradient(90deg,#ef4444,#f87171)';
-            status.textContent = 'Quota Reached — SMS disabled until midnight';
-            status.style.color = '#f87171';
-        } else if (pct >= 80) {
-            bar.style.background = 'linear-gradient(90deg,#f59e0b,#fbbf24)';
-            status.textContent = 'Warning: ' + (limit - dailyCount) + ' messages remaining';
-            status.style.color = '#fbbf24';
-        } else {
-            bar.style.background = 'linear-gradient(90deg,#4f46e5,#7c3aed)';
-            status.textContent = (limit - dailyCount) + ' messages remaining today';
-            status.style.color = 'var(--set-text-secondary)';
-        }
-    }
-
-    function updateEmailQuotaBar() {
-        var box = document.getElementById('emailMonitorBox');
-        var icon = document.getElementById('emailMonitorIcon');
-        var text = document.getElementById('emailQuotaText');
-        var status = document.getElementById('emailQuotaStatus');
-        if (!text || !status) return;
-
-        var dailyCount = <?= (int)($notifConfig['email_daily_count'] ?? 0) ?>;
-
-        text.textContent = dailyCount;
-
-        if (dailyCount === 0) {
-            if (icon) { icon.style.background = 'linear-gradient(135deg,#4f46e5,#7c3aed)'; }
-            if (box) { box.style.borderColor = 'var(--set-border)'; }
-            status.textContent = 'No emails sent today';
-            status.style.color = 'var(--set-text-secondary)';
-        } else {
-            if (icon) { icon.style.background = 'linear-gradient(135deg,#10b981,#34d399)'; }
-            if (box) { box.style.borderColor = 'rgba(16,185,129,0.3)'; }
-            status.textContent = dailyCount + ' email' + (dailyCount > 1 ? 's' : '') + ' sent today';
-            status.style.color = '#34d399';
-        }
-    }
-
-    updateSmsQuotaBar();
-    updateEmailQuotaBar();
 })();
 </script>
 
@@ -1666,25 +1583,6 @@ $baseUrl = BASE_URL;
 
     .set-section { display: none; }
     .set-section.active { display: block; }
-
-    .profile-card { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-    .profile-avatar {
-        width: 72px; height: 72px; border-radius: 16px; flex-shrink: 0;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 28px; font-weight: 800; color: #fff;
-        font-family: var(--set-font);
-    }
-    .profile-info { flex: 1; min-width: 0; }
-    .profile-info h6 { font-size: 18px; font-weight: 800; color: var(--set-text); margin: 0 0 4px; letter-spacing: -.02em; }
-    .profile-role {
-        display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
-        padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: .04em;
-        background: rgba(79,70,229,.15); color: #818cf8;
-    }
-    .profile-detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-top: 16px; }
-    .profile-field .pf-label { font-size: 11px; font-weight: 600; color: var(--set-text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
-    .profile-field .pf-value { font-size: 14px; font-weight: 600; color: var(--set-text); }
 </style>
 
 <div class="page-title d-none d-md-flex justify-content-between align-items-center gap-3 mb-3">

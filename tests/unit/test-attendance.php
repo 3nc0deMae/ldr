@@ -232,7 +232,35 @@ $t->assertNotNull(validateNumeric('abc', null, null, 'Age'), 'validateNumeric fa
 $t->assertNotNull(validateNumeric('150', 0, 100, 'Age'), 'validateNumeric fails for out of range');
 
 // validateEnum
-$t->assertNull(validateEnum('present', ['present', 'absent', 'late'], 'Status'), 'validateEnum passes for valid value');
-$t->assertNotNull(validateEnum('invalid', ['present', 'absent', 'late'], 'Status'), 'validateEnum fails for invalid value');
+$t->assertNull(validateEnum('present', ['present', 'absent', 'late', 'pending', 'excused'], 'Status'), 'validateEnum passes for valid value');
+$t->assertNotNull(validateEnum('invalid', ['present', 'absent', 'late', 'pending', 'excused'], 'Status'), 'validateEnum fails for invalid value');
+
+// ============================================================
+// Gate Session Period Auto-Selection Tests
+// ============================================================
+
+// Configured time-in morning window 06:00-08:00, afternoon 12:30-13:30
+$t->assertEqual('morning', getGateSessionPeriod(null, 'time_in', strtotime('2026-08-01 07:00:00')), 'time-in at 07:00 selects Morning');
+$t->assertEqual('afternoon', getGateSessionPeriod(null, 'time_in', strtotime('2026-08-01 13:00:00')), 'time-in at 13:00 selects Afternoon');
+$t->assertEqual('morning', getGateSessionPeriod(null, 'time_in', strtotime('2026-08-01 06:00:00')), 'time-in at 06:00 (window edge) selects Morning');
+$t->assertEqual('afternoon', getGateSessionPeriod(null, 'time_in', strtotime('2026-08-01 13:30:00')), 'time-in at 13:30 (window edge) selects Afternoon');
+
+// Fallback to AM/PM when outside any configured window
+$t->assertEqual('morning', getGateSessionPeriod(null, 'time_in', strtotime('2026-08-01 09:00:00')), 'time-in at 09:00 falls back to AM = Morning');
+$t->assertEqual('afternoon', getGateSessionPeriod(null, 'time_in', strtotime('2026-08-01 23:00:00')), 'time-in at 23:00 falls back to PM = Afternoon');
+
+// Configured time-out morning window 10:30-11:30, afternoon 15:30-17:00
+$t->assertEqual('morning', getGateSessionPeriod(null, 'time_out', strtotime('2026-08-01 10:45:00')), 'time-out at 10:45 selects Morning');
+$t->assertEqual('afternoon', getGateSessionPeriod(null, 'time_out', strtotime('2026-08-01 16:00:00')), 'time-out at 16:00 selects Afternoon');
+$t->assertEqual('afternoon', getGateSessionPeriod(null, 'time_out', strtotime('2026-08-01 12:00:00')), 'time-out at noon falls back to PM = Afternoon');
+
+// Invalid session type defaults to time_in windows
+$t->assertEqual('morning', getGateSessionPeriod(null, 'lunch', strtotime('2026-08-01 07:00:00')), 'Unknown session type defaults to time-in windows');
+
+// Live DB read of configured windows returns a valid period
+if ($db) {
+    $livePeriod = getGateSessionPeriod($db, 'time_in');
+    $t->assertTrue(in_array($livePeriod, ['morning', 'afternoon'], true), 'getGateSessionPeriod() with DB returns a valid period');
+}
 
 return $t;

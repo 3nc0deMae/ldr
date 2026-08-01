@@ -139,14 +139,26 @@ $roleColor = $roleColors[$role] ?? '#0066FE';
         }
 
         body {
+            position: relative;
             font-family: 'Poppins', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             color: var(--gray-800);
             -webkit-font-smoothing: antialiased;
-            background:
-                url('assets/images/background.png') center center / cover no-repeat fixed;
+            background: transparent;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a url('assets/images/background.png') center center / cover no-repeat fixed;
+            filter: blur(8px);
+            -webkit-filter: blur(8px);
+            z-index: -1;
         }
 
         /* =============================================

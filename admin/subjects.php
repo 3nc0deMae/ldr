@@ -357,7 +357,7 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
         --sm-shadow:0 4px 16px rgba(0,0,0,0.25);
         --sm-transition:0.2s cubic-bezier(0.4,0,0.2,1);
         --select-bg:#1e2a4a;--select-bg-hover:#2563eb;--select-bg-placeholder:#151d33;
-        --select-text:#fff;--select-text-muted:rgba(255,255,255,0.45);
+        --select-text:#fff;--select-text-muted:#ffffff;
     }
 
     /* GLOBAL SELECT */
@@ -393,7 +393,7 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
 
     /* FILTER */
     .filter-chips{display:flex;gap:8px;flex-wrap:wrap}
-    .filter-chip{padding:7px 18px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid rgba(255,255,255,0.12);background:transparent;cursor:pointer;transition:all var(--sm-transition);text-decoration:none;display:inline-flex;align-items:center}
+    .filter-chip{padding:7px 18px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid rgba(255,255,255,0.12);background:transparent;cursor:pointer;transition:all var(--sm-transition);text-decoration:none;display:inline-flex;align-items:center;color:#fff}
     .filter-chip:hover{transform:translateY(-1px);border-color:var(--sm-primary)}.filter-chip.active{background:var(--sm-primary);border-color:var(--sm-primary);color:#fff}
 
     /* ACTION BUTTONS */
@@ -458,7 +458,7 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
         #sidebarToggle{width:38px;height:38px;font-size:20px;flex-shrink:0}
         .navbar-brand{display:flex}.navbar-brand-logo{width:44px;height:44px}
         .navbar-brand-name{font-size:12px}.navbar-brand-sub{font-size:9px;opacity:0.45}
-        .desktop-title{display:none!important}.mobile-title{display:block}
+        .desktop-title{display:none!important}.mobile-title{display:block!important}
         .navbar-actions{gap:6px}.nav-icon-btn{width:38px;height:38px;font-size:15px}
 
         .content-area{padding:10px 12px 28px}
@@ -484,15 +484,12 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
         .event-modal::before{content:'';display:block;width:36px;height:4px;border-radius:4px;background:rgba(255,255,255,0.2);margin:10px auto 0;flex-shrink:0}
         .toast-container{bottom:24px;right:12px;left:12px}.toast-notification{max-width:100%;font-size:12px;padding:12px 16px}
         .stat-card{animation:none;opacity:1}
-        .mobile-title-left h5 { font-size: 17px; }
-        .mobile-title-left small { font-size: 12px; }
     }
     @media(max-width:576px){
         .top-navbar{padding:10px 10px}.navbar-brand-logo{width:38px;height:38px}
         .navbar-brand-name{font-size:11px}.navbar-brand-sub{font-size:8px}
         .navbar-actions{gap:4px;flex-wrap:wrap}.nav-icon-btn{width:34px;height:34px;font-size:14px}
         #sidebarToggle{width:34px;height:34px;font-size:18px}
-        .mobile-title-left h5{font-size:15px}.mobile-title-left small{font-size:11px}
         .content-area{padding:8px 8px 24px}.stat-card{padding:12px 10px}
         .stat-value{font-size:18px}.stat-label{font-size:9px}
         .stat-icon{width:32px;height:32px;font-size:13px}

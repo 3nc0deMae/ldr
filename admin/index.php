@@ -57,6 +57,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
 <!-- Stylesheets — pages-theme.css first (sidebar lives there), pages-navbar.css second (everything else) -->
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-navbar.css">
+<style>@media(max-width:767px){.mobile-title{display:block!important}}</style>
 
 <!-- ═══ TOP NAVBAR ═══ -->
 <?php require_once __DIR__ . '/../includes/pages-topnavbar.php'; ?>
@@ -73,6 +74,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                 <small>Welcome back, <strong><?= sanitize($_SESSION['user_email']) ?></strong></small>
             </div>
         </div>
+        <div class="page-title mobile-title"><div class="mobile-title-inner"><div class="mobile-title-left"><h5>Admin Dashboard</h5><small>Welcome back, <?= sanitize($_SESSION['user_email']) ?></small></div></div></div>
         <!-- STAT CARDS -->
         <div class="row g-3 mb-4">
             <div class="col-6 col-lg-3">

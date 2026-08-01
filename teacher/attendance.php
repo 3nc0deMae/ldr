@@ -344,8 +344,6 @@ if ($activeSession) {
         .navbar-brand-logo { width: 38px; height: 38px; }
         .navbar-brand-name { font-size: 11px; }
         .navbar-brand-sub { font-size: 8px; }
-        .mobile-title-left h5 { font-size: 15px; }
-        .mobile-title-left small { font-size: 11px; }
         .mobile-date { font-size: 10px; padding: 5px 8px; }
         .content-area { padding: 8px 8px 24px; }
         .card-header { padding: 12px 14px; font-size: 13px; }
@@ -631,8 +629,8 @@ if ($activeSession) {
                                     <?php
                                         $curStatus    = $rec['att_status'] ?: 'pending';
                                         $hasRemark    = $curStatus !== 'pending';
-                                        $statusColor  = $curStatus === 'present' ? 'success' : ($curStatus === 'late' ? 'warning' : 'danger');
-                                        $statusIcon   = $curStatus === 'present' ? 'check' : ($curStatus === 'late' ? 'clock' : 'x');
+                                        $statusColor  = $curStatus === 'present' ? 'success' : ($curStatus === 'late' ? 'warning' : ($curStatus === 'excused' ? 'info' : 'danger'));
+                                        $statusIcon   = $curStatus === 'present' ? 'check' : ($curStatus === 'late' ? 'clock' : ($curStatus === 'excused' ? 'journal-text' : 'x'));
                                         $attTime      = !empty($rec['att_time']) ? date('h:i A', strtotime($rec['att_time'])) : '';
                                     ?>
                                     <div class="scan-item" data-student-id="<?= sanitize($rec['sid']) ?>" data-status="<?= $curStatus ?>">
@@ -726,12 +724,13 @@ if ($activeSession) {
                 <p style="font-size:13px;opacity:0.6;margin-bottom:12px">Update attendance status for <strong id="editStatusNameDisplay"></strong></p>
                 <div class="evt-field">
                     <label>Status <span class="required">*</span></label>
-                    <select id="editStatusSelect" required>
-                        <option value="present">Present</option>
-                        <option value="late">Late</option>
-                        <option value="absent">Absent</option>
-                        <option value="pending">Pending</option>
-                    </select>
+<select id="editStatusSelect" required>
+                                <option value="present">Present</option>
+                                <option value="late">Late</option>
+                                <option value="absent">Absent</option>
+                                <option value="excused">Excused</option>
+                                <option value="pending">Pending</option>
+                            </select>
                 </div>
                 <div id="editStatusMessage"></div>
             </div>
@@ -750,8 +749,8 @@ if ($activeSession) {
     let liveness = null;
     const sessionId = <?= $activeSession['id'] ?>;
     const scannedStudents = new Set();
-    const statusColorMap = { present: 'success', late: 'warning', absent: 'danger', pending: '' };
-    const statusIconMap  = { present: 'check', late: 'clock', absent: 'x', pending: 'person' };
+    const statusColorMap = { present: 'success', late: 'warning', absent: 'danger', excused: 'info', pending: '' };
+    const statusIconMap  = { present: 'check', late: 'clock', absent: 'x', excused: 'journal-text', pending: 'person' };
 
     /* Voice announcement toggle — speak once per student when detected */
     let voiceEnabled = true;

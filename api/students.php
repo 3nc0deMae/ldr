@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/face_api.php';
+require_once __DIR__ . '/../includes/xlsx_reader.php';
 
 header('Content-Type: application/json');
 
@@ -18,24 +19,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="students_export_' . date('Y-m-d') . '.csv"');
 
-        $students = getStudents($db, []);
+        $sql = "SELECT s.*, g.guardian_name, g.relationship, g.phone as guardian_phone,
+                       g.email as guardian_email, g.address as guardian_address
+                FROM students s LEFT JOIN guardians g ON s.id = g.student_id
+                ORDER BY s.last_name ASC, s.first_name ASC";
+        $students = $db->query($sql)->fetchAll();
 
         $output = fopen('php://output', 'w');
-        fputcsv($output, ['student_id', 'first_name', 'last_name', 'middle_name', 'grade_level', 'section', 'gender', 'status']);
-        
+        fputcsv($output, [
+            'LRN', 'first_name', 'middle_name', 'last_name', 'name_extension',
+            'age', 'gender', 'email', 'grade_level', 'section', 'address',
+            'guardian_name', 'relationship', 'guardian_phone', 'guardian_email', 'guardian_address'
+        ]);
+
         foreach ($students as $student) {
             fputcsv($output, [
                 $student['student_id'],
                 $student['first_name'],
-                $student['last_name'],
                 $student['middle_name'] ?? '',
+                $student['last_name'],
+                $student['name_extension'] ?? '',
+                $student['age'] ?? '',
+                $student['gender'] ?? '',
+                $student['email'] ?? '',
                 $student['grade_level'],
                 $student['section'] ?? '',
-                $student['gender'] ?? '',
-                $student['status'] ?? 'active'
+                $student['address'] ?? '',
+                $student['guardian_name'] ?? '',
+                $student['relationship'] ?? '',
+                $student['guardian_phone'] ?? '',
+                $student['guardian_email'] ?? '',
+                $student['guardian_address'] ?? ''
             ]);
         }
-        
+
         fclose($output);
         exit;
     }
@@ -43,7 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($action === 'download_template') {
         require_once __DIR__ . '/../includes/xlsx_template.php';
 
-        // Columns mirror the Add Student form (admin/student-add.php)
         $headers = [
             'LRN', 'first_name', 'middle_name', 'last_name', 'name_extension',
             'age', 'gender', 'email', 'grade_level', 'section', 'address',
@@ -52,8 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         $example = [
             '113400000001', 'Juan', 'Santos', 'Dela Cruz', 'Jr.',
-            '16', 'Male', 'juan@example.com', '11', 'St. Luke', 'Malolos, Bulacan',
-            'Jose Dela Cruz', 'parents', '09171234567', 'jose@example.com', 'Malolos, Bulacan'
+            '16', 'Male', 'juan@example.com', '11', 'St. Luke', 'Malolos Bulacan',
+            'Jose Dela Cruz', 'parents', '09171234567', 'jose@example.com', 'Malolos Bulacan'
         ];
 
         $templateRows = [$headers, $example];
@@ -83,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             ['guardian_email', 'No', 'Valid email address'],
             ['guardian_address', 'No', 'Text'],
             ['', '', ''],
-            ['Note', '', 'Save this file as .csv before using the Import CSV feature.'],
+            ['Note', '', 'This .xlsx template can be imported directly using the Import CSV feature.'],
         ];
         $instructionSheet = [
             'name' => 'Instructions',
@@ -112,6 +128,125 @@ requireRole(['admin']);
 csrfMiddleware(true);
 
 $action = $_POST['action'] ?? '';
+
+function processStudentImport($studentsData, $skipDuplicates, $updateExisting, $db) {
+    $imported = 0;
+    $skipped = 0;
+    $updated = 0;
+    $errors = 0;
+    $errorDetails = [];
+
+    $db->beginTransaction();
+
+    try {
+        foreach ($studentsData as $index => $row) {
+            $rowNum = $index + 2; // +2 because we skip header row
+
+            // Validate required fields
+            if (empty($row['lrn']) || empty($row['first_name']) || empty($row['last_name'])) {
+                $errors++;
+                $errorDetails[] = "Row $rowNum: Missing required fields (LRN, first_name, last_name)";
+                continue;
+            }
+
+            $studentId = sanitize($row['lrn']);
+
+            // Check if student already exists
+            $existing = getStudentByStudentId($db, $studentId);
+
+            if ($existing) {
+                if ($updateExisting) {
+                    // Update existing student — merge file values with existing
+                    // data so blank columns in the file do not erase stored info.
+                    $updateFields = ['first_name', 'middle_name', 'last_name', 'name_extension', 'age', 'gender', 'address', 'email', 'grade_level', 'section'];
+                    $data = [];
+                    foreach ($updateFields as $field) {
+                        $raw = trim((string) ($row[$field] ?? ''));
+                        if ($raw === '') {
+                            $data[$field] = $existing[$field] ?? ($field === 'age' ? 0 : '');
+                        } else {
+                            $data[$field] = $field === 'age' ? intval($raw) : sanitize($raw);
+                        }
+                    }
+
+                    if (updateStudent($db, $existing['id'], $data)) {
+                        saveGuardian($db, $existing['id'], [
+                            'guardian_name' => sanitize($row['guardian_name'] ?? ''),
+                            'relationship'  => sanitize($row['relationship'] ?? ''),
+                            'phone'         => normalizePhilippinePhone($row['guardian_phone'] ?? ''),
+                            'email'         => sanitize($row['guardian_email'] ?? ''),
+                            'address'       => sanitize($row['guardian_address'] ?? '')
+                        ]);
+                        $updated++;
+                    } else {
+                        $errors++;
+                        $errorDetails[] = "Row $rowNum: Failed to update $studentId";
+                    }
+                } elseif ($skipDuplicates) {
+                    $skipped++;
+                    continue;
+                } else {
+                    $errors++;
+                    $errorDetails[] = "Row $rowNum: Duplicate student ID $studentId";
+                    continue;
+                }
+            } else {
+                // Insert new student
+                $data = [
+                    'student_id'    => $studentId,
+                    'first_name'    => sanitize($row['first_name']),
+                    'last_name'     => sanitize($row['last_name']),
+                    'middle_name'   => sanitize($row['middle_name'] ?? ''),
+                    'name_extension'=> sanitize($row['name_extension'] ?? ''),
+                    'age'           => intval($row['age'] ?? 0),
+                    'gender'        => sanitize($row['gender'] ?? ''),
+                    'address'       => sanitize($row['address'] ?? ''),
+                    'email'         => sanitize($row['email'] ?? ''),
+                    'grade_level'   => sanitize($row['grade_level'] ?? ''),
+                    'section'       => sanitize($row['section'] ?? '')
+                ];
+
+                // Calculate age from birthdate if provided and age not set
+                if (empty($data['age']) && !empty($row['birthdate'])) {
+                    $birthdate = new DateTime($row['birthdate']);
+                    $now = new DateTime();
+                    $data['age'] = $now->diff($birthdate)->y;
+                }
+
+                $newStudentId = addStudent($db, $data);
+                if ($newStudentId) {
+                    saveGuardian($db, $newStudentId, [
+                        'guardian_name' => sanitize($row['guardian_name'] ?? ''),
+                        'relationship'  => sanitize($row['relationship'] ?? ''),
+                        'phone'         => normalizePhilippinePhone($row['guardian_phone'] ?? ''),
+                        'email'         => sanitize($row['guardian_email'] ?? ''),
+                        'address'       => sanitize($row['guardian_address'] ?? '')
+                    ]);
+                    $imported++;
+                } else {
+                    $errors++;
+                    $errorDetails[] = "Row $rowNum: Failed to add $studentId";
+                }
+            }
+        }
+
+        $db->commit();
+
+        jsonResponse([
+            'success'   => true,
+            'message'   => "Import completed. $imported imported, $skipped skipped, $updated updated, $errors errors.",
+            'imported'  => $imported,
+            'skipped'   => $skipped,
+            'updated'   => $updated,
+            'errors'    => $errors,
+            'error_details' => $errorDetails
+        ]);
+
+    } catch (Exception $e) {
+        $db->rollBack();
+        jsonResponse(['error' => 'Import failed: ' . $e->message], 500);
+    }
+}
 
 switch ($action) {
 
@@ -282,114 +417,70 @@ switch ($action) {
         }
         break;
 
+    case 'import_excel':
+        if (empty($_FILES['excel_file']) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK) {
+            jsonResponse(['error' => 'Please upload a valid Excel file (.xlsx)'], 400);
+        }
+
+        $uploadedFile = $_FILES['excel_file']['tmp_name'];
+        $originalName = $_FILES['excel_file']['name'];
+        $fileExt = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+        if ($fileExt !== 'xlsx') {
+            jsonResponse(['error' => 'Only .xlsx files are accepted'], 400);
+        }
+
+        $skipDuplicates = ($_POST['skip_duplicates'] ?? '1') === '1';
+        $updateExisting = ($_POST['update_existing'] ?? '0') === '1';
+
+        try {
+            $xlsxRows = xlsx_read_file($uploadedFile);
+        } catch (Exception $e) {
+            jsonResponse(['error' => 'Failed to read Excel file: ' . $e->getMessage()], 500);
+        }
+
+        if (count($xlsxRows) < 2) {
+            jsonResponse(['error' => 'Excel file must have a header row and at least one data row'], 400);
+        }
+
+        $headers = array_map(function($h) { return strtolower(trim($h)); }, $xlsxRows[0]);
+        $requiredFields = ['lrn', 'first_name', 'last_name'];
+        $missingFields = array_filter($requiredFields, function($f) use ($headers) {
+            return array_search($f, $headers) === false;
+        });
+
+        if (!empty($missingFields)) {
+            jsonResponse(['error' => 'Missing required columns: ' . implode(', ', $missingFields)], 400);
+        }
+
+        $studentsData = [];
+        for ($i = 1; $i < count($xlsxRows); $i++) {
+            $row = [];
+            foreach ($headers as $colIndex => $headerName) {
+                $row[$headerName] = $xlsxRows[$i][$colIndex] ?? '';
+            }
+            $studentsData[] = $row;
+        }
+
+        if (empty($studentsData)) {
+            jsonResponse(['error' => 'No data rows found in Excel file'], 400);
+        }
+
+        processStudentImport($studentsData, $skipDuplicates, $updateExisting, $db);
+        break;
+
     case 'import_csv':
         $studentsJson = $_POST['students'] ?? '[]';
         $skipDuplicates = ($_POST['skip_duplicates'] ?? '1') === '1';
         $updateExisting = ($_POST['update_existing'] ?? '0') === '1';
-        
+
         $studentsData = json_decode($studentsJson, true);
-        
+
         if (empty($studentsData) || !is_array($studentsData)) {
             jsonResponse(['error' => 'No valid student data provided'], 400);
         }
-        
-        $imported = 0;
-        $skipped = 0;
-        $updated = 0;
-        $errors = 0;
-        $errorDetails = [];
-        
-        $db->beginTransaction();
-        
-        try {
-            foreach ($studentsData as $index => $row) {
-                $rowNum = $index + 2; // +2 because CSV is 1-indexed and we skip header
-                
-                // Validate required fields
-                if (empty($row['lrn']) || empty($row['first_name']) || empty($row['last_name'])) {
-                    $errors++;
-                    $errorDetails[] = "Row $rowNum: Missing required fields (LRN, first_name, last_name)";
-                    continue;
-                }
-                
-                $studentId = sanitize($row['lrn']);
-                
-                // Check if student already exists
-                $existing = getStudentByStudentId($db, $studentId);
-                
-                if ($existing) {
-                    if ($updateExisting) {
-                        // Update existing student
-                        $data = [
-                            'first_name'  => sanitize($row['first_name']),
-                            'last_name'   => sanitize($row['last_name']),
-                            'middle_name' => sanitize($row['middle_name'] ?? ''),
-                            'grade_level' => sanitize($row['grade_level'] ?? ''),
-                            'section'     => sanitize($row['section'] ?? ''),
-                            'gender'      => sanitize($row['gender'] ?? ''),
-                        ];
-                        
-                        if (updateStudent($db, $existing['id'], $data)) {
-                            $updated++;
-                        } else {
-                            $errors++;
-                            $errorDetails[] = "Row $rowNum: Failed to update $studentId";
-                        }
-                    } elseif ($skipDuplicates) {
-                        $skipped++;
-                        continue;
-                    } else {
-                        $errors++;
-                        $errorDetails[] = "Row $rowNum: Duplicate student ID $studentId";
-                        continue;
-                    }
-                } else {
-                    // Insert new student
-                    $data = [
-                        'student_id'  => $studentId,
-                        'first_name'  => sanitize($row['first_name']),
-                        'last_name'   => sanitize($row['last_name']),
-                        'middle_name' => sanitize($row['middle_name'] ?? ''),
-                        'age'         => intval($row['age'] ?? 0),
-                        'gender'      => sanitize($row['gender'] ?? ''),
-                        'address'     => sanitize($row['address'] ?? ''),
-                        'email'       => sanitize($row['email'] ?? ''),
-                        'grade_level' => sanitize($row['grade_level'] ?? ''),
-                        'section'     => sanitize($row['section'] ?? '')
-                    ];
-                    
-                    // Calculate age from birthdate if provided and age not set
-                    if (empty($data['age']) && !empty($row['birthdate'])) {
-                        $birthdate = new DateTime($row['birthdate']);
-                        $now = new DateTime();
-                        $data['age'] = $now->diff($birthdate)->y;
-                    }
-                    
-                    if (addStudent($db, $data)) {
-                        $imported++;
-                    } else {
-                        $errors++;
-                        $errorDetails[] = "Row $rowNum: Failed to add $studentId";
-                    }
-                }
-            }
-            
-            $db->commit();
-            
-            jsonResponse([
-                'success'   => true,
-                'message'   => "Import completed. $imported imported, $skipped skipped, $updated updated, $errors errors.",
-                'imported'  => $imported,
-                'skipped'   => $skipped,
-                'updated'   => $updated,
-                'errors'    => $errors,
-                'error_details' => $errorDetails
-            ]);
-            
-        } catch (Exception $e) {
-            $db->rollBack();
-            jsonResponse(['error' => 'Import failed: ' . $e->message], 500);
-        }
+
+        processStudentImport($studentsData, $skipDuplicates, $updateExisting, $db);
         break;
 
     default:

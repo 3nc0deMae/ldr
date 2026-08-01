@@ -29,14 +29,15 @@ if ($section)    $filters['section']     = $section;
 $totalStudents = count(getStudents($db, $filters));
 $totalPages    = max(1, ceil($totalStudents / $perPage));
 
-$sql = "SELECT s.*, g.guardian_name, g.phone as guardian_phone FROM students s LEFT JOIN guardians g ON s.id = g.student_id";
+$sql = "SELECT s.*, g.guardian_name, g.relationship, g.phone as guardian_phone, g.email as guardian_email FROM students s LEFT JOIN guardians g ON s.id = g.student_id";
 $conditions = [];
 $params = [];
 if ($search) {
-    $conditions[] = "(s.first_name LIKE :search OR s.last_name LIKE :search2 OR s.student_id LIKE :search3)";
+    $conditions[] = "(s.first_name LIKE :search OR s.last_name LIKE :search2 OR s.student_id LIKE :search3 OR s.name_extension LIKE :search4)";
     $params[':search']  = "%$search%";
     $params[':search2'] = "%$search%";
     $params[':search3'] = "%$search%";
+    $params[':search4'] = "%$search%";
 }
 if ($gradeLevel) { $conditions[] = "s.grade_level = :grade_level"; $params[':grade_level'] = $gradeLevel; }
 if ($section)    { $conditions[] = "s.section = :section";         $params[':section'] = $section; }
@@ -48,6 +49,14 @@ $students = $stmt->fetchAll();
 
 $sections = [];
 try { $stmt = $db->query("SELECT DISTINCT section FROM students WHERE section != '' ORDER BY section"); $sections = $stmt->fetchAll(PDO::FETCH_COLUMN); } catch (Exception $e) {}
+
+$gradeSectionsMap = [];
+try {
+    $stmt = $db->query("SELECT grade_level, section FROM students WHERE section != '' AND grade_level != '' GROUP BY grade_level, section ORDER BY CAST(grade_level AS UNSIGNED), section");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $gradeSectionsMap[$row['grade_level']][] = $row['section'];
+    }
+} catch (Exception $e) {}
 
 $faceCount = 0;
 try { $faceCount = $db->query("SELECT COUNT(*) FROM student_faces WHERE face_encoding IS NOT NULL")->fetchColumn(); } catch (Exception $e) {}
@@ -601,7 +610,7 @@ select.filter-input option{
                             <label class="filter-label">Search</label>
                             <div class="search-wrapper">
                                 <i class="bi bi-search search-icon"></i>
-                                <input type="text" class="filter-input" name="search" placeholder="Name or student ID..." value="<?= sanitize($search) ?>">
+                                <input type="text" class="filter-input" name="search" placeholder="Name or student LRN..." value="<?= sanitize($search) ?>">
                             </div>
                         </div>
                         <div class="col-6 col-md-2">
@@ -615,7 +624,7 @@ select.filter-input option{
                         </div>
                         <div class="col-6 col-md-2">
                             <label class="filter-label">Section</label>
-                            <select name="section" class="filter-input">
+                            <select name="section" class="filter-input" id="sectionFilterSelect">
                                 <option value="">All Sections</option>
                                 <?php foreach ($sections as $s): ?>
                                     <option value="<?= sanitize($s) ?>" <?= $section === $s ? 'selected' : '' ?>><?= sanitize($s) ?></option>
@@ -665,22 +674,26 @@ select.filter-input option{
                 <?php else: ?>
                 <div class="table-scroll-wrapper">
                     <table class="student-table">
-                        <thead><tr><th>Student ID</th><th>Name</th><th>Grade</th><th>Section</th><th>Gender</th><th>Guardian</th><th>Face</th><th style="width:130px;">Actions</th></tr></thead>
+                        <thead><tr><th>Student ID</th><th>Name</th><th>Age</th><th>Grade</th><th>Section</th><th>Gender</th><th>Guardian</th><th>Face</th><th style="width:130px;">Actions</th></tr></thead>
                         <tbody>
                             <?php foreach ($students as $student): ?>
                             <tr>
                                 <td><span class="student-id-code"><?= sanitize($student['student_id']) ?></span></td>
                                 <td class="student-name-cell">
-                                    <span class="student-name"><?= sanitize($student['last_name']) ?>, <?= sanitize($student['first_name']) ?></span>
+                                    <span class="student-name"><?= sanitize($student['last_name']) ?>, <?= sanitize($student['first_name']) ?><?= $student['name_extension'] ? ' ' . sanitize($student['name_extension']) : '' ?></span>
                                     <?php if (!empty($student['middle_name'])): ?><div class="student-middle"><?= sanitize($student['middle_name']) ?></div><?php endif; ?>
+                                    <?php if (!empty($student['email'])): ?><div class="student-middle"><?= sanitize($student['email']) ?></div><?php endif; ?>
                                 </td>
+                                <td><span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;background:var(--pg-primary-light);color:var(--pg-primary);letter-spacing:0.04em;"><?= !empty($student['age']) ? $student['age'] : '-' ?></span></td>
                                 <td><span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;background:var(--pg-primary-light);color:var(--pg-primary);letter-spacing:0.04em;">Grade <?= $student['grade_level'] ?></span></td>
                                 <td><?= sanitize($student['section'] ?? '-') ?></td>
                                 <td><?= sanitize($student['gender'] ?? '-') ?></td>
                                 <td>
                                     <?php if (!empty($student['guardian_name'])): ?>
                                         <div class="guardian-info"><?= sanitize($student['guardian_name']) ?></div>
+                                        <?php if (!empty($student['relationship'])): ?><div class="guardian-phone"><?= sanitize($student['relationship']) ?></div><?php endif; ?>
                                         <?php if (!empty($student['guardian_phone'])): ?><div class="guardian-phone"><?= sanitize($student['guardian_phone']) ?></div><?php endif; ?>
+                                        <?php if (!empty($student['guardian_email'])): ?><div class="guardian-phone"><?= sanitize($student['guardian_email']) ?></div><?php endif; ?>
                                     <?php else: ?><span style="opacity:0.4;font-size:12px;">Not set</span><?php endif; ?>
                                 </td>
                                 <td>
@@ -694,7 +707,7 @@ select.filter-input option{
                                     <div style="display:flex;gap:4px;">
                                         <a href="<?= BASE_URL ?>/admin/student-edit.php?id=<?= $student['id'] ?>" class="btn-action-icon edit" title="Edit"><i class="bi bi-pencil"></i></a>
                                         <a href="<?= BASE_URL ?>/admin/student-edit.php?id=<?= $student['id'] ?>&tab=face" class="btn-action-icon face" title="Face Registration"><i class="bi bi-camera"></i></a>
-                                        <button class="btn-action-icon delete" onclick="openDeleteConfirm(<?= $student['id'] ?>, '<?= sanitize(addslashes($student['first_name'] . ' ' . $student['last_name'])) ?>')" title="Delete"><i class="bi bi-trash3"></i></button>
+                                        <button class="btn-action-icon delete" onclick="openDeleteConfirm(<?= $student['id'] ?>, '<?= sanitize(addslashes($student['first_name'] . ' ' . $student['name_extension'] . ' ' . $student['last_name'])) ?>')" title="Delete"><i class="bi bi-trash3"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -735,7 +748,7 @@ select.filter-input option{
     </div>
 </div>
 
-<!-- CSV IMPORT -->
+<!-- CSV / EXCEL IMPORT -->
 <div class="event-modal-overlay" id="importModalOverlay">
     <div class="event-modal">
         <div class="event-modal-header">
@@ -749,19 +762,18 @@ select.filter-input option{
             <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
                 <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
                     <i class="bi bi-info-circle" style="color:#60A5FA;"></i>
-                    CSV Format Requirements
+                    Supported Formats
                 </div>
-                <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:6px;">Your CSV must include these columns (any order):</p>
+                <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:6px;">You can import a CSV or Excel (.xlsx) file. Columns can be in any order.</p>
                 <code style="display:block;padding:8px 10px;border-radius:6px;background:rgba(0,0,0,0.25);font-family:var(--pg-mono);font-size:11px;color:rgba(255,255,255,0.75);word-break:break-all;line-height:1.5;">LRN,first_name,middle_name,last_name,name_extension,age,gender,email,grade_level,section,address,guardian_name,relationship,guardian_phone,guardian_email,guardian_address</code>
-                <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:8px;margin-bottom:4px;"><strong style="color:rgba(255,255,255,0.7);">Example:</strong></p>
-                <pre style="padding:8px 10px;border-radius:6px;background:rgba(0,0,0,0.25);font-family:var(--pg-mono);font-size:10px;color:rgba(255,255,255,0.65);line-height:1.5;overflow-x:auto;margin:0;">LRN,first_name,middle_name,last_name,name_extension,age,gender,email,grade_level,section,address,guardian_name,relationship,guardian_phone,guardian_email,guardian_address
-113400000001,Juan,Santos,Dela Cruz,Jr.,16,Male,juan@example.com,11,St. Luke,Malolos, Bulacan,Jose Dela Cruz,parents,+639171234567,jose@example.com,Malolos, Bulacan</pre>
+                <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:8px;margin-bottom:4px;"><strong style="color:rgba(255,255,255,0.7);">Example (first data row):</strong></p>
+                <pre style="padding:8px 10px;border-radius:6px;background:rgba(0,0,0,0.25);font-family:var(--pg-mono);font-size:10px;color:rgba(255,255,255,0.65);line-height:1.5;overflow-x:auto;margin:0;">113400000001,Juan,Santos,Dela Cruz,Jr.,16,Male,juan@example.com,11,St. Luke,Malolos Bulacan,Jose Dela Cruz,parents,+639171234567,jose@example.com,Malolos Bulacan</pre>
             </div>
-            <form id="importCSVForm" autocomplete="off">
+            <form id="importCSVForm" autocomplete="off" enctype="multipart/form-data">
                 <div class="evt-field">
-                    <label>Select CSV File <span class="required">*</span></label>
-                    <input type="file" id="csvFile" name="csv_file" accept=".csv" required style="width:100%;padding:9px 12px;border:1.5px solid rgba(255,255,255,0.12);border-radius:var(--pg-radius-sm);font-size:13px;background:rgba(255,255,255,0.05);color:inherit;">
-                    <small style="font-size:10px;opacity:0.4;line-height:1.4;margin-top:3px;display:block;">Max 5MB, up to 1000 students per import</small>
+                    <label>Select File <span class="required">*</span></label>
+                    <input type="file" id="csvFile" name="csv_file" accept=".csv,.xlsx" required style="width:100%;padding:9px 12px;border:1.5px solid rgba(255,255,255,0.12);border-radius:var(--pg-radius-sm);font-size:13px;background:rgba(255,255,255,0.05);color:inherit;">
+                    <small style="font-size:10px;opacity:0.4;line-height:1.4;margin-top:3px;display:block;">Accepts .csv or .xlsx files, Max 10MB, up to 1000 students</small>
                 </div>
                 <div class="import-check-row" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--pg-radius-xs);margin-bottom:8px;cursor:pointer;transition:all var(--pg-transition);background:rgba(255,255,255,0.03);">
                     <input class="import-check-input" type="checkbox" id="skipDuplicates" checked style="width:16px;height:16px;accent-color:#4f46e5;cursor:pointer;flex-shrink:0;">
@@ -794,7 +806,7 @@ select.filter-input option{
 // Delete
 var dO=document.getElementById('deleteConfirmOverlay'),dN=document.getElementById('deleteStudentName'),dB=document.getElementById('deleteConfirmBtn'),dC=document.getElementById('deleteCancelBtn'),BU=window.BASE_URL||'';window.openDeleteConfirm=function(id,name){dN.textContent=name;dB.href=BU+'/admin/students.php?delete='+id;dO.classList.add('show');document.body.style.overflow='hidden'};function cD(){dO.classList.remove('show');document.body.style.overflow=''}dC.addEventListener('click',cD);dO.addEventListener('click',function(e){if(e.target===dO)cD()});
 // Import
-var iO=document.getElementById('importModalOverlay'),iCl=document.getElementById('importModalClose'),iCa=document.getElementById('importCancelBtn');function oI(){iO.classList.add('show');document.body.style.overflow='hidden'}function cI(){iO.classList.remove('show');document.body.style.overflow=''}var iB1=document.getElementById('openImportBtn'),iB2=document.getElementById('openImportBtnMobile');if(iB1)iB1.addEventListener('click',oI);if(iB2)iB2.addEventListener('click',oI);iCl.addEventListener('click',cI);iCa.addEventListener('click',cI);iO.addEventListener('click',function(e){if(e.target===iO)cI()});iO.addEventListener('transitionend',function(){if(!iO.classList.contains('show')){document.getElementById('csvFile').value='';document.getElementById('importPreview').classList.add('d-none');document.getElementById('importResults').classList.add('d-none');csvData=null}});
+var iO=document.getElementById('importModalOverlay'),iCl=document.getElementById('importModalClose'),iCa=document.getElementById('importCancelBtn');function oI(){iO.classList.add('show');document.body.style.overflow='hidden'}function cI(){iO.classList.remove('show');document.body.style.overflow=''}var iB1=document.getElementById('openImportBtn'),iB2=document.getElementById('openImportBtnMobile');if(iB1)iB1.addEventListener('click',oI);if(iB2)iB2.addEventListener('click',oI);iCl.addEventListener('click',cI);iCa.addEventListener('click',cI);iO.addEventListener('click',function(e){if(e.target===iO)cI()});iO.addEventListener('transitionend',function(){if(!iO.classList.contains('show')){document.getElementById('csvFile').value='';document.getElementById('importPreview').classList.add('d-none');document.getElementById('importResults').classList.add('d-none');csvData=null;excelFile=null}});
 // Escape
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(dO.classList.contains('show'))cD();if(iO.classList.contains('show'))cI();if(dd&&dd.classList.contains('show')){nO=false;dd.classList.remove('show')}}});
 // Toast
@@ -940,9 +952,223 @@ window.showToast=function(msg,type){type=type||'success';var c=document.getEleme
         reader.readAsDataURL(file);
     });
 })();
-var csvData=null;document.getElementById('csvFile').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){var t=e.target.result,li=t.split('\n').filter(function(l){return l.trim()});if(li.length<2){showToast('CSV must have a header row and at least one data row.','warning');return}                var h=li[0].split(',').map(function(x){return x.trim().toLowerCase()});var req=['lrn','first_name','last_name'],mis=req.filter(function(x){return h.indexOf(x)===-1});if(mis.length>0){showToast('Missing required columns: '+mis.join(', '),'error');document.getElementById('csvFile').value='';return}csvData=[];for(var i=1;i<li.length;i++){var v=li[i].split(',').map(function(x){return x.trim()});var row={};h.forEach(function(x,idx){row[x]=v[idx]||''});csvData.push(row)}showPreview(h,csvData.slice(0,5));document.getElementById('importPreview').classList.remove('d-none');document.getElementById('importResults').classList.add('d-none');showToast('CSV loaded: '+csvData.length+' rows detected.','info')};r.readAsText(f)});
-function showPreview(h,rows){var t=document.getElementById('previewTable');t.innerHTML='';var th=document.createElement('thead'),hr=document.createElement('tr');h.forEach(function(x){var c=document.createElement('th');c.textContent=x;hr.appendChild(c)});th.appendChild(hr);t.appendChild(th);var tb=document.createElement('tbody');rows.forEach(function(row){var tr=document.createElement('tr');h.forEach(function(x){var td=document.createElement('td');td.textContent=row[x]||'-';tr.appendChild(td)});tb.appendChild(tr)});t.appendChild(tb)}
-async function processImport(){if(!csvData||csvData.length===0){showToast('Please select a valid CSV file first.','warning');return}var b=document.getElementById('importBtn');b.classList.add('loading');b.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Importing...';var fd=new FormData();var cm=document.querySelector('meta[name="csrf-token"]');fd.append('csrf_token',cm?cm.getAttribute('content'):'');fd.append('action','import_csv');fd.append('students',JSON.stringify(csvData));fd.append('skip_duplicates',document.getElementById('skipDuplicates').checked?'1':'0');fd.append('update_existing',document.getElementById('updateExisting').checked?'1':'0');var BU=window.BASE_URL||'';try{var res=await fetch(BU+'/api/students.php',{method:'POST',credentials:'same-origin',body:fd});var ct=res.headers.get('content-type');if(!ct||!ct.includes('application/json'))throw new Error('Server returned non-JSON');var d=await res.json();var rd=document.getElementById('importResults'),bd=document.getElementById('importResultsBox'),td=document.getElementById('importResultsTitle'),cd=document.getElementById('importResultsContent');rd.classList.remove('d-none');if(d.success){bd.style.background='rgba(16,185,129,0.15)';bd.style.color='#10b981';td.innerHTML='<i class="bi bi-check-circle-fill me-1"></i> Import Successful';cd.innerHTML='<p><strong>'+(d.imported||0)+'</strong> students imported</p>'+(d.skipped?'<p><strong>'+d.skipped+'</strong> duplicates skipped</p>':'')+(d.updated?'<p><strong>'+d.updated+'</strong> records updated</p>':'')+(d.errors?'<p><strong>'+d.errors+'</strong> rows had errors</p>':'')+'<small style="opacity:0.7;display:block;margin-top:8px;">Refreshing in 3 seconds...</small>';setTimeout(function(){location.reload()},3000)}else{bd.style.background='rgba(239,68,68,0.15)';bd.style.color='#ef4444';td.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> Import Failed';cd.innerHTML='<p>'+(d.error||'Unknown error')+'</p>'}}catch(err){console.error('Import error:',err);var rd=document.getElementById('importResults'),bd=document.getElementById('importResultsBox'),td=document.getElementById('importResultsTitle'),cd=document.getElementById('importResultsContent');rd.classList.remove('d-none');bd.style.background='rgba(239,68,68,0.15)';bd.style.color='#ef4444';td.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> Error';cd.innerHTML='<p>'+(err.message||'Network error')+'</p>'}finally{b.classList.remove('loading');b.innerHTML='<i class="bi bi-upload"></i> Import Students'}}
+var csvData=null;
+function parseCSVLine(line){
+    var result=[],current='',inQuotes=false;
+    for(var i=0;i<line.length;i++){
+        var ch=line[i];
+        if(inQuotes){
+            if(ch==='"'){
+                if(i+1<line.length&&line[i+1]==='"'){current+='"';i++}
+                else{inQuotes=false}
+            }else{current+=ch}
+        }else{
+            if(ch==='"'){inQuotes=true}
+            else if(ch===','){result.push(current.trim());current=''}
+            else{current+=ch}
+        }
+    }
+    result.push(current.trim());
+    return result
+}
+
+function readCSVFile(file){
+    var r=new FileReader();
+    r.onload=function(e){
+        var t=e.target.result,li=t.split('\n').filter(function(l){return l.trim()});
+        if(li.length<2){showToast('CSV must have a header row and at least one data row.','warning');return}
+        if(li[0]&&li[0].charCodeAt(0)===0xFEFF)li[0]=li[0].slice(1);
+        var h=parseCSVLine(li[0]).map(function(x){return x.trim().toLowerCase()});
+        var req=['lrn','first_name','last_name'],mis=req.filter(function(x){return h.indexOf(x)===-1});
+        if(mis.length>0){showToast('Missing required columns: '+mis.join(', '),'error');document.getElementById('csvFile').value='';return}
+        csvData=[];
+        for(var i=1;i<li.length;i++){
+            var v=parseCSVLine(li[i]);
+            var row={};
+            h.forEach(function(x,idx){row[x]=v[idx]||''});
+            csvData.push(row)
+        }
+        showPreview(h,csvData.slice(0,5));
+        document.getElementById('importPreview').classList.remove('d-none');
+        document.getElementById('importResults').classList.add('d-none');
+        showToast('CSV loaded: '+csvData.length+' rows detected.','info')
+    };
+    r.readAsText(file)
+}
+
+async function uploadExcelFile(file){
+    var fd=new FormData();
+    fd.append('excel_file',file);
+    fd.append('action','import_excel');
+    fd.append('skip_duplicates',document.getElementById('skipDuplicates').checked?'1':'0');
+    fd.append('update_existing',document.getElementById('updateExisting').checked?'1':'0');
+    var cm=document.querySelector('meta[name="csrf-token"]');
+    if(cm)fd.append('csrf_token',cm.getAttribute('content'));
+    
+    var b=document.getElementById('importBtn');
+    b.classList.add('loading');
+    b.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Importing...';
+    
+    try{
+        var res=await fetch(window.BASE_URL+'/api/students.php',{method:'POST',credentials:'same-origin',body:fd});
+        var ct=res.headers.get('content-type')||'';
+        var text=await res.text();
+        if(!ct.includes('application/json')){
+            var preview=text.length>200?text.substring(0,200)+'...':text;
+            throw new Error('Server returned non-JSON (HTTP '+res.status+'): '+preview)
+        }
+        var d=JSON.parse(text);
+        var rd=document.getElementById('importResults'),bd=document.getElementById('importResultsBox'),td=document.getElementById('importResultsTitle'),cd=document.getElementById('importResultsContent');
+        rd.classList.remove('d-none');
+        if(d.success){
+            bd.style.background='rgba(16,185,129,0.15)';bd.style.color='#10b981';
+            td.innerHTML='<i class="bi bi-check-circle-fill me-1"></i> Import Successful';
+            cd.innerHTML='<p><strong>'+(d.imported||0)+'</strong> students imported</p>'+(d.skipped?'<p><strong>'+d.skipped+'</strong> duplicates skipped</p>':'')+(d.updated?'<p><strong>'+d.updated+'</strong> records updated</p>':'')+(d.errors?'<p><strong>'+d.errors+'</strong> rows had errors</p>':'')+'<small style="opacity:0.7;display:block;margin-top:8px;">Refreshing in 3 seconds...</small>';
+            setTimeout(function(){location.reload()},3000)
+        }else{
+            bd.style.background='rgba(239,68,68,0.15)';bd.style.color='#ef4444';
+            td.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> Import Failed';
+            cd.innerHTML='<p>'+(d.error||'Unknown error')+'</p>'
+        }
+    }catch(err){
+        console.error('Import error:',err);
+        var rd=document.getElementById('importResults'),bd=document.getElementById('importResultsBox'),td=document.getElementById('importResultsTitle'),cd=document.getElementById('importResultsContent');
+        rd.classList.remove('d-none');
+        bd.style.background='rgba(239,68,68,0.15)';bd.style.color='#ef4444';
+        td.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> Error';
+        cd.innerHTML='<p style="white-space:pre-wrap;font-size:11px;opacity:0.9;">'+(err.message||'Network error')+'</p>'
+    }finally{
+        b.classList.remove('loading');
+        b.innerHTML='<i class="bi bi-upload"></i> Import Students'
+    }
+}
+
+function showPreview(h,rows){
+    var t=document.getElementById('previewTable');
+    t.innerHTML='';
+    var th=document.createElement('thead'),hr=document.createElement('tr');
+    h.forEach(function(x){
+        var c=document.createElement('th');
+        c.textContent=x;
+        hr.appendChild(c)
+    });
+    th.appendChild(hr);
+    t.appendChild(th);
+    var tb=document.createElement('tbody');
+    rows.forEach(function(row){
+        var tr=document.createElement('tr');
+        h.forEach(function(x){
+            var td=document.createElement('td');
+            td.textContent=row[x]||'-';
+            tr.appendChild(td)
+        });
+        tb.appendChild(tr)
+    });
+    t.appendChild(tb)
+}
+
+document.getElementById('csvFile').addEventListener('change',function(e){
+    var f=e.target.files[0];
+    if(!f)return;
+    var ext=f.name.split('.').pop().toLowerCase();
+    if(ext==='xlsx'){
+        csvData=null;
+        document.getElementById('importPreview').classList.add('d-none');
+        uploadExcelFile(f)
+    }else{
+        readCSVFile(f)
+    }
+});
+
+async function processImport(){
+    if(!csvData||csvData.length===0){showToast('Please select a valid CSV file first.','warning');return}
+    var b=document.getElementById('importBtn');
+    b.classList.add('loading');
+    b.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Importing...';
+    var fd=new FormData();
+    var cm=document.querySelector('meta[name="csrf-token"]');
+    fd.append('csrf_token',cm?cm.getAttribute('content'):'');
+    fd.append('action','import_csv');
+    fd.append('students',JSON.stringify(csvData));
+    fd.append('skip_duplicates',document.getElementById('skipDuplicates').checked?'1':'0');
+    fd.append('update_existing',document.getElementById('updateExisting').checked?'1':'0');
+    var BU=window.BASE_URL||'';
+    try{
+        var res=await fetch(BU+'/api/students.php',{method:'POST',credentials:'same-origin',body:fd});
+        var ct=res.headers.get('content-type')||'';
+        var text=await res.text();
+        if(!ct.includes('application/json')){
+            var preview=text.length>200?text.substring(0,200)+'...':text;
+            throw new Error('Server returned non-JSON (HTTP '+res.status+'): '+preview)
+        }
+        var d=JSON.parse(text);
+        var rd=document.getElementById('importResults'),bd=document.getElementById('importResultsBox'),td=document.getElementById('importResultsTitle'),cd=document.getElementById('importResultsContent');
+        rd.classList.remove('d-none');
+        if(d.success){
+            bd.style.background='rgba(16,185,129,0.15)';bd.style.color='#10b981';
+            td.innerHTML='<i class="bi bi-check-circle-fill me-1"></i> Import Successful';
+            cd.innerHTML='<p><strong>'+(d.imported||0)+'</strong> students imported</p>'+(d.skipped?'<p><strong>'+d.skipped+'</strong> duplicates skipped</p>':'')+(d.updated?'<p><strong>'+d.updated+'</strong> records updated</p>':'')+(d.errors?'<p><strong>'+d.errors+'</strong> rows had errors</p>':'')+'<small style="opacity:0.7;display:block;margin-top:8px;">Refreshing in 3 seconds...</small>';
+            setTimeout(function(){location.reload()},3000)
+        }else{
+            bd.style.background='rgba(239,68,68,0.15)';bd.style.color='#ef4444';
+            td.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> Import Failed';
+            cd.innerHTML='<p>'+(d.error||'Unknown error')+'</p>'
+        }
+    }catch(err){
+        console.error('Import error:',err);
+        var rd=document.getElementById('importResults'),bd=document.getElementById('importResultsBox'),td=document.getElementById('importResultsTitle'),cd=document.getElementById('importResultsContent');
+        rd.classList.remove('d-none');
+        bd.style.background='rgba(239,68,68,0.15)';bd.style.color='#ef4444';
+        td.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> Error';
+        cd.innerHTML='<p style="white-space:pre-wrap;font-size:11px;opacity:0.9;">'+(err.message||'Network error')+'</p>'
+    }finally{
+        b.classList.remove('loading');
+        b.innerHTML='<i class="bi bi-upload"></i> Import Students'
+    }
+}
+
+// ============================================================
+// GRADE -> SECTION FILTER DEPENDENCY
+// ============================================================
+(function() {
+    var gradeSel = document.querySelector('select[name="grade_level"]');
+    var sectionSel = document.getElementById('sectionFilterSelect');
+    if (!gradeSel || !sectionSel) return;
+    var gradeSectionsMap = <?= json_encode($gradeSectionsMap) ?>;
+
+    function sectionListForGrade(grade) {
+        var list = grade ? (gradeSectionsMap[grade] || []) : [];
+        if (!grade) {
+            var seen = {};
+            list = [];
+            Object.keys(gradeSectionsMap).forEach(function(g) {
+                (gradeSectionsMap[g] || []).forEach(function(s) {
+                    if (!seen[s]) { seen[s] = true; list.push(s); }
+                });
+            });
+            list.sort();
+        }
+        return list;
+    }
+
+    function updateSectionOptions() {
+        var current = sectionSel.value;
+        var list = sectionListForGrade(gradeSel.value);
+        sectionSel.innerHTML = '<option value="">All Sections</option>';
+        list.forEach(function(s) {
+            var opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            sectionSel.appendChild(opt);
+        });
+        if (list.indexOf(current) !== -1) {
+            sectionSel.value = current;
+        }
+    }
+
+    gradeSel.addEventListener('change', updateSectionOptions);
+    updateSectionOptions();
+})();
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

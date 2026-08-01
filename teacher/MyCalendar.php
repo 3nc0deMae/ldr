@@ -143,6 +143,7 @@ try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by = ? A
 <!-- Stylesheets — pages-theme.css first (sidebar lives there), pages-navbar.css second (everything else) -->
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-navbar.css">
+<style>@media(max-width:767px){.mobile-title{display:block!important}}</style>
 
 <!-- NOTE: main-content has NO sidebar-collapsed class -->
 <?php require_once __DIR__ . '/../includes/pages-topnavbar.php'; ?>
@@ -158,6 +159,7 @@ try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by = ? A
                 <small>View attendance, sessions, and events</small>
             </div>
         </div>
+        <div class="page-title mobile-title"><div class="mobile-title-inner"><div class="mobile-title-left"><h5>My Calendar</h5><small>View attendance, sessions, and events</small></div></div></div>
 
         <!-- CALENDAR -->
         <div class="row g-3 mb-4">

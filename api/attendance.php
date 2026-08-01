@@ -32,6 +32,11 @@ switch ($action) {
             jsonResponse(['error' => 'Student ID is required'], 400);
         }
 
+        $allowed = ['present', 'absent', 'late', 'pending', 'excused'];
+        if (!in_array($status, $allowed, true)) {
+            jsonResponse(['error' => 'Invalid status'], 400);
+        }
+
         $result = recordAttendance($db, [
             'student_id' => $studentId,
             'subject_id' => $subjectId ?: null,
@@ -186,6 +191,33 @@ switch ($action) {
             'success' => true,
             'message' => "$absentCount student(s) marked as absent"
         ]);
+        break;
+
+    case 'update_attendance_status':
+        $recordId = intval($_POST['id'] ?? 0);
+        $newStatus = sanitize($_POST['status'] ?? '');
+        $table = sanitize($_POST['table'] ?? 'class');
+
+        if (!$recordId || empty($newStatus)) {
+            jsonResponse(['error' => 'Record ID and status are required'], 400);
+        }
+
+        $allowed = ['present', 'absent', 'late', 'pending', 'excused'];
+        if (!in_array($newStatus, $allowed, true)) {
+            jsonResponse(['error' => 'Invalid status'], 400);
+        }
+
+        if ($table === 'gate') {
+            $stmt = $db->prepare("UPDATE attendance_records SET status = ? WHERE id = ?");
+        } else {
+            $stmt = $db->prepare("UPDATE attendance SET status = ?, updated_at = NOW() WHERE id = ?");
+        }
+
+        if ($stmt->execute([$newStatus, $recordId])) {
+            jsonResponse(['success' => true, 'status' => $newStatus, 'message' => 'Status updated']);
+        } else {
+            jsonResponse(['error' => 'Failed to update status'], 500);
+        }
         break;
 
     default:

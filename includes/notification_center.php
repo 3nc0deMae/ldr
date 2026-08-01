@@ -83,17 +83,33 @@ if (!function_exists('seedNotifications')) {
              VALUES (?, ?, ?, ?, ?, ?, 0, ?)"
         );
 
-        $seedDestMap = [
-            'calendar' => '/admin/MyCalendar.php',
-            'attendance' => '/admin/attendance.php',
-            'security' => '/admin/audit-logs.php',
-            'automated' => '/admin/notifications.php',
-        ];
-
         foreach ($seed as $role => $rows) {
-            foreach ($rows as $r) {
-                $dest = $seedDestMap[$r[0]] ?? '/admin/notifications.php';
-                $stmt->execute([$role, $r[0], $r[1], $r[2], $r[3], $r[4], $dest]);
+            foreach ($rows as $row) {
+                [$cat] = $row;
+                $dest = match($cat) {
+                    'calendar' => match($role) {
+                        'teacher' => '/teacher/MyCalendar.php',
+                        'gate'    => '/gate/notifications.php',
+                        default   => '/admin/MyCalendar.php',
+                    },
+                    'attendance' => match($role) {
+                        'teacher' => '/teacher/attendance.php',
+                        'gate'    => '/gate/logs.php',
+                        default   => '/admin/attendance.php',
+                    },
+                    'security' => match($role) {
+                        'teacher' => '/teacher/notifications.php',
+                        'gate'    => '/gate/logs.php',
+                        'admin'   => '/admin/audit-logs.php',
+                        default   => '/admin/notifications.php',
+                    },
+                    default => match($role) {
+                        'teacher' => '/teacher/notifications.php',
+                        'gate'    => '/gate/notifications.php',
+                        default   => '/admin/notifications.php',
+                    },
+                };
+                $stmt->execute(array_merge([$role], $row, [$dest]));
             }
         }
     }
@@ -178,11 +194,31 @@ try {
  * 6. Destination URL mapping for notification categories
  * ─────────────────────────────────────────────────────────────────────────── */
 $destinationMap = [
-    'calendar'   => '/admin/MyCalendar.php',
-    'attendance' => '/admin/attendance.php',
-    'security'   => '/admin/audit-logs.php',
-    'system'     => '/admin/notifications.php',
-    'automated'  => '/admin/notifications.php',
+    'calendar'   => match($currentRole) {
+        'teacher' => '/teacher/MyCalendar.php',
+        'gate'    => '/gate/notifications.php',
+        default   => '/admin/MyCalendar.php',
+    },
+    'attendance' => match($currentRole) {
+        'teacher' => '/teacher/attendance.php',
+        'gate'    => '/gate/logs.php',
+        default   => '/admin/attendance.php',
+    },
+    'security'   => match($currentRole) {
+        'teacher' => '/teacher/notifications.php',
+        'gate'    => '/gate/logs.php',
+        default   => '/admin/audit-logs.php',
+    },
+    'system'     => match($currentRole) {
+        'teacher' => '/teacher/notifications.php',
+        'gate'    => '/gate/notifications.php',
+        default   => '/admin/notifications.php',
+    },
+    'automated'  => match($currentRole) {
+        'teacher' => '/teacher/notifications.php',
+        'gate'    => '/gate/notifications.php',
+        default   => '/admin/notifications.php',
+    },
 ];
 
 $catMeta = [
@@ -305,13 +341,6 @@ $failedMessage = '🔴 Delivery Failed: Automated calendar reminder failed to se
     #dispatchHistorySection table { min-width: 760px; }
     #dispatchHistorySection th, #dispatchHistorySection td { white-space: nowrap; }
 </style>
-
-<div class="page-title d-none d-md-flex justify-content-between align-items-center gap-3 mb-3">
-    <div>
-        <h5 class="mb-0">Notifications</h5>
-        <small>Role-based system alerts &amp; reminders</small>
-    </div>
-</div>
 
 <div class="notif-dash">
     <!-- ── LEFT: Category filter navigation ── -->

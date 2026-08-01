@@ -635,7 +635,7 @@ $baseUrl = BASE_URL;
     .navbar-brand-sub { font-size: 9px; opacity: 0.45; }
     .desktop-title { display: none !important; }
     .desktop-date { display: none !important; }
-    .mobile-title { display: block; }
+    .mobile-title { display: block !important; }
     .navbar-actions { gap: 6px; flex-shrink: 0; }
     .nav-icon-btn { width: 38px; height: 38px; font-size: 15px; }
 
@@ -729,8 +729,6 @@ $baseUrl = BASE_URL;
     .navbar-actions { gap: 4px; }
     .nav-icon-btn { width: 34px; height: 34px; font-size: 14px; }
     #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
-    .mobile-title-left h5 { font-size: 15px; }
-    .mobile-title-left small { font-size: 11px; }
     .mobile-date { font-size: 10px; padding: 5px 8px; }
     .content-area { padding: 8px 8px 24px; }
 
@@ -953,9 +951,6 @@ $baseUrl = BASE_URL;
                 <div class="mobile-title-left">
                     <h5>System Settings</h5>
                     <small>Configure school info, email, SMS, and attendance rules</small>
-                </div>
-                <div class="mobile-date">
-                    <i class="bi bi-calendar3"></i> <?= date('D, M j, Y') ?>
                 </div>
             </div>
         </div>

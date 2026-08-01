@@ -231,6 +231,7 @@ function verifyCSRFToken($token) {
  * @param int $statusCode
  */
 function jsonResponse($data, $statusCode = 200) {
+    while (ob_get_level()) ob_end_clean();
     http_response_code($statusCode);
     header('Content-Type: application/json');
     echo json_encode($data);
@@ -372,23 +373,24 @@ function getStudentByStudentId($db, $studentId) {
  * @return int|false
  */
 function addStudent($db, $data) {
-    $sql = "INSERT INTO students (student_id, first_name, middle_name, last_name, age, gender, 
+    $sql = "INSERT INTO students (student_id, first_name, middle_name, last_name, name_extension, age, gender, 
             address, email, grade_level, section, created_at)
-            VALUES (:student_id, :first_name, :middle_name, :last_name, :age, :gender,
+            VALUES (:student_id, :first_name, :middle_name, :last_name, :name_extension, :age, :gender,
             :address, :email, :grade_level, :section, NOW())";
     $stmt = $db->prepare($sql);
     return $stmt->execute([
-        ':student_id'  => $data['student_id'],
-        ':first_name'  => $data['first_name'],
-        ':middle_name' => $data['middle_name'] ?? '',
-        ':last_name'   => $data['last_name'],
-        ':age'         => $data['age'],
-        ':gender'      => $data['gender'],
-        ':address'     => $data['address'],
-        ':email'       => $data['email'],
-        ':grade_level' => $data['grade_level'],
-        ':section'     => $data['section']
-    ]) ? $db->lastInsertId() : false;
+        ':student_id'   => $data['student_id'],
+        ':first_name'   => $data['first_name'],
+        ':middle_name'  => $data['middle_name'] ?? '',
+        ':last_name'    => $data['last_name'],
+        ':name_extension' => $data['name_extension'] ?? '',
+        ':age'          => $data['age'],
+        ':gender'       => $data['gender'],
+        ':address'      => $data['address'],
+        ':email'        => $data['email'],
+        ':grade_level'  => $data['grade_level'],
+        ':section'      => $data['section']]
+    ) ? $db->lastInsertId() : false;
 }
 
 /**
@@ -399,22 +401,23 @@ function addStudent($db, $data) {
  * @return bool
  */
 function updateStudent($db, $id, $data) {
-    $sql = "UPDATE students SET first_name = :first_name, middle_name = :middle_name,
+    $sql = "UPDATE students SET first_name = :first_name, name_extension = :name_extension, middle_name = :middle_name,
             last_name = :last_name, age = :age, gender = :gender, address = :address,
             email = :email, grade_level = :grade_level, section = :section, updated_at = NOW()
             WHERE id = :id";
     $stmt = $db->prepare($sql);
     return $stmt->execute([
-        ':first_name'  => $data['first_name'],
-        ':middle_name' => $data['middle_name'] ?? '',
-        ':last_name'   => $data['last_name'],
-        ':age'         => $data['age'],
-        ':gender'      => $data['gender'],
-        ':address'     => $data['address'],
-        ':email'       => $data['email'],
-        ':grade_level' => $data['grade_level'],
-        ':section'     => $data['section'],
-        ':id'          => $id
+        ':first_name'   => $data['first_name'],
+        ':name_extension' => $data['name_extension'] ?? '',
+        ':middle_name'  => $data['middle_name'] ?? '',
+        ':last_name'    => $data['last_name'],
+        ':age'          => $data['age'],
+        ':gender'       => $data['gender'],
+        ':address'      => $data['address'],
+        ':email'        => $data['email'],
+        ':grade_level'  => $data['grade_level'],
+        ':section'      => $data['section'],
+        ':id'           => $id
     ]);
 }
 
@@ -722,12 +725,13 @@ function addTeacher($db, $data) {
     }
     $trackElectiveSubjectIds = array_values(array_unique($trackElectiveSubjectIds));
 
-    $sql = "INSERT INTO teachers (employee_id, first_name, last_name, email, phone, department, subjects_handled, grade_section_handled, core_subjects_handled, track_elective_handled, advisory_class, created_at)
-            VALUES (:employee_id, :first_name, :last_name, :email, :phone, :department, :subjects_handled, :grade_section_handled, :core_subjects_handled, :track_elective_handled, :advisory_class, NOW())";
+    $sql = "INSERT INTO teachers (employee_id, first_name, middle_name, last_name, email, phone, department, subjects_handled, grade_section_handled, core_subjects_handled, track_elective_handled, advisory_class, created_at)
+            VALUES (:employee_id, :first_name, :middle_name, :last_name, :email, :phone, :department, :subjects_handled, :grade_section_handled, :core_subjects_handled, :track_elective_handled, :advisory_class, NOW())";
     $stmt = $db->prepare($sql);
     $result = $stmt->execute([
         ':employee_id'        => $data['employee_id'] ?? null,
         ':first_name'         => $data['first_name'],
+        ':middle_name'        => $data['middle_name'] ?? '',
         ':last_name'          => $data['last_name'],
         ':email'              => $data['email'],
         ':phone'              => $data['phone'] ?? '',
@@ -745,15 +749,21 @@ function addTeacher($db, $data) {
         syncTeacherSubjects($db, $teacherId, $allSubjectIds);
     }
 
-    if ($teacherId && !empty($data['password'])) {
-        $userId = createUser($db, [
-            'role'     => 'teacher',
-            'email'    => $data['email'],
-            'password' => $data['password'],
-            'status'   => 'active'
-        ]);
-        if ($userId) {
-            $db->prepare("UPDATE teachers SET user_id = ? WHERE id = ?")->execute([$userId, $teacherId]);
+    if ($teacherId && !empty($data['user_id'])) {
+        $db->prepare("UPDATE teachers SET user_id = ? WHERE id = ?")->execute([(int)$data['user_id'], $teacherId]);
+    } elseif ($teacherId && !empty($data['password'])) {
+        try {
+            $userId = createUser($db, [
+                'role'     => 'teacher',
+                'email'    => $data['email'],
+                'password' => $data['password'],
+                'status'   => 'active'
+            ]);
+            if ($userId) {
+                $db->prepare("UPDATE teachers SET user_id = ? WHERE id = ?")->execute([$userId, $teacherId]);
+            }
+        } catch (Exception $e) {
+            error_log('addTeacher createUser: ' . $e->getMessage());
         }
     }
 
@@ -834,7 +844,7 @@ function updateTeacher($db, $id, $data) {
     $trackElectiveSubjectIds = array_values(array_unique($trackElectiveSubjectIds));
 
     $sql = "UPDATE teachers SET employee_id = :employee_id, first_name = :first_name,
-            last_name = :last_name, email = :email, phone = :phone, department = :department,
+            middle_name = :middle_name, last_name = :last_name, email = :email, phone = :phone, department = :department,
             subjects_handled = :subjects_handled, grade_section_handled = :grade_section_handled,
             core_subjects_handled = :core_subjects_handled, track_elective_handled = :track_elective_handled,
             advisory_class = :advisory_class, updated_at = NOW()
@@ -843,6 +853,7 @@ function updateTeacher($db, $id, $data) {
     $updated = $stmt->execute([
         ':employee_id'        => $data['employee_id'] ?? null,
         ':first_name'         => $data['first_name'],
+        ':middle_name'        => $data['middle_name'] ?? '',
         ':last_name'          => $data['last_name'],
         ':email'              => $data['email'],
         ':phone'              => $data['phone'] ?? '',
@@ -1136,6 +1147,55 @@ function getGateLogs($db, $date = '') {
     $stmt = $db->prepare($sql);
     $stmt->execute([':date' => $date]);
     return $stmt->fetchAll();
+}
+
+/**
+ * Determine the automatic gate session period (morning/afternoon) based on
+ * the current time. When the current time falls inside an admin-configured
+ * gate time window the matching period is returned; otherwise it falls back
+ * to the clock: AM = morning, PM = afternoon.
+ *
+ * @param PDO|null $db
+ * @param string   $sessionType 'time_in' or 'time_out'
+ * @param int|null $time        Unix timestamp (defaults to now)
+ * @return string 'morning' or 'afternoon'
+ */
+function getGateSessionPeriod($db = null, $sessionType = 'time_in', $time = null) {
+    $time = $time !== null ? (int)$time : time();
+    $current = date('H:i', $time);
+
+    $defaults = [
+        'time_in'  => ['morning' => ['06:00', '08:00'], 'afternoon' => ['12:30', '13:30']],
+        'time_out' => ['morning' => ['10:30', '11:30'], 'afternoon' => ['15:30', '17:00']]
+    ];
+    if (!isset($defaults[$sessionType])) {
+        $sessionType = 'time_in';
+    }
+
+    $windows = $defaults[$sessionType];
+
+    // Override with admin-configured gate time windows when present
+    if ($db) {
+        try {
+            $stmt = $db->query("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'gate_time_%'");
+            foreach ($stmt->fetchAll() as $s) {
+                $key = $s['setting_key'];
+                $val = trim($s['setting_value']);
+                if (!preg_match('/^gate_time_(time_in|time_out)_(morning|afternoon)_(start|end)$/', $key, $m) || $val === '') {
+                    continue;
+                }
+                $windows[$m[2]][($m[3] === 'start') ? 0 : 1] = $val;
+            }
+        } catch (Exception $e) {}
+    }
+
+    foreach ($windows as $period => $range) {
+        if ($current >= $range[0] && $current <= $range[1]) {
+            return $period;
+        }
+    }
+
+    return (int)date('G', $time) < 12 ? 'morning' : 'afternoon';
 }
 
 // ============================================================

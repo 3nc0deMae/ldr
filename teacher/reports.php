@@ -8,18 +8,74 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
 $teacherId = getCurrentUserId();
 
+$teacherName = '';
+try {
+    $teacher = $db->prepare("SELECT * FROM teachers WHERE user_id = ?");
+    $teacher->execute([$teacherId]);
+    $teacher = $teacher->fetch();
+    if ($teacher) {
+        $teacherName = $teacher['first_name'] ?? '';
+        if (!empty($teacher['middle_name'])) {
+            $teacherName .= ' ' . strtoupper($teacher['middle_name'][0]) . '.';
+        }
+        $teacherName .= ' ' . ($teacher['last_name'] ?? '');
+    }
+} catch (Exception $e) {}
+if (empty($teacherName)) $teacherName = 'ANGELYN S. PARRABA';
+
 $dateFrom = sanitize($_GET['date_from'] ?? date('Y-m-01'));
 $dateTo   = sanitize($_GET['date_to'] ?? date('Y-m-d'));
+$gradeLevel = sanitize($_GET['grade_level'] ?? '');
+$section    = sanitize($_GET['section']    ?? '');
+$subjectId  = intval($_GET['subject_id']   ?? 0);
+
+$gradeSql = "SELECT DISTINCT s.grade_level FROM students s
+                JOIN attendance a ON a.student_id = s.id
+                WHERE a.recorded_by = :tid AND a.date BETWEEN :df AND :dt
+                ORDER BY s.grade_level ASC";
+$gradeStmt = $db->prepare($gradeSql);
+$gradeStmt->execute([':tid' => $teacherId, ':df' => $dateFrom, ':dt' => $dateTo]);
+$gradeOptions = $gradeStmt->fetchAll();
+
+$sectionSql = "SELECT DISTINCT s.section FROM students s
+                 JOIN attendance a ON a.student_id = s.id
+                 WHERE a.recorded_by = :tid AND a.date BETWEEN :df AND :dt
+                 ORDER BY s.section ASC";
+$sectionStmt = $db->prepare($sectionSql);
+$sectionStmt->execute([':tid' => $teacherId, ':df' => $dateFrom, ':dt' => $dateTo]);
+$sectionOptions = $sectionStmt->fetchAll();
+
+$subjectSql = "SELECT DISTINCT sub.id, sub.subject_name
+                 FROM attendance a
+                 JOIN subjects sub ON a.subject_id = sub.id
+                 WHERE a.recorded_by = :tid AND a.date BETWEEN :df AND :dt
+                 ORDER BY sub.subject_name ASC";
+$subjectStmt = $db->prepare($subjectSql);
+$subjectStmt->execute([':tid' => $teacherId, ':df' => $dateFrom, ':dt' => $dateTo]);
+$subjectOptions = $subjectStmt->fetchAll();
 
 $sql = "SELECT a.*, s.first_name, s.last_name, s.student_id as sid,
-               s.grade_level, s.section, sub.subject_name
-         FROM attendance a
-         LEFT JOIN students s ON a.student_id = s.id
-         LEFT JOIN subjects sub ON a.subject_id = sub.id
-         WHERE a.recorded_by = :tid AND a.date BETWEEN :df AND :dt
-         ORDER BY a.date DESC, s.last_name ASC, a.time DESC";
+                s.grade_level, s.section, sub.subject_name
+          FROM attendance a
+          LEFT JOIN students s ON a.student_id = s.id
+          LEFT JOIN subjects sub ON a.subject_id = sub.id
+          WHERE a.recorded_by = :tid AND a.date BETWEEN :df AND :dt";
+$params = [':tid' => $teacherId, ':df' => $dateFrom, ':dt' => $dateTo];
+if ($gradeLevel !== '') {
+    $sql .= " AND s.grade_level = :grade_level";
+    $params[':grade_level'] = $gradeLevel;
+}
+if ($section !== '') {
+    $sql .= " AND s.section = :section";
+    $params[':section'] = $section;
+}
+if ($subjectId > 0) {
+    $sql .= " AND a.subject_id = :subject_id";
+    $params[':subject_id'] = $subjectId;
+}
+$sql .= " ORDER BY a.date DESC, s.last_name ASC, a.time DESC";
 $stmt = $db->prepare($sql);
-$stmt->execute([':tid' => $teacherId, ':df' => $dateFrom, ':dt' => $dateTo]);
+$stmt->execute($params);
 $allRecords = $stmt->fetchAll();
 
 $sessionKeys = [];
@@ -49,7 +105,7 @@ foreach ($allRecords as $r) {
             'grade_level' => $r['grade_level'] ?? '',
             'section'     => $r['section'] ?? '',
             'subject'     => $r['subject_name'] ?? 'Multiple',
-            'present'     => 0, 'late' => 0, 'absent' => 0, 'pending' => 0, 'total' => 0
+            'present'     => 0, 'late' => 0, 'absent' => 0, 'pending' => 0, 'excused' => 0, 'total' => 0
         ];
     }
     $studentStats[$sid]['total']++;
@@ -85,7 +141,7 @@ $lowPageData = array_slice($lowStudents, $lowOffset, $lowPerPage);
 $dailyTrend = [];
 foreach ($allRecords as $r) {
     $d = $r['date'];
-    if (!isset($dailyTrend[$d])) $dailyTrend[$d] = ['present' => 0, 'late' => 0, 'absent' => 0, 'pending' => 0];
+    if (!isset($dailyTrend[$d])) $dailyTrend[$d] = ['present' => 0, 'late' => 0, 'absent' => 0, 'pending' => 0, 'excused' => 0];
     $dailyTrend[$d][$r['status']]++;
 }
 ksort($dailyTrend);
@@ -94,7 +150,7 @@ $subjectStats = [];
 foreach ($allRecords as $r) {
     $subId = $r['subject_id'];
     if (!isset($subjectStats[$subId])) {
-            $subjectStats[$subId] = ['name' => $r['subject_name'] ?? 'Unknown', 'present' => 0, 'late' => 0, 'absent' => 0, 'pending' => 0, 'total' => 0];
+            $subjectStats[$subId] = ['name' => $r['subject_name'] ?? 'Unknown', 'present' => 0, 'late' => 0, 'absent' => 0, 'pending' => 0, 'excused' => 0, 'total' => 0];
     }
     $subjectStats[$subId]['total']++;
     $subjectStats[$subId][$r['status']]++;
@@ -163,6 +219,10 @@ foreach ($allRecords as $r) {
     .card-header { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; padding: 16px 20px; }
     .card-body { padding: 20px; }
 
+    /* CHART CARD HEADERS — keep titles close to their icons */
+    .chart-card > .card-header { justify-content: flex-start; gap: 0; }
+    .chart-card > .card-header > i { margin-right: 4px; }
+
     /* FORM */
     .form-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: block; }
     .form-select, .form-control { padding: 10px 14px; border-radius: var(--td-radius-sm); font-size: 13px; font-weight: 500; border-width: 1.5px; transition: all var(--td-transition); }
@@ -202,6 +262,14 @@ foreach ($allRecords as $r) {
     .chart-wrap canvas { display: block; width: 100% !important; }
     .chart-card .card-body { padding: 16px; }
 
+    /* ALERT */
+    .alert { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #fff; }
+    .alert-success { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: #34D399; }
+    .alert-danger { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #F87171; }
+    .alert-warning { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.3); color: #FBBF24; }
+    .alert-info { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); color: #93C5FD; }
+    .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     /* =====================================================
@@ -227,7 +295,7 @@ foreach ($allRecords as $r) {
         .navbar-brand-sub { font-size: 9px; opacity: 0.45; }
         .desktop-title { display: none !important; }
         .desktop-date { display: none !important; }
-        .mobile-title { display: block; }
+        .mobile-title { display: block !important; }
         .navbar-actions { gap: 6px; }
 
         .content-area { padding: 10px 12px 28px; }
@@ -263,8 +331,6 @@ foreach ($allRecords as $r) {
         .navbar-brand-logo { width: 38px; height: 38px; }
         .navbar-brand-name { font-size: 11px; }
         .navbar-brand-sub { font-size: 8px; }
-        .mobile-title-left h5 { font-size: 15px; }
-        .mobile-title-left small { font-size: 11px; }
         .mobile-date { font-size: 10px; padding: 5px 8px; }
         .content-area { padding: 8px 8px 24px; }
         .card-header { padding: 12px 14px; font-size: 13px; }
@@ -279,6 +345,13 @@ foreach ($allRecords as $r) {
     }
 
     #printReportArea { display: none; }
+    .print-header-img { display: none; }
+    @media print {
+        .print-header-img { display: block !important; margin-bottom: 25px; }
+        body { padding: 0 !important; }
+        @page { margin-top: 0; }
+        .pagination { display: none !important; }
+    }
 </style>
 
 <?php require_once __DIR__ . '/../includes/pages-topnavbar.php'; ?>
@@ -287,20 +360,12 @@ foreach ($allRecords as $r) {
     <!-- ===== CONTENT ===== -->
     <div class="content-area">
         <?= displayFlashMessage() ?>
-        <?php
-        $printDocTitle = 'Attendance Reports';
-        $printDocMeta  = '<span>Period: ' . formatDate($dateFrom) . ' to ' . formatDate($dateTo) . '</span>'
-                       . '<span>Generated: ' . date('F d, Y h:i A') . '</span>';
-        include __DIR__ . '/../includes/print-header.php';
-        ?>
+        <img src="<?= BASE_URL ?>/assets/images/header.jpg" alt="Header" class="print-header-img" style="width:100%;max-height:160px;object-fit:contain;">
 
-        <div class="d-none d-md-flex justify-content-between align-items-center gap-3 mb-3">
+<div class="d-none d-md-flex justify-content-between align-items-center gap-3 mb-3">
             <div class="page-title mb-0">
                 <h5 class="mb-0">Attendance Reports</h5>
                 <small>Your teaching performance analytics</small>
-            </div>
-            <div class="d-flex gap-2">
-                <button onclick="printReport()" class="btn btn-outline-primary"><i class="bi bi-printer"></i> <span class="d-none d-sm-inline">Print Report</span></button>
             </div>
         </div>
 
@@ -309,9 +374,6 @@ foreach ($allRecords as $r) {
                 <div class="mobile-title-left">
                     <h5>Attendance Reports</h5>
                     <small>Performance analytics</small>
-                </div>
-                <div class="d-flex gap-2">
-                    <button onclick="printReport()" class="btn btn-outline-primary"><i class="bi bi-printer"></i> <span class="d-none d-sm-inline">Print Report</span></button>
                 </div>
             </div>
         </div>
@@ -328,6 +390,39 @@ foreach ($allRecords as $r) {
                         <label class="form-label">To</label>
                         <input type="date" class="form-control" name="date_to" value="<?= sanitize($dateTo) ?>">
                     </div>
+<div class="col-6 col-md-2">
+                        <label class="form-label">Grade</label>
+                        <select class="form-select" name="grade_level" id="gradeLevelFilter">
+                            <option value="">All Grades</option>
+                            <?php foreach ($gradeOptions as $go): ?>
+                            <option value="<?= sanitize($go['grade_level']) ?>" <?= $gradeLevel == $go['grade_level'] ? 'selected' : '' ?>>
+                                Grade <?= sanitize($go['grade_level']) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">Section</label>
+                        <select class="form-select" name="section" id="sectionFilter">
+                            <option value="">All Sections</option>
+                            <?php foreach ($sectionOptions as $so): ?>
+                            <option value="<?= sanitize($so['section']) ?>" <?= $section == $so['section'] ? 'selected' : '' ?>>
+                                <?= sanitize($so['section']) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">Subject</label>
+                        <select class="form-select" name="subject_id" id="subjectIdFilter">
+                            <option value="">All Subjects</option>
+                            <?php foreach ($subjectOptions as $so): ?>
+                            <option value="<?= $so['id'] ?>" <?= $subjectId == $so['id'] ? 'selected' : '' ?>>
+                                <?= sanitize($so['subject_name']) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                     <div class="col-6 col-md-2">
                         <label class="form-label">&nbsp;</label>
                         <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filter</button>
@@ -335,6 +430,10 @@ foreach ($allRecords as $r) {
                     <div class="col-6 col-md-2">
                         <label class="form-label">&nbsp;</label>
                         <a href="<?= BASE_URL ?>/teacher/reports.php" class="btn btn-outline-secondary w-100">Reset</a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" id="openPrintModalBtn" class="px-5 py-2.5 rounded-xl bg-emerald-600/80 hover:bg-emerald-500 text-white font-medium text-sm flex items-center gap-2 backdrop-blur-md transition-all shadow-lg ml-2"><i class="bi bi-printer"></i> Print / Export</button>
                     </div>
                 </form>
             </div>
@@ -441,6 +540,7 @@ foreach ($allRecords as $r) {
                                 <th>Present</th>
                                 <th>Late</th>
                                 <th>Absent</th>
+                                <th>Excused</th>
                                 <th>Total</th>
                                 <th>Rate</th>
                             </tr>
@@ -456,6 +556,7 @@ foreach ($allRecords as $r) {
                                 <td style="color:var(--td-success);"><?= $row['present'] ?></td>
                                 <td style="color:var(--td-warning);"><?= $row['late'] ?></td>
                                 <td style="color:var(--td-danger);"><?= $row['absent'] ?></td>
+                                <td style="color:var(--td-info);"><?= $row['excused'] ?></td>
                                 <td><?= $row['total'] ?></td>
                                 <td>
                                     <span class="badge" style="background:<?= $row['rate'] >= 100 ? 'var(--td-success-light)' : ($row['rate'] >= 75 ? 'var(--td-warning-light)' : 'var(--td-danger-light)') ?>;color:<?= $row['rate'] >= 100 ? 'var(--td-success)' : ($row['rate'] >= 75 ? 'var(--td-warning)' : 'var(--td-danger)') ?>;font-size:10px;font-weight:700;">
@@ -567,20 +668,64 @@ foreach ($allRecords as $r) {
                     </ul>
                 </nav>
             </div>
-            <?php endif; ?>
-        </div>
-        <?php endif; ?>
-    </div>
+<?php endif; ?>
+          </div>
+          <?php endif; ?>
+
+          <!-- ═══════════════════════════════════════════════════════════════
+               PRINT FORMAT SELECTION MODAL (Glassmorphism)
+               ═══════════════════════════════════════════════════════════════ -->
+         <div id="printFormatModal" class="print-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="printModalTitle">
+             <div class="print-modal-backdrop"></div>
+             <div class="print-modal-container">
+                 <div class="print-modal-header">
+                     <h5 id="printModalTitle"><i class="bi bi-printer me-2"></i>Print / Export Report</h5>
+                     <button type="button" class="print-modal-close" onclick="closePrintModal()" aria-label="Close modal">&times;</button>
+                 </div>
+                 <div class="print-modal-body">
+                     <div class="print-option-card" data-option="standard" onclick="selectPrintOption('standard')">
+                         <div class="print-option-icon">
+                             <i class="bi bi-file-earmark-text"></i>
+                         </div>
+                         <div class="print-option-content">
+                             <h6 class="print-option-title">📄 Standard Dashboard View</h6>
+                             <p class="print-option-desc">Prints the full report view as rendered on screen, including summary cards, stats, and student tables.</p>
+                         </div>
+                         <div class="print-option-check">
+                             <i class="bi bi-check-circle"></i>
+                         </div>
+                     </div>
+                     <div class="print-option-card" data-option="matrix" onclick="selectPrintOption('matrix')">
+                         <div class="print-option-icon">
+                             <i class="bi bi-grid-3x3-gap"></i>
+                         </div>
+                         <div class="print-option-content">
+                             <h6 class="print-option-title">📊 7-Week Attendance Matrix Sheet</h6>
+                             <p class="print-option-desc">Generates the official landscape multi-week grid (Week 1–7 | M T W T F) matching the paper attendance sheet format.</p>
+                         </div>
+                         <div class="print-option-check">
+                             <i class="bi bi-check-circle"></i>
+                         </div>
+                     </div>
+                 </div>
+                 <div class="print-modal-footer">
+                     <button type="button" class="btn btn-outline-secondary" onclick="closePrintModal()">Cancel</button>
+                     <button type="button" class="btn btn-success" id="printModalExport" onclick="exportReportOption()" disabled>
+                         <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+                     </button>
+                     <button type="button" class="btn btn-primary" id="printModalConfirm" onclick="executePrintOption()" disabled>
+                         <i class="bi bi-printer me-1"></i> Print
+                     </button>
+                 </div>
+             </div>
+         </div>
+     </div>
 
     <!-- Hidden print area — full data (all students, not paginated) -->
     <div id="printReportArea">
-        <?php
-        $printDocTitle = 'Attendance Reports';
-        $printDocMeta  = '<span><strong>Period:</strong> ' . formatDate($dateFrom) . ' to ' . formatDate($dateTo) . '</span>'
-                       . '<span><strong>Total Students:</strong> ' . number_format(count($reportData)) . '</span>'
-                       . '<span><strong>Generated:</strong> ' . date('F d, Y g:i A') . '</span>';
-        include __DIR__ . '/../includes/print-header.php';
-        ?>
+        <img src="<?= BASE_URL ?>/assets/images/header.jpg" alt="Header" class="print-header-img" style="width:100%;max-height:160px;object-fit:contain;">
+        <div style="text-align:center;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;color:#1e293b;">Attendance Reports — Complete Data Printout</div>
+        <div style="text-align:center;font-size:12px;color:#64748b;margin-bottom:16px;">Period: <?= formatDate($dateFrom) ?> to <?= formatDate($dateTo) ?> &bull; Generated: <?= date('F d, Y g:i A') ?></div>
         <table class="print-table">
             <thead>
                 <tr>
@@ -592,6 +737,7 @@ foreach ($allRecords as $r) {
                     <th style="width:65px;">Present</th>
                     <th style="width:55px;">Late</th>
                     <th style="width:60px;">Absent</th>
+                    <th style="width:60px;">Excused</th>
                     <th style="width:55px;">Total</th>
                     <th style="width:60px;">Rate</th>
                 </tr>
@@ -607,6 +753,7 @@ foreach ($allRecords as $r) {
                     <td style="color:#059669;font-weight:600;"><?= $row['present'] ?></td>
                     <td style="color:#d97706;font-weight:600;"><?= $row['late'] ?></td>
                     <td style="color:#dc2626;font-weight:600;"><?= $row['absent'] ?></td>
+                    <td style="color:#0e7490;font-weight:600;"><?= $row['excused'] ?></td>
                     <td><?= $row['total'] ?></td>
                     <td>
                         <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:9px;font-weight:700;background:<?= $row['rate'] >= 100 ? '#d1fae5' : ($row['rate'] >= 75 ? '#fef3c7' : '#fee2e2') ?>;color:<?= $row['rate'] >= 100 ? '#065f46' : ($row['rate'] >= 75 ? '#92400e' : '#991b1b') ?>;">
@@ -619,30 +766,52 @@ foreach ($allRecords as $r) {
         </table>
         <div style="text-align:center;margin-top:30px;padding-top:12px;border-top:2px solid #e5e7eb;font-size:10px;color:#94a3b8;">
             <p>Generated on <?= date('F d, Y g:i A') ?> &bull; Attendance Report &bull; Confidential</p>
+            <div style="display:flex;justify-content:space-between;gap:30px;margin-top:12px;">
+                <div style="flex:1;text-align:center;">
+                    <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">
+                    <strong><?= sanitize($teacherName ?? 'ANGELYN S. PARRABA') ?></strong>
+                    <span>Subject Teacher</span>
+                </div>
+                <div style="flex:1;text-align:center;">
+                    <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">
+                    <strong>ERWIN M. ESPENILLA</strong>
+                    <span>OIC/Assistant Principal</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-
 <!-- CHARTS -->
+<script src="<?= BASE_URL ?>/assets/js/generate_report_print.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 function printReport() {
     var area = document.getElementById('printReportArea');
     if (!area) return;
-    var pw = window.open('', '_blank', 'width=900,height=700');
+    var orient = (document.getElementById('printOrientation') || document.getElementById('printOrientationMobile') || {}).value || 'portrait';
+    var isLandscape = orient === 'landscape';
+    var pw = window.open('', '_blank', 'width=' + (isLandscape ? '1200' : '900') + ',height=' + (isLandscape ? '800' : '700'));
+    var pageSize = isLandscape ? 'A4 landscape' : 'A4 portrait';
+    var bodyPad = isLandscape ? '12px 15px' : '20px 25px';
+    var thPad = isLandscape ? '6px 8px' : '10px 12px';
+    var tdPad = isLandscape ? '5px 8px' : '8px 12px';
+    var thFont = isLandscape ? '10px' : '11px';
+    var tdFont = isLandscape ? '10px' : '12px';
     pw.document.write(
         '<!DOCTYPE html><html><head><title>Attendance Report</title>' +
         '<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">' +
         '<style>' +
-        'body.print-new-window{margin:0;padding:20px 25px;background:#fff;font-family:"Segoe UI",Arial,sans-serif;color:#333;}' +
-        '.print-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}' +
+        'body.print-new-window{margin:0;padding:' + bodyPad + ';background:#fff;font-family:"Segoe UI",Arial,sans-serif;color:#333;}' +
+        '@page{size:' + pageSize + ';margin:0 12mm 15mm 12mm;}' +
+        '.print-header-img{width:100%;max-height:160px;object-fit:contain;display:block;margin-bottom:12px;}' +
+        '.print-table{width:100%;border-collapse:collapse;font-size:' + tdFont + ';margin-top:10px;}' +
         '.print-table thead{background:#f0f1f4;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
-        '.print-table thead th{padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#555;border-bottom:2px solid #ddd;white-space:nowrap;}' +
-        '.print-table tbody td{padding:8px 12px;border-bottom:1px solid #eee;color:#444;}' +
+        '.print-table thead th{padding:' + thPad + ';text-align:left;font-weight:700;font-size:' + thFont + ';text-transform:uppercase;letter-spacing:0.05em;color:#555;border-bottom:2px solid #ddd;white-space:nowrap;}' +
+        '.print-table tbody td{padding:' + tdPad + ';border-bottom:1px solid #eee;color:#444;}' +
         '.print-table tbody tr:last-child td{border-bottom:none;}' +
         '.print-table tbody tr{page-break-inside:avoid;}' +
-        '@media print{body.print-new-window{padding:0;}.print-table{margin-top:0;}}' +
+        '@media print{body.print-new-window{padding:0 !important;}.print-table{margin-top:0;}.print-header-img{max-height:160px;margin-bottom:20px;}}' +
         '</style></head>' +
         '<body class="print-new-window">' +
         area.innerHTML +
@@ -691,6 +860,7 @@ const subjectNames = <?= json_encode(array_values(array_map(fn($s) => $s['name']
 const subjectPresent = <?= json_encode(array_values(array_map(fn($s) => $s['present'], $subjectStats))) ?>;
 const subjectLate = <?= json_encode(array_values(array_map(fn($s) => $s['late'], $subjectStats))) ?>;
 const subjectAbsent = <?= json_encode(array_values(array_map(fn($s) => $s['absent'], $subjectStats))) ?>;
+const subjectExcused = <?= json_encode(array_values(array_map(fn($s) => $s['excused'], $subjectStats))) ?>;
 
 new Chart(document.getElementById('barChart'), {
     type: 'bar',
@@ -699,7 +869,8 @@ new Chart(document.getElementById('barChart'), {
         datasets: [
             { label: 'Present', data: subjectPresent, backgroundColor: '#10b981', borderRadius: 4 },
             { label: 'Late', data: subjectLate, backgroundColor: '#f59e0b', borderRadius: 4 },
-            { label: 'Absent', data: subjectAbsent, backgroundColor: '#ef4444', borderRadius: 4 }
+            { label: 'Absent', data: subjectAbsent, backgroundColor: '#ef4444', borderRadius: 4 },
+            { label: 'Excused', data: subjectExcused, backgroundColor: '#06b6d4', borderRadius: 4 }
         ]
     },
     options: {

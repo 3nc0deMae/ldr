@@ -172,12 +172,12 @@ $boys = [];
 $girls = [];
 
 try {
-    $sql = "SELECT s.student_id, s.first_name, s.middle_name, s.last_name,
-                   s.gender, s.section, s.status,
-                   g.guardian_name
-            FROM students s
-            LEFT JOIN guardians g ON s.id = g.student_id
-            WHERE s.grade_level = ?";
+$sql = "SELECT s.student_id, s.first_name, s.middle_name, s.last_name,
+                    s.name_extension, s.gender, s.section, s.status,
+                    g.guardian_name
+             FROM students s
+             LEFT JOIN guardians g ON s.id = g.student_id
+             WHERE s.grade_level = ?";
     $params = [$gradeLevel];
     if ($sectionName !== '') {
         $sql .= " AND s.section = ?";
@@ -194,6 +194,7 @@ try {
             'first_name'     => $stu['first_name'],
             'middle_name'    => $stu['middle_name'],
             'last_name'      => $stu['last_name'],
+            'name_extension' => $stu['name_extension'] ?? '',
             'gender'         => $stu['gender'],
             'section'        => $stu['section'],
             'status'         => $stu['status'],

@@ -102,27 +102,48 @@ switch ($action) {
         }
         if (!is_array($trackElectiveHandled)) $trackElectiveHandled = [];
 
-        $data = [
-            'employee_id'     => sanitize($_POST['employee_id'] ?? ''),
-            'first_name'      => sanitize($_POST['first_name'] ?? ''),
-            'last_name'       => sanitize($_POST['last_name'] ?? ''),
-            'email'           => sanitize($_POST['email'] ?? ''),
-            'phone'           => sanitize($_POST['phone'] ?? ''),
-            'department'      => sanitize($_POST['department'] ?? ''),
-            'subjects_handled'=> $subjectNames,
-            'grade_section_handled' => $gradeSectionHandled,
-            'core_subjects_handled' => $coreSubjectsHandled,
-            'track_elective_handled' => $trackElectiveHandled,
-            'advisory_class'  => sanitize($_POST['advisory_class'] ?? ''),
-            'password'        => $_POST['password'] ?? '123456'
-        ];
+         $data = [
+             'employee_id'     => sanitize($_POST['employee_id'] ?? ''),
+             'first_name'      => sanitize($_POST['first_name'] ?? ''),
+             'middle_name'     => sanitize($_POST['middle_name'] ?? ''),
+             'last_name'       => sanitize($_POST['last_name'] ?? ''),
+             'email'           => sanitize($_POST['email'] ?? ''),
+             'phone'           => sanitize($_POST['phone'] ?? ''),
+             'department'      => sanitize($_POST['department'] ?? ''),
+             'subjects_handled'=> $subjectNames,
+             'grade_section_handled' => $gradeSectionHandled,
+             'core_subjects_handled' => $coreSubjectsHandled,
+             'track_elective_handled' => $trackElectiveHandled,
+             'advisory_class'  => sanitize($_POST['advisory_class'] ?? '')
+         ];
 
-        if (empty($data['first_name']) || empty($data['last_name']) || empty($data['email'])) {
-            jsonResponse(['success' => false, 'message' => 'First name, last name, and email are required.'], 400);
-        }
+         if (empty($data['first_name']) || empty($data['last_name']) || empty($data['email'])) {
+             jsonResponse(['success' => false, 'message' => 'First name, last name, and email are required.'], 400);
+         }
 
         if (!isValidEmail($data['email'])) {
             jsonResponse(['success' => false, 'message' => 'Invalid email address.'], 400);
+        }
+
+        $dupTeacher = $db->prepare("SELECT id FROM teachers WHERE email = ? LIMIT 1");
+        $dupTeacher->execute([$data['email']]);
+        if ($dupTeacher->fetch()) {
+            jsonResponse(['success' => false, 'message' => 'This email is already in use by an existing teacher.'], 409);
+        }
+
+        $dupUser = $db->prepare("SELECT id, role FROM users WHERE email = ? LIMIT 1");
+        $dupUser->execute([$data['email']]);
+        $existingUser = $dupUser->fetch();
+        if ($existingUser) {
+            if ($existingUser['role'] !== 'teacher') {
+                jsonResponse(['success' => false, 'message' => 'This email is already in use by an existing account.'], 409);
+            }
+            $linked = $db->prepare("SELECT id FROM teachers WHERE user_id = ? LIMIT 1");
+            $linked->execute([$existingUser['id']]);
+            if ($linked->fetch()) {
+                jsonResponse(['success' => false, 'message' => 'This email is already in use by an existing teacher.'], 409);
+            }
+            $data['user_id'] = $existingUser['id'];
         }
 
         $result = addTeacher($db, $data);
@@ -137,6 +158,7 @@ switch ($action) {
                         'id' => $newTeacher['id'],
                         'employee_id' => $newTeacher['employee_id'] ?? '',
                         'first_name' => $newTeacher['first_name'],
+                        'middle_name' => $newTeacher['middle_name'] ?? '',
                         'last_name' => $newTeacher['last_name'],
                         'email' => $newTeacher['email'],
                         'phone' => $newTeacher['phone'] ?? '',
@@ -223,21 +245,22 @@ switch ($action) {
         }
         if (!is_array($trackElectiveHandled)) $trackElectiveHandled = [];
 
-        $data = [
-            'employee_id'     => sanitize($_POST['employee_id'] ?? ''),
-            'first_name'      => sanitize($_POST['first_name'] ?? ''),
-            'last_name'       => sanitize($_POST['last_name'] ?? ''),
-            'email'           => sanitize($_POST['email'] ?? ''),
-            'phone'           => sanitize($_POST['phone'] ?? ''),
-            'department'      => sanitize($_POST['department'] ?? ''),
-            'subjects_handled'=> array_unique(array_merge($subjectNames, $coreSubjectNames)),
-            'grade_section_handled' => $gradeSectionHandled,
-            'core_subjects_handled' => $coreSubjectsHandled,
-            'track_elective_handled' => $trackElectiveHandled,
-            'advisory_class'  => sanitize($_POST['advisory_class'] ?? '')
-        ];
+         $data = [
+             'employee_id'     => sanitize($_POST['employee_id'] ?? ''),
+             'first_name'      => sanitize($_POST['first_name'] ?? ''),
+             'middle_name'     => sanitize($_POST['middle_name'] ?? ''),
+             'last_name'       => sanitize($_POST['last_name'] ?? ''),
+             'email'           => sanitize($_POST['email'] ?? ''),
+             'phone'           => sanitize($_POST['phone'] ?? ''),
+             'department'      => sanitize($_POST['department'] ?? ''),
+             'subjects_handled'=> array_unique(array_merge($subjectNames, $coreSubjectNames)),
+             'grade_section_handled' => $gradeSectionHandled,
+             'core_subjects_handled' => $coreSubjectsHandled,
+             'track_elective_handled' => $trackElectiveHandled,
+             'advisory_class'  => sanitize($_POST['advisory_class'] ?? '')
+         ];
 
-        if (updateTeacher($db, $id, $data)) {
+         if (updateTeacher($db, $id, $data)) {
             jsonResponse(['success' => true, 'message' => 'Teacher updated successfully.']);
         } else {
             jsonResponse(['success' => false, 'message' => 'Failed to update teacher.'], 500);

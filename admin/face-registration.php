@@ -577,12 +577,13 @@ try {
     .navbar-brand-sub { font-size: 9px; opacity: 0.45; }
     .desktop-title { display: none !important; }
     .desktop-date { display: none !important; }
-    .mobile-title { display: block; }
+    .mobile-title { display: block !important; }
     .navbar-actions { gap: 6px; flex-shrink: 0; }
     .nav-icon-btn { width: 38px; height: 38px; font-size: 15px; }
     .btn-kiosk { padding: 7px 12px !important; font-size: 12px !important; }
     .btn-kiosk .btn-text { display: none; }
-    .btn-export-top { display: none !important; }
+    .btn-export-top { padding: 7px 12px !important; font-size: 12px !important; }
+    .btn-export-top .btn-text { display: none; }
 
 
 
@@ -646,8 +647,6 @@ try {
     .navbar-actions { gap: 4px; }
     .nav-icon-btn { width: 34px; height: 34px; font-size: 14px; }
     #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
-    .mobile-title-left h5 { font-size: 15px; }
-    .mobile-title-left small { font-size: 11px; }
     .mobile-date { font-size: 10px; padding: 5px 8px; }
     .content-area { padding: 8px 8px 24px; }
 
@@ -718,11 +717,12 @@ try {
         <div class="page-title mobile-title">
             <div class="mobile-title-inner">
                 <div class="mobile-title-left">
-                    <h5><i class="bi bi-camera-fill"></i> Face Registration</h5>
+                    <h5><i></i> Face Registration</h5>
                     <small>Track &amp; manage student face registration</small>
                 </div>
-                <div class="mobile-date">
-                    <i class="bi bi-calendar3"></i> <?= date('D, M j, Y') ?>
+                <div class="d-flex gap-2">
+                    <a href="<?= BASE_URL ?>/gate/register.php?return_to=<?= urlencode($currentPageUrl) ?>" class="btn-kiosk"><i class="bi bi-window"></i> <span class="btn-text">Open Registration Kiosk</span></a>
+                    <button class="btn-export-top" onclick="exportUnregistered()"><i class="bi bi-download"></i> <span class="btn-text">Export Pending List</span></button>
                 </div>
             </div>
         </div>

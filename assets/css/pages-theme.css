@@ -6,9 +6,22 @@
 
 /* ---- BODY ---- */
 body {
-    background: #0f172a url('../images/background.png') center center / cover no-repeat fixed !important;
+    position: relative;
+    background: transparent !important;
     color: #ffffff;
     overflow-x: hidden;
+}
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0f172a url('../images/background.png') center center / cover no-repeat fixed;
+    filter: blur(8px);
+    -webkit-filter: blur(8px);
+    z-index: -1;
 }
 
 /* ---- MAIN CONTENT ---- */

@@ -49,6 +49,18 @@ if ($user['id'] ?? 0) {
     }
 }
 $userInitial = isset($teacher['first_name']) && $teacher['first_name'] ? strtoupper(substr($teacher['first_name'], 0, 1)) : 'T';
+
+$teacherFullName = '';
+if ($teacher) {
+    $teacherFullName = $teacher['first_name'] ?? '';
+    if (!empty($teacher['middle_name'])) {
+        $teacherFullName .= ' ' . strtoupper($teacher['middle_name'][0]) . '.';
+    }
+    $teacherFullName .= ' ' . ($teacher['last_name'] ?? '');
+}
+if (empty($teacherFullName)) {
+    $teacherFullName = sanitize($user['email'] ?? $userEmail);
+}
 ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -129,6 +141,7 @@ $userInitial = isset($teacher['first_name']) && $teacher['first_name'] ? strtoup
     .content-area { padding: 10px 12px 28px; }
     .profile-avatar { width: 72px; height: 72px; font-size: 30px; border-radius: 16px; }
     .profile-name { font-size: 18px; }
+    .mobile-title { display: block; }
 }
 .status-dot {
     height: 10px; width: 10px; border-radius: 50%; display: inline-block;
@@ -143,17 +156,6 @@ $userInitial = isset($teacher['first_name']) && $teacher['first_name'] ? strtoup
 .account-id {
     font-family: var(--prof-mono); font-size: 13px; font-weight: 500;
     color: rgba(255,255,255,0.5); letter-spacing: 0.02em;
-}
-@media (max-width: 767px) {
-    .content-area { padding: 10px 12px 28px; }
-    .profile-avatar { width: 72px; height: 72px; font-size: 30px; border-radius: 16px; }
-    .profile-name { font-size: 18px; }
-    .mobile-title-left h5 { font-size: 17px; }
-    .mobile-title-left small { font-size: 12px; }
-}
-@media (max-width: 576px) {
-    .mobile-title-left h5 { font-size: 15px; }
-    .mobile-title-left small { font-size: 11px; }
 }
 </style>
 
@@ -195,7 +197,7 @@ $userInitial = isset($teacher['first_name']) && $teacher['first_name'] ? strtoup
                         <input type="file" id="profilePageAvatarInput" class="navbar-profile-avatar-input" accept="image/*">
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1">
-                        <div class="profile-name" style="font-size:22px;"><?= sanitize($user['email'] ?? $userEmail) ?></div>
+                        <div class="profile-name" style="font-size:22px;"><?= $teacherFullName ?></div>
                         <span class="badge-role">
                             <span class="status-dot"></span>
                             <?= ucfirst($userRole) ?>
@@ -279,20 +281,6 @@ $userInitial = isset($teacher['first_name']) && $teacher['first_name'] ? strtoup
                     <div class="profile-info-item">
                         <div class="profile-info-label">Advisory Section</div>
                         <div class="profile-info-value"><?= sanitize($teacher['advisory_class'] ?? 'N/A') ?></div>
-                    </div>
-                    <div class="profile-info-item">
-                        <div class="profile-info-label">Data Privacy Consent</div>
-                        <div class="profile-info-value">
-                            <?php if (!empty($teacher['privacy_accepted_at'])): ?>
-                                <span class="badge bg-success" style="font-size:11px;">
-                                    <i class="bi bi-check-circle me-1"></i><?= formatDateTime($teacher['privacy_accepted_at']) ?>
-                                </span>
-                            <?php else: ?>
-                                <span class="badge bg-warning" style="font-size:11px; color:#000;">
-                                    <i class="bi bi-exclamation-triangle me-1"></i>Pending
-                                </span>
-                            <?php endif; ?>
-                        </div>
                     </div>
                 </div>
             </div>

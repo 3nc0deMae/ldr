@@ -201,6 +201,10 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
     .table tbody tr:hover { background: rgba(255,255,255,0.03); }
     .table code { font-family: var(--td-mono); font-size: 12px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); }
 
+    /* EDIT STATUS BUTTON */
+    .edit-status-btn { opacity: 0.7; transition: all var(--td-transition); }
+    .edit-status-btn:hover { opacity: 1; transform: translateY(-1px); }
+
     /* FILTER BAR */
     .filter-bar { padding: 16px 20px; }
 
@@ -239,7 +243,6 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
         .desktop-title { display: none !important; }
         .desktop-date { display: none !important; }
         .mobile-title { display: block; }
-        .mobile-title-left h5 { font-size: 17px; }
         .navbar-actions { gap: 6px; }
 
         .content-area { padding: 10px 12px 28px; }
@@ -277,8 +280,6 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
         .navbar-brand-logo { width: 38px; height: 38px; }
         .navbar-brand-name { font-size: 11px; }
         .navbar-brand-sub { font-size: 8px; }
-        .mobile-title-left h5 { font-size: 15px; }
-        .mobile-title-left small { font-size: 11px; }
         .mobile-date { font-size: 10px; padding: 5px 8px; }
         .content-area { padding: 8px 8px 24px; }
         .card-header { padding: 12px 14px; font-size: 13px; }
@@ -295,13 +296,47 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
     /* PRINT STYLES */
     .print-container { display: none; }
     @media print {
+        @page { margin-top: 0; }
+        body { padding: 0 !important; }
         body * { visibility: hidden; }
         .print-container, .print-container * { visibility: visible; }
         .print-container { display: block !important; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
         .print-container table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .print-container th, .print-container td { border: 1px solid #333; padding: 8px 12px; text-align: left; }
         .print-container th { background: #f0f0f0; font-weight: 700; }
+        .print-header-img { display: block !important; max-height: 160px; margin-bottom: 25px; }
     }
+
+    /* MODAL */
+    .event-modal-overlay { position: fixed; inset: 0; background: rgba(26,29,46,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9998; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .event-modal-overlay.show { display: flex; }
+    .event-modal { border-radius: 20px; width: min(620px,100%); max-width: 100%; height: auto; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; animation: modalSlideIn .35s cubic-bezier(.34,1.56,.64,1); }
+    .event-modal form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    @keyframes modalSlideIn { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .event-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; flex-shrink: 0; }
+    .event-modal-title { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
+    .event-modal-title i { font-size: 20px; }
+    .event-modal-close { width: 32px; height: 32px; border: none; border-radius: var(--td-radius-xs); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--td-transition); font-size: 13px; background: rgba(255,255,255,0.06); color: inherit; }
+    .event-modal-close:hover { background: rgba(255,255,255,0.14); }
+    .event-modal-body { padding: 0 22px 14px; overflow-y: auto; flex: 1 1 auto; min-height: 0; -webkit-overflow-scrolling: touch; }
+    .event-modal-body::-webkit-scrollbar { width: 5px; }
+    .event-modal-body::-webkit-scrollbar-track { background: transparent; margin: 4px 0; }
+    .event-modal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+    .event-modal-body::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+    .event-modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 22px; flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
+    .evt-field { margin-bottom: 12px; }
+    .evt-field:last-child { margin-bottom: 0; }
+    .evt-field label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; line-height: 1.3; }
+    .evt-field label .required { color: var(--td-danger); }
+    .evt-field input[type="text"], .evt-field input[type="email"], .evt-field input[type="tel"], .evt-field textarea, .evt-field select { width: 100%; padding: 9px 12px; border: 1.5px solid rgba(255,255,255,0.12); border-radius: var(--td-radius-sm); font-size: 13px; transition: all var(--td-transition); font-family: var(--td-font); background: rgba(255,255,255,0.05); color: #fff; }
+    .evt-field select option { background: #1e2a4a; color: #fff; }
+    .evt-field input:focus, .evt-field textarea:focus, .evt-field select:focus { outline: none; border-color: var(--td-primary); box-shadow: 0 0 0 3px var(--td-primary-glow); }
+    .evt-field input::placeholder { color: rgba(255,255,255,0.25); }
+    .evt-btn { padding: 10px 18px; border: none; border-radius: var(--td-radius-sm); font-size: 13px; font-weight: 700; cursor: pointer; transition: all var(--td-transition); display: flex; align-items: center; gap: 6px; }
+    .evt-btn-cancel { background: rgba(255,255,255,0.08); color: inherit; }
+    .evt-btn-cancel:hover { background: rgba(255,255,255,0.14); }
+    .evt-btn-save { background: var(--td-primary); color: #fff; }
+    .evt-btn-save:hover { background: var(--td-primary-dark); box-shadow: 0 4px 16px var(--td-primary-glow); }
 </style>
 
 <?php require_once __DIR__ . '/../includes/pages-topnavbar.php'; ?>
@@ -420,7 +455,8 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
                             <option value="present" <?= $statusFilter === 'present' ? 'selected' : '' ?>>Present</option>
                             <option value="late" <?= $statusFilter === 'late' ? 'selected' : '' ?>>Late</option>
                             <option value="absent" <?= $statusFilter === 'absent' ? 'selected' : '' ?>>Absent</option>
-                        </select>
+<option value="excused" <?= $statusFilter === 'excused' ? 'selected' : '' ?>>Excused</option>
+                                        </select>
                     </div>
                     <div class="col-3 col-md-2">
                         <label class="form-label">&nbsp;</label>
@@ -440,6 +476,10 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
                 <span><i class="bi bi-table me-2"></i>Attendance Records — <?= formatDate($dateFilter) ?></span>
                 <span class="d-flex gap-2 align-items-center">
                     <span class="badge bg-primary"><?= $total ?> record(s)</span>
+                    <select id="printOrientation" class="form-select" style="width:auto;display:inline-block;appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.4)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;background-size:12px;padding-right:32px;cursor:pointer;">
+                        <option value="portrait">Portrait</option>
+                        <option value="landscape">Landscape</option>
+                    </select>
                     <button class="btn btn-sm btn-outline-secondary" onclick="printRecords()" title="Print Records">
                         <i class="bi bi-printer"></i> Print
                     </button>
@@ -477,6 +517,9 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
                                     <span class="badge-status badge-<?= $rec['status'] ?>">
                                         <?= ucfirst($rec['status']) ?>
                                     </span>
+                                    <button type="button" class="btn btn-icon btn-sm btn-outline-primary ms-1 edit-status-btn" data-id="<?= $rec['id'] ?>" data-status="<?= $rec['status'] ?>" title="Edit status" style="width:26px;height:26px;font-size:11px;padding:0;">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -511,14 +554,9 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
         </div>
         <!-- Print Container (hidden, used for printing) -->
         <div class="print-container" id="printContainer">
-            <?php
-            $printDocTitle = 'Attendance Records — ' . formatDate($dateFilter);
-            $printDocMeta  = '<span><strong>Generated:</strong> ' . date('F j, Y g:i A') . '</span>'
-                           . ($subjectFilter ? '<span><strong>Subject:</strong> ' . sanitize($teacherSubjects[array_search($subjectFilter, array_column($teacherSubjects, 'id'))]['subject_name'] ?? 'Unknown') . '</span>' : '')
-                           . ($sectionFilter ? '<span><strong>Section:</strong> ' . sanitize($sectionFilter) . '</span>' : '')
-                           . ($statusFilter ? '<span><strong>Status:</strong> ' . ucfirst($statusFilter) . '</span>' : '');
-            include __DIR__ . '/../includes/print-header.php';
-            ?>
+            <img src="<?= BASE_URL ?>/assets/images/header.jpg" alt="Header" class="print-header-img" style="width:100%;max-height:160px;object-fit:contain;">
+            <div style="text-align:center;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;color:#1e293b;">Attendance Records — Complete Printout</div>
+            <div style="text-align:center;font-size:12px;color:#64748b;margin-bottom:16px;">Date: <?= formatDate($dateFilter) ?> &bull; Generated: <?= date('F j, Y g:i A') ?></div>
             <table class="print-table">
                 <thead>
                     <tr>
@@ -538,25 +576,61 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
                         <td style="font-weight:600;"><?= sanitize(($rec['first_name'] ?? '') . ' ' . ($rec['last_name'] ?? '')) ?></td>
                         <td>G<?= $rec['grade_level'] ?? '-' ?></td>
                         <td><?= sanitize($rec['subject_name'] ?? '-') ?></td>
-                        <td>
-                            <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:9px;font-weight:700;background:<?= $rec['status'] === 'present' ? '#d1fae5' : ($rec['status'] === 'late' ? '#fef3c7' : '#fee2e2') ?>;color:<?= $rec['status'] === 'present' ? '#065f46' : ($rec['status'] === 'late' ? '#92400e' : '#991b1b') ?>;">
-                                <?= ucfirst($rec['status']) ?>
-                            </span>
-                        </td>
+<td>
+                                <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:9px;font-weight:700;background:<?= $rec['status'] === 'present' ? '#d1fae5' : ($rec['status'] === 'late' ? '#fef3c7' : ($rec['status'] === 'excused' ? '#cffafe' : '#fee2e2')) ?>;color:<?= $rec['status'] === 'present' ? '#065f46' : ($rec['status'] === 'late' ? '#92400e' : ($rec['status'] === 'excused' ? '#0e7490' : '#991b1b')) ?>;">
+                                    <?= ucfirst($rec['status']) ?>
+                                </span>
+                            </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
-    </div>
 </div>
 
+<!-- Edit Status Modal -->
+<div class="event-modal-overlay" id="editStatusOverlay">
+    <div class="event-modal">
+        <div class="event-modal-header">
+            <div class="event-modal-title"><i class="bi bi-pencil-square"></i><span>Edit Attendance Status</span></div>
+            <button class="event-modal-close" id="editStatusClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form id="editStatusForm" onsubmit="submitEditStatus(event)">
+            <div class="event-modal-body">
+                <input type="hidden" id="editRecordId">
+                <p style="font-size:13px;opacity:0.6;margin-bottom:12px">Update attendance status for record <strong id="editRecordNameDisplay"></strong></p>
+                <div class="evt-field">
+                    <label>Status <span class="required">*</span></label>
+                    <select id="editStatusSelect" required>
+                        <option value="present">Present</option>
+                        <option value="late">Late</option>
+                        <option value="absent">Absent</option>
+                        <option value="excused">Excused</option>
+                    </select>
+                </div>
+                <div id="editStatusMessage"></div>
+            </div>
+            <div class="event-modal-footer">
+                <button type="button" class="evt-btn evt-btn-cancel" id="editStatusCancel">Cancel</button>
+                <button type="submit" class="evt-btn evt-btn-save" id="editStatusSave"><i class="bi bi-check-circle me-1"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script>
     function printRecords() {
         const printContainer = document.getElementById('printContainer');
         if (!printContainer) return;
-        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        const orient = (document.getElementById('printOrientation') || {}).value || 'portrait';
+        const isLandscape = orient === 'landscape';
+        const printWindow = window.open('', '_blank', 'width=' + (isLandscape ? '1200' : '900') + ',height=' + (isLandscape ? '800' : '700'));
+        const pageSize = isLandscape ? 'A4 landscape' : 'A4 portrait';
+        const bodyPad = isLandscape ? '12px 15px' : '20px 25px';
+        const thPad = isLandscape ? '6px 8px' : '10px 12px';
+        const tdPad = isLandscape ? '5px 8px' : '8px 12px';
+        const thFont = isLandscape ? '10px' : '11px';
+        const tdFont = isLandscape ? '10px' : '12px';
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -564,14 +638,16 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
                 <title>Attendance Records - <?= formatDate($dateFilter) ?></title>
                 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">
                 <style>
-                    body.print-new-window { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px 25px; color: #333; background: #fff; }
-                    .print-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+                    body.print-new-window { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: ${bodyPad}; color: #333; background: #fff; }
+                    @page { size: ${pageSize}; margin: 0 12mm 15mm 12mm; }
+                    .print-header-img { width: 100%; max-height: 160px; object-fit: contain; display: block; margin-bottom: 20px; }
+                    .print-table { width: 100%; border-collapse: collapse; font-size: ${tdFont}; margin-top: 10px; }
                     .print-table thead { background: #f0f1f4; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                    .print-table thead th { padding: 10px 12px; text-align: left; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; border-bottom: 2px solid #ddd; white-space: nowrap; }
-                    .print-table tbody td { padding: 8px 12px; border-bottom: 1px solid #eee; color: #444; }
+                    .print-table thead th { padding: ${thPad}; text-align: left; font-weight: 700; font-size: ${thFont}; text-transform: uppercase; letter-spacing: 0.05em; color: #555; border-bottom: 2px solid #ddd; white-space: nowrap; }
+                    .print-table tbody td { padding: ${tdPad}; border-bottom: 1px solid #eee; color: #444; }
                     .print-table tbody tr:last-child td { border-bottom: none; }
                     .print-table tbody tr { page-break-inside: avoid; }
-                    @media print { body.print-new-window { padding: 0; } .print-table { margin-top: 0; } }
+                    @media print { body.print-new-window { padding: 0 !important; } .print-table { margin-top: 0; } .print-header-img { max-height: 160px; margin-bottom: 20px; } }
                 </style>
             </head>
             <body class="print-new-window">
@@ -581,6 +657,71 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
             </html>
         `);
         printWindow.document.close();
+    }
+
+    // Edit Status Modal
+    document.querySelectorAll('.edit-status-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const recordId = this.getAttribute('data-id');
+            const currentStatus = this.getAttribute('data-status');
+            document.getElementById('editRecordId').value = recordId;
+            document.getElementById('editStatusSelect').value = currentStatus;
+            document.getElementById('editStatusMessage').innerHTML = '';
+            const overlay = document.getElementById('editStatusOverlay');
+            overlay.classList.add('show');
+        });
+    });
+
+    document.getElementById('editStatusClose').addEventListener('click', function() {
+        document.getElementById('editStatusOverlay').classList.remove('show');
+    });
+
+    document.getElementById('editStatusCancel').addEventListener('click', function() {
+        document.getElementById('editStatusOverlay').classList.remove('show');
+    });
+
+    document.getElementById('editStatusOverlay').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('show');
+    });
+
+    function submitEditStatus(e) {
+        e.preventDefault();
+        const recordId = document.getElementById('editRecordId').value;
+        const newStatus = document.getElementById('editStatusSelect').value;
+        const messageEl = document.getElementById('editStatusMessage');
+
+        if (!recordId || !newStatus) {
+            messageEl.innerHTML = '<div class="alert alert-danger" style="padding:8px 12px;font-size:12px;">Please select a status.</div>';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('action', 'update_attendance_status');
+        formData.append('id', recordId);
+        formData.append('status', newStatus);
+        formData.append('table', 'class');
+        const csrf = document.querySelector('meta[name="csrf-token"]');
+        if (csrf) formData.append('csrf_token', csrf.getAttribute('content'));
+
+        fetch(window.BASE_URL + '/api/attendance.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                messageEl.innerHTML = '<div class="alert alert-success" style="padding:8px 12px;font-size:12px;">Status updated successfully.</div>';
+                setTimeout(function() {
+                    document.getElementById('editStatusOverlay').classList.remove('show');
+                    location.reload();
+                }, 800);
+            } else {
+                messageEl.innerHTML = '<div class="alert alert-danger" style="padding:8px 12px;font-size:12px;">' + (data.error || 'Failed to update status.') + '</div>';
+            }
+        })
+        .catch(function() {
+            messageEl.innerHTML = '<div class="alert alert-danger" style="padding:8px 12px;font-size:12px;">Network error. Please try again.</div>';
+        });
     }
 </script>
 

@@ -66,10 +66,12 @@ require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 
 // Stats
-$pCount = $lCount = $aCount = 0;
+$pCount = $lCount = $aCount = $eCount = 0;
 foreach ($records as $r) {
     if ($r['status'] === 'present') $pCount++;
     elseif ($r['status'] === 'late') $lCount++;
+    elseif ($r['status'] === 'absent') $aCount++;
+    elseif ($r['status'] === 'excused') $eCount++;
     else $aCount++;
 }
 $total = count($records);
@@ -77,14 +79,24 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
 
 $subjects = [];
 try { $subjects = $db->query("SELECT * FROM subjects ORDER BY subject_name")->fetchAll(); } catch (Exception $e) {}
-$sections = [];
-try { $sections = $db->query("SELECT DISTINCT section FROM students WHERE section != '' ORDER BY section")->fetchAll(PDO::FETCH_COLUMN); } catch (Exception $e) {}
+$gradeSections = [];
+try {
+    $rows = $db->query("SELECT grade_level, section FROM students WHERE section != '' AND grade_level != '' GROUP BY grade_level, section ORDER BY section")->fetchAll();
+    foreach ($rows as $r) {
+        $gradeSections[$r['grade_level']][] = $r['section'];
+    }
+} catch (Exception $e) {}
+$allSections = [];
+foreach ($gradeSections as $list) { $allSections = array_merge($allSections, $list); }
+$allSections = array_values(array_unique($allSections));
+sort($allSections);
+$sections = ($gradeFilter !== '' && isset($gradeSections[$gradeFilter])) ? $gradeSections[$gradeFilter] : $allSections;
 
 // Daily trend data (server-side for chart)
 $dailyTrend = [];
 foreach ($records as $rec) {
     $d = $rec['date'];
-    if (!isset($dailyTrend[$d])) $dailyTrend[$d] = ['present' => 0, 'late' => 0, 'absent' => 0];
+    if (!isset($dailyTrend[$d])) $dailyTrend[$d] = ['present' => 0, 'late' => 0, 'absent' => 0, 'excused' => 0];
     $dailyTrend[$d][$rec['status']]++;
 }
 ksort($dailyTrend);
@@ -576,6 +588,7 @@ $baseUrl = BASE_URL;
 .badge-present { background: rgba(16,185,129,0.1); color: #059669; }
 .badge-late    { background: rgba(245,158,11,0.1); color: #b45309; }
 .badge-absent  { background: rgba(239,68,68,0.1); color: #dc2626; }
+.badge-excused { background: rgba(6,182,212,0.1); color: #0e7490; }
 
 /* ─── Chart ───────────────────────────────────────────────────────────── */
 .chart-container { position: relative; width: 100%; min-height: 200px; }
@@ -673,7 +686,7 @@ $baseUrl = BASE_URL;
     .navbar-brand-sub { font-size: 9px; opacity: 0.45; }
     .desktop-title { display: none !important; }
     .desktop-date { display: none !important; }
-    .mobile-title { display: block; position: sticky; top: 60px; z-index: 99; background: var(--rpt-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+    .mobile-title { display: block !important; }
     .navbar-actions { gap: 6px; flex-shrink: 0; }
     .nav-icon-btn { width: 38px; height: 38px; font-size: 15px; }
 
@@ -735,8 +748,6 @@ $baseUrl = BASE_URL;
     .navbar-actions { gap: 4px; }
     .nav-icon-btn { width: 34px; height: 34px; font-size: 14px; }
     #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
-    .mobile-title-left h5 { font-size: 15px; }
-    .mobile-title-left small { font-size: 11px; }
     .mobile-date { font-size: 10px; padding: 5px 8px; }
     .content-area { padding: 8px 8px 24px; }
 
@@ -779,10 +790,22 @@ $baseUrl = BASE_URL;
 /* Print Header - hidden by default, shown only in print */
 .report-table-print-all { display: none; }
 #printReportArea { display: none; }
+.print-header-img { display: none; }
+@media print {
+    .print-header-img { display: block !important; margin-bottom: 25px; }
+    body { padding: 0 !important; }
+    @page { margin-top: 0; }
+    .rpt-pagination { display: none !important; }
+}
 </style>
 
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-navbar.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">
+<style>
+@media print {
+    body { padding: 0 !important; }
+}
+</style>
 
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
@@ -799,6 +822,10 @@ $baseUrl = BASE_URL;
             </div>
             <div class="d-flex gap-2">
                 <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>" class="btn-export"><i class="bi bi-file-earmark-excel"></i> Export CSV</a>
+                <select id="printOrientationTop" class="rpt-select" style="width:auto;display:inline-block;" onchange="document.getElementById('printOrientationTable').value=this.value;">
+                    <option value="portrait" selected>Portrait</option>
+                    <option value="landscape">Landscape</option>
+                </select>
                 <button onclick="printReport()" class="btn-print"><i class="bi bi-printer"></i> Print Report</button>
             </div>
         </div>
@@ -809,9 +836,6 @@ $baseUrl = BASE_URL;
                 <div class="mobile-title-left">
                     <h5>Attendance Reports</h5>
                     <small>Generate and export attendance data</small>
-                </div>
-                <div class="mobile-date">
-                    <i class="bi bi-calendar3"></i> <?= date('D, M j, Y') ?>
                 </div>
             </div>
         </div>
@@ -878,7 +902,7 @@ $baseUrl = BASE_URL;
                 <form method="GET" class="row g-3 align-items-end">
                     <div class="col-6 col-md-2">
                         <label class="rpt-label">Grade</label>
-                        <select name="grade_level" class="rpt-select">
+                        <select name="grade_level" id="gradeFilterSelect" class="rpt-select">
                             <option value="">All Grades</option>
                             <?php foreach(['7','8','9','10','11','12'] as $g): ?>
                                 <option value="<?= $g ?>" <?= $gradeFilter === $g ? 'selected' : '' ?>>Grade <?= $g ?></option>
@@ -887,7 +911,7 @@ $baseUrl = BASE_URL;
                     </div>
                     <div class="col-6 col-md-2">
                         <label class="rpt-label">Section</label>
-                        <select name="section" class="rpt-select">
+                        <select name="section" id="sectionFilterSelect" class="rpt-select">
                             <option value="">All Sections</option>
                             <?php foreach($sections as $s): ?>
                                 <option value="<?= sanitize($s) ?>" <?= $sectionFilter === $s ? 'selected' : '' ?>><?= sanitize($s) ?></option>
@@ -924,6 +948,38 @@ $baseUrl = BASE_URL;
                 </form>
             </div>
         </div>
+
+        <script>
+        window.GRADE_SECTIONS = <?= json_encode($gradeSections) ?>;
+        window.ALL_SECTIONS = <?= json_encode($allSections) ?>;
+        function updateSectionFilter() {
+            var grade = document.getElementById('gradeFilterSelect').value;
+            var secSel = document.getElementById('sectionFilterSelect');
+            var current = secSel.value;
+            var list = [];
+            if (grade && window.GRADE_SECTIONS && window.GRADE_SECTIONS[grade]) {
+                list = window.GRADE_SECTIONS[grade];
+            } else if (!grade) {
+                list = window.ALL_SECTIONS;
+            }
+            secSel.innerHTML = '';
+            var allOpt = document.createElement('option');
+            allOpt.value = '';
+            allOpt.textContent = 'All Sections';
+            secSel.appendChild(allOpt);
+            for (var i = 0; i < list.length; i++) {
+                var opt = document.createElement('option');
+                opt.value = list[i];
+                opt.textContent = list[i];
+                if (list[i] === current) opt.selected = true;
+                secSel.appendChild(opt);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            var gradeSel = document.getElementById('gradeFilterSelect');
+            if (gradeSel) gradeSel.addEventListener('change', updateSectionFilter);
+        });
+        </script>
 
         <!-- ═══ Charts ═══ -->
         <div class="row g-3 mb-4">
@@ -963,7 +1019,11 @@ $baseUrl = BASE_URL;
                     <span>Report Data</span>
                     <span class="count-pill"><?= number_format($total) ?></span>
                 </span>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <select id="printOrientationTable" class="rpt-select" style="width:auto;display:inline-block;" onchange="document.getElementById('printOrientationTop').value=this.value;">
+                        <option value="portrait" selected>Portrait</option>
+                        <option value="landscape">Landscape</option>
+                    </select>
                     <button onclick="printReport()" class="btn-table-export"><i class="bi bi-printer"></i> Print</button>
                     <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>" class="btn-table-export">
                         <i class="bi bi-download"></i> Export
@@ -972,16 +1032,7 @@ $baseUrl = BASE_URL;
             </div>
             <div class="card-body p-0">
                 <!-- Print Header — Standard School Letterhead (visible only in print) -->
-                <?php
-                $printDocTitle = 'Attendance Report';
-                $printDocMeta  = '<span>Period: ' . formatDate($dateFrom) . ' to ' . formatDate($dateTo)
-                               . ($gradeFilter ? ' | Grade: ' . $gradeFilter : '')
-                               . ($sectionFilter ? ' | Section: ' . sanitize($sectionFilter) : '')
-                               . ($subjectFilter ? ' | Subject: ' . sanitize($subjects[array_search($subjectFilter, array_column($subjects, 'id'))]['subject_name'] ?? '') : '')
-                               . '</span>'
-                               . '<span>Generated: ' . date('F d, Y h:i A') . '</span>';
-                include __DIR__ . '/../includes/print-header.php';
-                ?>
+                <img src="<?= BASE_URL ?>/assets/images/header.jpg" alt="Header" class="print-header-img" style="width:100%;max-height:160px;object-fit:contain;">
                 
                 <!-- Desktop Table -->
                 <div class="table-scroll-wrapper">
@@ -1158,15 +1209,9 @@ $baseUrl = BASE_URL;
 
     <!-- Hidden print area — full data (all records, not paginated) -->
     <div id="printReportArea">
-        <?php
-        $printDocTitle = 'Attendance Report';
-        $printDocMeta  = '<span><strong>Period:</strong> ' . formatDate($dateFrom) . ' to ' . formatDate($dateTo) . '</span>'
-                       . '<span><strong>Total Records:</strong> ' . number_format($total) . '</span>'
-                       . ($gradeFilter ? '<span><strong>Grade:</strong> ' . $gradeFilter . '</span>' : '')
-                       . ($sectionFilter ? '<span><strong>Section:</strong> ' . sanitize($sectionFilter) . '</span>' : '')
-                       . '<span><strong>Generated:</strong> ' . date('F d, Y g:i A') . '</span>';
-        include __DIR__ . '/../includes/print-header.php';
-        ?>
+        <img src="<?= BASE_URL ?>/assets/images/header.jpg" alt="Header" class="print-header-img" style="width:100%;max-height:160px;object-fit:contain;">
+        <div style="text-align:center;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;color:#1e293b;">Attendance Reports — Complete Data Printout</div>
+        <div style="text-align:center;font-size:12px;color:#64748b;margin-bottom:16px;">Period: <?= formatDate($dateFrom) ?> to <?= formatDate($dateTo) ?> &bull; Generated: <?= date('F d, Y g:i A') ?></div>
         <table class="print-table">
             <thead>
                 <tr>
@@ -1191,7 +1236,7 @@ $baseUrl = BASE_URL;
                     <td><?= sanitize($rec['subject_name'] ?? '-') ?></td>
                     <td style="font-size:10px;font-weight:600;"><?= ucfirst($rec['source'] ?? '-') ?></td>
                     <td>
-                        <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:9px;font-weight:700;background:<?= $rec['status'] === 'present' ? '#d1fae5' : ($rec['status'] === 'late' ? '#fef3c7' : '#fee2e2') ?>;color:<?= $rec['status'] === 'present' ? '#065f46' : ($rec['status'] === 'late' ? '#92400e' : '#991b1b') ?>;">
+                        <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:9px;font-weight:700;background:<?= $rec['status'] === 'present' ? '#d1fae5' : ($rec['status'] === 'late' ? '#fef3c7' : ($rec['status'] === 'excused' ? '#cffafe' : '#fee2e2')) ?>;color:<?= $rec['status'] === 'present' ? '#065f46' : ($rec['status'] === 'late' ? '#92400e' : ($rec['status'] === 'excused' ? '#0e7490' : '#991b1b')) ?>;">
                             <?= ucfirst($rec['status']) ?>
                         </span>
                     </td>
@@ -1210,19 +1255,32 @@ $baseUrl = BASE_URL;
 function printReport() {
     var area = document.getElementById('printReportArea');
     if (!area) return;
-    var pw = window.open('', '_blank', 'width=900,height=700');
+    var top = document.getElementById('printOrientationTop');
+    var table = document.getElementById('printOrientationTable');
+    var orientEl = (top && top.offsetParent !== null) ? top : (table || top);
+    var orient = (orientEl || {}).value || 'portrait';
+    var isLandscape = orient === 'landscape';
+    var pw = window.open('', '_blank', 'width=' + (isLandscape ? '1200' : '900') + ',height=' + (isLandscape ? '800' : '700'));
+    var pageSize = isLandscape ? 'A4 landscape' : 'A4 portrait';
+    var bodyPad = isLandscape ? '12px 15px' : '20px 25px';
+    var thPad = isLandscape ? '6px 8px' : '10px 12px';
+    var tdPad = isLandscape ? '5px 8px' : '8px 12px';
+    var thFont = isLandscape ? '10px' : '11px';
+    var tdFont = isLandscape ? '10px' : '12px';
     pw.document.write(
         '<!DOCTYPE html><html><head><title>Attendance Report</title>' +
         '<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">' +
         '<style>' +
-        'body.print-new-window{margin:0;padding:20px 25px;background:#fff;font-family:"Segoe UI",Arial,sans-serif;color:#333;}' +
-        '.print-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}' +
+        'body.print-new-window{margin:0;padding:' + bodyPad + ';background:#fff;font-family:"Segoe UI",Arial,sans-serif;color:#333;}' +
+        '@page{size:' + pageSize + ';margin:0 12mm 15mm 12mm;}' +
+        '.print-header-img{width:100%;max-height:160px;object-fit:contain;display:block;margin-bottom:12px;}' +
+        '.print-table{width:100%;border-collapse:collapse;font-size:' + tdFont + ';margin-top:10px;}' +
         '.print-table thead{background:#f0f1f4;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
-        '.print-table thead th{padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#555;border-bottom:2px solid #ddd;white-space:nowrap;}' +
-        '.print-table tbody td{padding:8px 12px;border-bottom:1px solid #eee;color:#444;}' +
+        '.print-table thead th{padding:' + thPad + ';text-align:left;font-weight:700;font-size:' + thFont + ';text-transform:uppercase;letter-spacing:0.05em;color:#555;border-bottom:2px solid #ddd;white-space:nowrap;}' +
+        '.print-table tbody td{padding:' + tdPad + ';border-bottom:1px solid #eee;color:#444;}' +
         '.print-table tbody tr:last-child td{border-bottom:none;}' +
         '.print-table tbody tr{page-break-inside:avoid;}' +
-        '@media print{body.print-new-window{padding:0;}.print-table{margin-top:0;}}' +
+        '@media print{body.print-new-window{padding:0 !important;}.print-table{margin-top:0;}.print-header-img{max-height:160px;margin-bottom:20px;}}' +
         '</style></head>' +
         '<body class="print-new-window">' +
         area.innerHTML +
@@ -1232,11 +1290,12 @@ function printReport() {
     pw.document.close();
 }
 </script>
+<script>
 (function() {
     'use strict';
 
-    // ─── Toast ──────────────────────────────────────────────────────────
-    function showToast(type, message) {
+    // ─── Toast (globally accessible) ───────────────────────────────────
+    window.showToast = function(type, message) {
         var c = document.getElementById('toastContainer');
         var icons = { success: 'bi-check-circle-fill', danger: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
         var t = document.createElement('div');

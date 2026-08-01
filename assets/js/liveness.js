@@ -70,10 +70,11 @@
             this.lastBlinkAt = 0;      // timestamp of last detected blink
             this.faceVisible = false;
 
-            this._noseHistory = [];
-            this._hasMotion = false;
-            this._processing = false;
-        }
+             this._noseHistory = [];
+             this._hasMotion = false;
+             this._processing = false;
+             this.faceBoundingBox = null;
+         }
 
         /** Is a live person currently verified? */
         isLive() {
@@ -119,22 +120,29 @@
             this._loop();
         }
 
-        stop() {
-            this.running = false;
-            if (this.rafId) cancelAnimationFrame(this.rafId);
-            this.rafId = null;
-            this.faceVisible = false;
-            this.eyesClosed = false;
-            this.lastBlinkAt = 0;
-            this._noseHistory = [];
-            try { if (this.faceMesh) this.faceMesh.close(); } catch (e) {}
-            this.faceMesh = null;
+         stop() {
+             this.running = false;
+             if (this.rafId) cancelAnimationFrame(this.rafId);
+             this.rafId = null;
+             this.faceVisible = false;
+             this.eyesClosed = false;
+             this.lastBlinkAt = 0;
+             this._noseHistory = [];
+             this.faceBoundingBox = null;
+             try { if (this.faceMesh) this.faceMesh.close(); } catch (e) {}
+             this.faceMesh = null;
+         }
+
+         /** Get the face bounding box from the latest frame (normalized 0-1). */
+        getBoundingBox() {
+            return this.faceBoundingBox;
         }
 
         /** Reset the live window (e.g. after a successful record). */
         reset() {
             this.lastBlinkAt = 0;
             this.eyesClosed = false;
+            this.faceBoundingBox = null;
         }
 
         async _loop() {
@@ -153,18 +161,34 @@
             }
         }
 
-        _onResults(results) {
-            const faces = results.multiFaceLandmarks;
-            if (!faces || faces.length === 0) {
-                this.faceVisible = false;
-                this._noseHistory = [];
-                this._emit();
-                return;
-            }
-            this.faceVisible = true;
-            const lm = faces[0];
+         _onResults(results) {
+             const faces = results.multiFaceLandmarks;
+             if (!faces || faces.length === 0) {
+                 this.faceVisible = false;
+                 this._noseHistory = [];
+                 this.faceBoundingBox = null;
+                 this._emit();
+                 return;
+             }
+             this.faceVisible = true;
+             const lm = faces[0];
 
-            // --- Blink detection via EAR + hysteresis ---
+             // --- Face bounding box from landmarks ---
+             let minX = 1, minY = 1, maxX = 0, maxY = 0;
+             for (const pt of lm) {
+                 if (pt.x < minX) minX = pt.x;
+                 if (pt.y < minY) minY = pt.y;
+                 if (pt.x > maxX) maxX = pt.x;
+                 if (pt.y > maxY) maxY = pt.y;
+             }
+             this.faceBoundingBox = {
+                 x: minX,
+                 y: minY,
+                 width: maxX - minX,
+                 height: maxY - minY
+             };
+
+             // --- Blink detection via EAR + hysteresis ---
             const ear = (eyeAspectRatio(lm, LEFT_EYE) +
                          eyeAspectRatio(lm, RIGHT_EYE)) / 2;
 

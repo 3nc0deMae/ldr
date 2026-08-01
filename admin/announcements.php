@@ -1258,7 +1258,7 @@ if (isset($_GET['resend'])) {
     .navbar-brand-sub { font-size: 9px; opacity: 0.45; }
     .desktop-title { display: none !important; }
     .desktop-date { display: none !important; }
-    .mobile-title { display: block; }
+    .mobile-title { display: block !important; }
     .navbar-actions { gap: 6px; flex-shrink: 0; }
     .nav-icon-btn { width: 38px; height: 38px; font-size: 15px; }
 

@@ -52,6 +52,14 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 
 // Handle Print All - Direct print without displaying on screen
 if (isset($_GET['print_all']) && $_GET['print_all'] === '1') {
+    $printOrientation = isset($_GET['orientation']) && $_GET['orientation'] === 'landscape' ? 'landscape' : 'portrait';
+    $isLandscape = $printOrientation === 'landscape';
+    $pageSize = $isLandscape ? 'A4 landscape' : 'A4 portrait';
+    $thPad = $isLandscape ? '6px 8px' : '10px 12px';
+    $tdPad = $isLandscape ? '5px 8px' : '8px 12px';
+    $thFont = $isLandscape ? '10px' : '11px';
+    $tdFont = $isLandscape ? '10px' : '12px';
+    $bodyPad = $isLandscape ? '12px 15px' : '20px 25px';
     // Get ALL logs without pagination
     $allLogs = getAuditLogs($db, $filters, 99999, 0);
     ?>
@@ -61,9 +69,10 @@ if (isset($_GET['print_all']) && $_GET['print_all'] === '1') {
         <title>Audit Logs - Print</title>
         <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">
         <style>
+            @page { size: <?= $pageSize ?>; margin: 0 12mm 15mm 12mm; }
             body.print-new-window {
                 margin: 0;
-                padding: 20px 25px;
+                padding: <?= $bodyPad ?>;
                 background: #fff;
                 font-family: 'Segoe UI', Arial, sans-serif;
                 color: #333;
@@ -78,13 +87,18 @@ if (isset($_GET['print_all']) && $_GET['print_all'] === '1') {
                     visibility: visible;
                     height: auto;
                     overflow: visible;
-                    padding: 20px 25px;
+                    padding: <?= $bodyPad ?> !important;
                     background: #fff;
+                }
+                .print-header-img {
+                    display: block !important;
+                    max-height: 160px;
+                    margin-bottom: 30px;
                 }
                 .print-table {
                     width: 100%;
                     border-collapse: collapse;
-                    font-size: 12px;
+                    font-size: <?= $tdFont ?>;
                     margin-top: 10px;
                 }
                 .print-table thead {
@@ -93,10 +107,10 @@ if (isset($_GET['print_all']) && $_GET['print_all'] === '1') {
                     print-color-adjust: exact;
                 }
                 .print-table thead th {
-                    padding: 10px 12px;
+                    padding: <?= $thPad ?>;
                     text-align: left;
                     font-weight: 700;
-                    font-size: 11px;
+                    font-size: <?= $thFont ?>;
                     text-transform: uppercase;
                     letter-spacing: 0.05em;
                     color: #555;
@@ -104,7 +118,7 @@ if (isset($_GET['print_all']) && $_GET['print_all'] === '1') {
                     white-space: nowrap;
                 }
                 .print-table tbody td {
-                    padding: 8px 12px;
+                    padding: <?= $tdPad ?>;
                     border-bottom: 1px solid #eee;
                     vertical-align: top;
                     color: #444;
@@ -193,15 +207,13 @@ if (isset($_GET['print_all']) && $_GET['print_all'] === '1') {
         </script>
     </head>
     <body class="print-new-window">
-        <?php
-        $printDocTitle = 'Audit Logs Report';
-        $printDocMeta  = '<span><strong>Date Range:</strong> ' . date('M d, Y', strtotime($dateFrom)) . ' to ' . date('M d, Y', strtotime($dateTo)) . '</span>'
-                       . '<span><strong>Total Entries:</strong> ' . number_format(count($allLogs)) . '</span>'
-                       . '<span><strong>Generated:</strong> ' . date('F d, Y g:i A') . '</span>'
-                       . ($userFilter ? '<span><strong>User:</strong> ' . sanitize($userFilter) . '</span>' : '')
-                       . ($actionFilter ? '<span><strong>Action:</strong> ' . sanitize(str_replace('_', ' ', ucfirst($actionFilter))) . '</span>' : '');
-        include __DIR__ . '/../includes/print-header.php';
-        ?>
+        <img src="<?= BASE_URL ?>/assets/images/header.jpg" alt="Header" class="print-header-img" style="width:100%;max-height:160px;object-fit:contain;">
+        <div style="text-align:center;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;color:#1e293b;">Audit Logs — Complete Security Trail</div>
+        <div style="text-align:center;font-size:12px;color:#64748b;margin-bottom:16px;">
+            Date Range: <?= date('M d, Y', strtotime($dateFrom)) ?> to <?= date('M d, Y', strtotime($dateTo)) ?>
+            &bull; Total Entries: <?= number_format(count($allLogs)) ?>
+            &bull; Generated: <?= date('F d, Y g:i A') ?>
+        </div>
 
         <?php if (empty($allLogs)): ?>
             <div class="no-data">
@@ -847,7 +859,7 @@ $roleColors = [
     .navbar-brand-sub { font-size: 9px; opacity: 0.45; }
     .desktop-title { display: none !important; }
     .desktop-date { display: none !important; }
-    .mobile-title { display: block; }
+    .mobile-title { display: block !important; }
     .navbar-actions { gap: 6px; }
     .nav-icon-btn { width: 38px; height: 38px; font-size: 15px; }
 
@@ -872,7 +884,9 @@ $roleColors = [
 
     /* ─── Action Buttons ──────────────────────────────────────────────── */
     .btn-export { padding: 7px 12px; font-size: 11px; }
+    .btn-export .btn-text { display: none; }
     .btn-print { padding: 7px 12px; font-size: 11px; }
+    .btn-print .btn-text { display: none; }
 
     /* ─── Table ───────────────────────────────────────────────────────── */
     .audit-table { min-width: 750px; }
@@ -917,6 +931,8 @@ $roleColors = [
     .stat-card { animation: none; opacity: 1; }
 }
 
+.print-header-img { display: none; }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    RESPONSIVE — SMALL PHONE (max-width: 576px)
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -928,8 +944,6 @@ $roleColors = [
     .navbar-actions { gap: 4px; }
     .nav-icon-btn { width: 34px; height: 34px; font-size: 14px; }
     #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
-    .mobile-title-left h5 { font-size: 15px; }
-    .mobile-title-left small { font-size: 11px; }
     .mobile-date { font-size: 10px; padding: 5px 8px; }
     .content-area { padding: 8px 8px 24px; }
 
@@ -1182,11 +1196,25 @@ $roleColors = [
     .empty-state p {
         color: #666 !important;
     }
+    
+    .print-header-img {
+        display: block !important;
+        max-height: 160px;
+        margin-bottom: 30px;
+    }
+    body { padding: 0 !important; }
+    .content-area { padding-top: 10px !important; }
+    @page { margin-top: 0; }
 }
 </style>
 
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-navbar.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/print.css">
+<style>
+@media print {
+    body { padding: 0 !important; }
+}
+</style>
 
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
@@ -1195,12 +1223,7 @@ $roleColors = [
 <div class="main-content">
 
     <div class="content-area">
-        <?php
-        $printDocTitle = 'Audit Logs Report';
-        $printDocMeta  = '<span><strong>Date Range:</strong> ' . date('M d, Y', strtotime($dateFrom)) . ' to ' . date('M d, Y', strtotime($dateTo)) . '</span>'
-                       . '<span><strong>Generated:</strong> ' . date('F d, Y g:i A') . '</span>';
-        include __DIR__ . '/../includes/print-header.php';
-        ?>
+        <img src="<?= BASE_URL ?>/assets/images/header.jpg" alt="Header" class="print-header-img" style="width:100%;max-height:160px;object-fit:contain;">
 
         <div class="d-none d-md-flex justify-content-between align-items-center gap-3 mb-3">
             <div class="page-title mb-0">
@@ -1209,7 +1232,11 @@ $roleColors = [
             </div>
             <div class="d-flex gap-2">
                 <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>" class="btn-export"><i class="bi bi-file-earmark-excel"></i> Export CSV</a>
-                <a href="?<?= http_build_query(array_merge($_GET, ['print_all' => '1'])) ?>" class="btn-print"><i class="bi bi-printer"></i> Print All</a>
+                <select id="auditPrintOrientation" class="aud-select" style="width:auto;display:inline-block;" onchange="var q=new URLSearchParams(window.location.search);q.set('print_all','1');q.set('orientation',this.value);document.getElementById('auditPrintAllLink').href='?'+q.toString()">
+                    <option value="portrait" <?= (!isset($_GET['orientation']) || $_GET['orientation'] !== 'landscape') ? 'selected' : '' ?>>Portrait</option>
+                    <option value="landscape" <?= (isset($_GET['orientation']) && $_GET['orientation'] === 'landscape') ? 'selected' : '' ?>>Landscape</option>
+                </select>
+                <a href="?<?= http_build_query(array_merge($_GET, ['print_all' => '1'])) ?>" class="btn-print" id="auditPrintAllLink"><i class="bi bi-printer"></i> Print All</a>
             </div>
         </div>
 
@@ -1217,11 +1244,16 @@ $roleColors = [
         <div class="page-title mobile-title">
             <div class="mobile-title-inner">
                 <div class="mobile-title-left">
-                    <h5><i class="bi bi-shield-lock"></i> Audit Logs</h5>
+                    <h5><i></i> Audit Logs</h5>
                     <small>Security audit trail and activity tracking</small>
                 </div>
-                <div class="mobile-date">
-                    <i class="bi bi-calendar3"></i> <?= date('D, M j, Y') ?>
+                <div class="d-flex gap-2">
+                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>" class="btn-export"><i class="bi bi-file-earmark-excel"></i> <span class="btn-text">Export CSV</span></a>
+                    <select id="auditPrintOrientationMobile" class="aud-select" style="width:auto;display:inline-block;" onchange="var q=new URLSearchParams(window.location.search);q.set('print_all','1');q.set('orientation',this.value);document.getElementById('auditPrintAllLinkMobile').href='?'+q.toString()">
+                        <option value="portrait" <?= (!isset($_GET['orientation']) || $_GET['orientation'] !== 'landscape') ? 'selected' : '' ?>>Portrait</option>
+                        <option value="landscape" <?= (isset($_GET['orientation']) && $_GET['orientation'] === 'landscape') ? 'selected' : '' ?>>Landscape</option>
+                    </select>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['print_all' => '1'])) ?>" class="btn-print" id="auditPrintAllLinkMobile"><i class="bi bi-printer"></i> <span class="btn-text">Print All</span></a>
                 </div>
             </div>
         </div>

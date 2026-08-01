@@ -15,7 +15,7 @@ $statusFilter  = sanitize($_GET['status'] ?? '');
 $gradeFilter   = sanitize($_GET['grade_level'] ?? '');
 
 // Get today's overall statistics
-$stats = ['present' => 0, 'absent' => 0, 'late' => 0, 'total' => 0, 'rate' => 0];
+$stats = ['present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0, 'total' => 0, 'rate' => 0];
 try {
     $stmt = $db->prepare("SELECT status, COUNT(*) as count FROM attendance WHERE date = ? GROUP BY status");
     $stmt->execute([$dateFilter]);
@@ -23,7 +23,7 @@ try {
     $stmt2 = $db->prepare("SELECT status, COUNT(*) as count FROM attendance_records WHERE DATE(scan_time) = ? GROUP BY status");
     $stmt2->execute([$dateFilter]);
     foreach ($stmt2->fetchAll() as $row) { if (isset($stats[$row['status']])) { $stats[$row['status']] += intval($row['count']); } }
-    $stats['total'] = $stats['present'] + $stats['absent'] + $stats['late'];
+    $stats['total'] = $stats['present'] + $stats['absent'] + $stats['late'] + $stats['excused'];
     $stats['rate']  = $stats['total'] > 0 ? round(($stats['present'] + $stats['late']) / $stats['total'] * 100, 1) : 0;
 } catch (Exception $e) {}
 
@@ -78,7 +78,7 @@ for ($i = 6; $i >= 0; $i--) {
             elseif ($row['status'] === 'late') $l = intval($row['count']);
         }
     } catch (Exception $e) {}
-    $weeklyData[] = ['day' => $dayName, 'present' => $p, 'absent' => $a, 'late' => $l];
+        $weeklyData[] = ['day' => $dayName, 'present' => $p, 'absent' => $a, 'late' => $l, 'excused' => 0];
 }
 ?>
 
@@ -246,7 +246,7 @@ for ($i = 6; $i >= 0; $i--) {
         #sidebarToggle{width:38px;height:38px;font-size:20px;flex-shrink:0}
         .navbar-brand{display:flex}.navbar-brand-logo{width:44px;height:44px}
         .navbar-brand-name{font-size:12px}.navbar-brand-sub{font-size:9px;opacity:0.45}
-        .desktop-title{display:none!important}.mobile-title{display:block}
+        .desktop-title{display:none!important}.mobile-title{display:block!important}
         .navbar-actions{gap:6px}
         /* Mobile reports button - now visible */
         .btn-reports-mobile { display: inline-flex !important; }
@@ -280,7 +280,6 @@ for ($i = 6; $i >= 0; $i--) {
         .navbar-brand-name{font-size:11px}.navbar-brand-sub{font-size:8px}
         .navbar-actions{gap:4px}
         #sidebarToggle{width:34px;height:34px;font-size:18px}
-        .mobile-title-left h5{font-size:15px}.mobile-title-left small{font-size:11px}
         .content-area{padding:8px 8px 24px}
         .stat-card{padding:10px 8px}.stat-value{font-size:18px!important}.stat-label{font-size:8px}
         .stat-icon{width:28px;height:28px;font-size:12px;border-radius:7px}
@@ -341,6 +340,7 @@ for ($i = 6; $i >= 0; $i--) {
                             <option value="present" <?= $statusFilter==='present'?'selected':'' ?>>Present</option>
                             <option value="absent"  <?= $statusFilter==='absent'?'selected':'' ?>>Absent</option>
                             <option value="late"    <?= $statusFilter==='late'?'selected':'' ?>>Late</option>
+                            <option value="excused" <?= $statusFilter==='excused'?'selected':'' ?>>Excused</option>
                         </select>
                     </div>
                     <div class="col-6 col-md-2">
@@ -385,6 +385,14 @@ for ($i = 6; $i >= 0; $i--) {
                     <div class="d-flex justify-content-between align-items-start">
                         <div><div class="stat-value text-warning"><?= $stats['late'] ?></div><div class="stat-label">Late</div></div>
                         <div class="stat-icon" style="background:rgba(255,193,7,0.1);color:#ffc107;"><i class="bi bi-clock-fill"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div><div class="stat-value text-info"><?= $stats['excused'] ?></div><div class="stat-label">Excused</div></div>
+                        <div class="stat-icon" style="background:rgba(6,182,212,0.1);color:#06b6d4;"><i class="bi bi-journal-check"></i></div>
                     </div>
                 </div>
             </div>
@@ -458,7 +466,7 @@ for ($i = 6; $i >= 0; $i--) {
                                 <td><?= sanitize($r['subject_name'] ?? '—') ?></td>
                                 <td><?= $r['time']?formatTime($r['time']):'—' ?></td>
                                 <td>
-                                    <?php $bc='secondary'; if($r['status']==='present')$bc='success'; if($r['status']==='absent')$bc='danger'; if($r['status']==='late')$bc='warning'; ?>
+                                    <?php $bc='secondary'; if($r['status']==='present')$bc='success'; if($r['status']==='absent')$bc='danger'; if($r['status']==='late')$bc='warning'; if($r['status']==='excused')$bc='info'; ?>
                                     <span class="badge bg-<?= $bc ?>"><?= ucfirst($r['status']) ?></span>
                                 </td>
                             </tr>
@@ -490,7 +498,7 @@ for ($i = 6; $i >= 0; $i--) {
                                 <td><?= formatDateTime($gr['scan_time'],'g:i A') ?></td>
                                 <td><?php if($gr['confidence_score']): ?><span class="text-success fw-600"><?= number_format($gr['confidence_score'],1) ?>%</span><?php else: ?><span class="text-muted">—</span><?php endif; ?></td>
                                 <td>
-                                    <?php $gb='secondary'; if($gr['status']==='present')$gb='success'; if($gr['status']==='absent')$gb='danger'; if($gr['status']==='late')$gb='warning'; ?>
+                                    <?php $gb='secondary'; if($gr['status']==='present')$gb='success'; if($gr['status']==='absent')$gb='danger'; if($gr['status']==='late')$gb='warning'; if($gr['status']==='excused')$gb='info'; ?>
                                     <span class="badge bg-<?= $gb ?>"><?= ucfirst($gr['status']) ?></span>
                                 </td>
                             </tr>
@@ -519,7 +527,8 @@ for ($i = 6; $i >= 0; $i--) {
                 datasets: [
                     { label:'Present', data:weeklyData.map(function(d){return d.present}), backgroundColor:'rgba(40,167,69,0.7)', borderRadius: isMobile ? 3 : 4 },
                     { label:'Late',    data:weeklyData.map(function(d){return d.late}),    backgroundColor:'rgba(255,193,7,0.7)',  borderRadius: isMobile ? 3 : 4 },
-                    { label:'Absent',  data:weeklyData.map(function(d){return d.absent}),  backgroundColor:'rgba(220,53,69,0.7)',  borderRadius: isMobile ? 3 : 4 }
+                    { label:'Absent',  data:weeklyData.map(function(d){return d.absent}),  backgroundColor:'rgba(220,53,69,0.7)',  borderRadius: isMobile ? 3 : 4 },
+                    { label:'Excused', data:weeklyData.map(function(d){return d.excused||0}), backgroundColor:'rgba(6,182,212,0.7)', borderRadius: isMobile ? 3 : 4 }
                 ]
             },
             options: {
@@ -552,6 +561,7 @@ for ($i = 6; $i >= 0; $i--) {
             }
         });
     }
+
 })();
 </script>
 

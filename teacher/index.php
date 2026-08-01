@@ -77,6 +77,107 @@ if (!empty($teacherSessionIds)) {
         $lowAttendance = (int)$stmt->fetchColumn();
     } catch (Exception $e) { error_log('lowAttendance: ' . $e->getMessage()); }
 }
+
+// ── Dashboard report charts (same sources as teacher/reports.php) ──
+$dashBreakdown = [];
+$dashSubjectStats = [];
+try {
+    $chartStmt = $db->prepare("SELECT a.status, a.subject_id, sub.subject_name
+                               FROM attendance a
+                               LEFT JOIN subjects sub ON a.subject_id = sub.id
+                               WHERE a.recorded_by = ?");
+    $chartStmt->execute([$teacherId]);
+    $chartRows = $chartStmt->fetchAll();
+} catch (Exception $e) {
+    error_log('dashCharts: ' . $e->getMessage());
+    $chartRows = [];
+}
+
+$dashTotals = ['present' => 0, 'late' => 0, 'absent' => 0, 'pending' => 0, 'excused' => 0];
+foreach ($chartRows as $r) {
+    $st = $r['status'];
+    if (isset($dashTotals[$st])) {
+        $dashTotals[$st]++;
+    }
+    $sid = $r['subject_id'] ? (int)$r['subject_id'] : 0;
+    if (!isset($dashSubjectStats[$sid])) {
+        $dashSubjectStats[$sid] = ['name' => $r['subject_name'] ?: 'Unknown', 'present' => 0, 'late' => 0, 'absent' => 0, 'pending' => 0, 'excused' => 0];
+    }
+    if (isset($dashSubjectStats[$sid][$st])) {
+        $dashSubjectStats[$sid][$st]++;
+    }
+}
+foreach (['present' => '#10b981', 'late' => '#f59e0b', 'absent' => '#ef4444'] as $st => $color) {
+    if ($dashTotals[$st] > 0) {
+        $dashBreakdown[] = ['label' => ucfirst($st), 'value' => $dashTotals[$st], 'color' => $color];
+    }
+}
+if ($dashTotals['pending'] > 0) {
+    $dashBreakdown[] = ['label' => 'Pending', 'value' => $dashTotals['pending'], 'color' => '#94a3b8'];
+}
+if ($dashTotals['excused'] > 0) {
+    $dashBreakdown[] = ['label' => 'Excused', 'value' => $dashTotals['excused'], 'color' => '#06b6d4'];
+}
+usort($dashSubjectStats, function ($a, $b) { return strcasecmp($a['name'], $b['name']); });
+$dashSubjectStats = array_values($dashSubjectStats);
+
+// ── Gender distribution (from the teacher's attendance roster) ──
+$dashGender = ['Male' => 0, 'Female' => 0];
+try {
+    $stmt = $db->prepare("SELECT s.gender, COUNT(DISTINCT s.id) AS cnt
+                          FROM attendance a
+                          JOIN students s ON a.student_id = s.id
+                          WHERE a.recorded_by = ?
+                          GROUP BY s.gender");
+    $stmt->execute([$teacherId]);
+    foreach ($stmt->fetchAll() as $g) {
+        if (isset($dashGender[$g['gender']])) {
+            $dashGender[$g['gender']] = (int)$g['cnt'];
+        }
+    }
+} catch (Exception $e) { error_log('dashGender: ' . $e->getMessage()); }
+
+// ── Student attendance leaders (top 5 by rate) ──
+$dashLeaders = [];
+try {
+    $stmt = $db->prepare("SELECT s.first_name, s.last_name,
+                          SUM(CASE WHEN a.status IN ('present','late') THEN 1 ELSE 0 END) AS ok,
+                          COUNT(*) AS total
+                          FROM attendance a
+                          JOIN students s ON a.student_id = s.id
+                          WHERE a.recorded_by = ?
+                          GROUP BY s.id
+                          HAVING total > 0
+                          ORDER BY (SUM(CASE WHEN a.status IN ('present','late') THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) DESC, s.last_name ASC
+                          LIMIT 5");
+    $stmt->execute([$teacherId]);
+    foreach ($stmt->fetchAll() as $ld) {
+        $dashLeaders[] = [
+            'name' => ($ld['last_name'] ?? '') . ', ' . ($ld['first_name'] ?? ''),
+            'rate' => (float)$ld['total'] > 0 ? round(((float)$ld['ok'] / (float)$ld['total']) * 100, 1) : 0
+        ];
+    }
+} catch (Exception $e) { error_log('dashLeaders: ' . $e->getMessage()); }
+
+// ── Daily status breakdown (last 7 days) ──
+$dashDaily = [];
+for ($i = 6; $i >= 0; $i--) {
+    $d = date('Y-m-d', strtotime("-{$i} days"));
+    $dashDaily[$d] = ['label' => date('D M j', strtotime($d)), 'present' => 0, 'late' => 0, 'absent' => 0, 'pending' => 0];
+}
+try {
+    $stmt = $db->prepare("SELECT date, status, COUNT(*) AS cnt
+                          FROM attendance
+                          WHERE recorded_by = ? AND date BETWEEN ? AND ?
+                          GROUP BY date, status");
+    $stmt->execute([$teacherId, date('Y-m-d', strtotime('-6 days')), date('Y-m-d')]);
+    foreach ($stmt->fetchAll() as $dd) {
+        if (isset($dashDaily[$dd['date']]) && isset($dashDaily[$dd['date']][$dd['status']])) {
+            $dashDaily[$dd['date']][$dd['status']] = (int)$dd['cnt'];
+        }
+    }
+} catch (Exception $e) { error_log('dashDaily: ' . $e->getMessage()); }
+$dashDaily = array_values($dashDaily);
 ?>
 
 
@@ -328,10 +429,12 @@ if (!empty($teacherSessionIds)) {
     /* CHART */
     .chart-section { overflow: hidden; }
     .chart-section .card-header { padding: 18px 24px; font-weight: 700; font-size: 15px; letter-spacing: -0.02em; }
+    .chart-section > .card-header { justify-content: flex-start; gap: 6px; }
     .chart-header-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(96,165,250,0.12); color: #60A5FA; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
     .chart-header-range { margin-left: auto; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.35); font-family: var(--td-mono); background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; }
     .chart-wrapper { position: relative; height: 240px; padding: 8px 0; }
     .chart-wrapper canvas { width: 100% !important; height: 100% !important; }
+    .chart-empty { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 0.02em; }
 
     @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     .stat-card { animation: fadeUp 0.5s ease forwards; opacity: 0; }
@@ -480,8 +583,6 @@ if (!empty($teacherSessionIds)) {
         .navbar-actions { gap: 4px; }
         .nav-icon-btn { width: 34px; height: 34px; font-size: 14px; }
         #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
-        .mobile-title-left h5 { font-size: 15px; }
-        .mobile-title-left small { font-size: 11px; }
         .mobile-date { font-size: 10px; padding: 5px 8px; }
         .content-area { padding: 8px 8px 24px; }
         .stat-card { padding: 12px 10px; }
@@ -519,16 +620,23 @@ if (!empty($teacherSessionIds)) {
     <div class="content-area">
         <?= displayFlashMessage() ?>
 
+<?php
+    $teacherFullName = $teacherRecord['first_name'] ?? '';
+    if (!empty($teacherRecord['middle_name'])) {
+        $teacherFullName .= ' ' . strtoupper($teacherRecord['middle_name'][0]) . '.';
+    }
+    $teacherFullName .= ' ' . ($teacherRecord['last_name'] ?? '');
+?>
         <div class="d-none d-md-flex justify-content-between align-items-center gap-3 mb-3">
             <div class="page-title mb-0">
                 <h5 class="mb-0">Teacher Dashboard</h5>
-                <small>Welcome back, <strong><?= sanitize($_SESSION['user_email']) ?></strong></small>
+                <small>Welcome back, <strong><?= sanitize($teacherFullName) ?></strong></small>
             </div>
         </div>
 
         <div class="page-title mobile-title">
             <div class="mobile-title-inner">
-                <div class="mobile-title-left"><h5>Teacher Dashboard</h5><small>Welcome back, <strong><?= sanitize($_SESSION['user_email']) ?></strong></small></div>
+                <div class="mobile-title-left"><h5>Teacher Dashboard</h5><small>Welcome back, <strong><?= sanitize($teacherFullName) ?></strong></small></div>
                 <div class="mobile-date"><i class="bi bi-calendar3"></i> <?= date('D, M j, Y') ?></div>
             </div>
         </div>
@@ -543,6 +651,18 @@ if (!empty($teacherSessionIds)) {
             <div class="col-md-6"><div class="card"><div class="card-header p-3">Quick Actions</div><div class="card-body p-3"><a href="<?= BASE_URL ?>/teacher/attendance.php" class="btn btn-primary me-2 mb-2"><i class="bi bi-camera-video"></i> Start Attendance Session</a><a href="<?= BASE_URL ?>/teacher/records.php" class="btn btn-outline-secondary mb-2"><i class="bi bi-list-check"></i> View Records</a><a href="<?= BASE_URL ?>/teacher/reports.php" class="btn btn-outline-secondary mb-2"><i class="bi bi-file-earmark-bar-graph"></i> Generate Report</a></div></div></div>
             <div class="col-md-6"><div class="card"><div class="card-header p-3">My Subjects</div><div class="card-body p-3"><?php if (empty($mySubjects)): ?><p class="text-muted text-center mb-0">No subjects assigned yet.</p><?php else: ?><div class="d-flex flex-wrap gap-2"><?php foreach ($mySubjects as $subj): ?><span class="badge"><i class="bi bi-book me-1"></i> <?= sanitize($subj['subject_name']) ?></span><?php endforeach; ?></div><?php endif; ?></div></div></div>
         </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-5"><div class="card h-100 chart-section"><div class="card-header p-3 d-flex align-items-center gap-2"><div class="chart-header-icon"><i class="bi bi-pie-chart"></i></div><span>Overall Breakdown</span></div><div class="card-body"><div class="chart-wrapper"><canvas id="dashPieChart"></canvas></div></div></div></div>
+            <div class="col-md-7"><div class="card h-100 chart-section"><div class="card-header p-3 d-flex align-items-center gap-2"><div class="chart-header-icon"><i class="bi bi-bar-chart"></i></div><span>Subject Comparison</span></div><div class="card-body"><div class="chart-wrapper"><canvas id="dashBarChart"></canvas></div></div></div></div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-4"><div class="card h-100 chart-section"><div class="card-header p-3 d-flex align-items-center gap-2"><div class="chart-header-icon"><i class="bi bi-people"></i></div><span>Gender Distribution</span></div><div class="card-body"><div class="chart-wrapper"><canvas id="dashGenderChart"></canvas></div></div></div></div>
+            <div class="col-md-8"><div class="card h-100 chart-section"><div class="card-header p-3 d-flex align-items-center gap-2"><div class="chart-header-icon"><i class="bi bi-calendar-week"></i></div><span>Daily Status Breakdown</span></div><div class="card-body"><div class="chart-wrapper"><canvas id="dashDailyChart"></canvas></div></div></div></div>
+        </div>
+
+        <div class="card chart-section mb-4"><div class="card-header p-3 d-flex align-items-center gap-2"><div class="chart-header-icon"><i class="bi bi-trophy"></i></div><span>Student Attendance Leaders</span></div><div class="card-body"><div class="chart-wrapper" style="height:280px;"><canvas id="dashLeadersChart"></canvas></div></div></div>
 
         <div class="card chart-section mb-4"><div class="card-header p-3 d-flex align-items-center gap-2"><div class="chart-header-icon"><i class="bi bi-graph-up"></i></div><span>Attendance Trends</span><select class="chart-header-range" id="chartPeriod" style="width:auto;padding:0.2rem 0.5rem;font-size:0.75rem;cursor:pointer;"><option value="week" selected>This Week</option><option value="month">This Month</option></select></div><div class="card-body"><div class="chart-wrapper"><canvas id="teacherChart"></canvas></div></div></div>
     </div>
@@ -681,6 +801,194 @@ if (!empty($teacherSessionIds)) {
             loadChart(this.value);
         });
     }
+})();
+</script>
+
+<!-- DASHBOARD REPORT CHARTS -->
+<script>
+(function() {
+    var chartFont = "'Plus Jakarta Sans',sans-serif";
+    var legendLabels = {
+        position: 'bottom',
+        labels: { padding: 12, usePointStyle: true, pointStyleWidth: 10, font: { size: 11, family: chartFont, weight: '600' }, color: 'rgba(255,255,255,0.6)' }
+    };
+
+    // ── Overall Breakdown (doughnut) ──
+    (function() {
+        var canvas = document.getElementById('dashPieChart');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var items = <?= json_encode($dashBreakdown) ?>;
+        var wrapper = canvas.closest('.chart-wrapper');
+        if (!items.length) {
+            if (wrapper) wrapper.innerHTML = '<div class="chart-empty">No attendance records yet.</div>';
+            return;
+        }
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: items.map(function(it) { return it.label + ' (' + it.value + ')'; }),
+                datasets: [{
+                    data: items.map(function(it) { return it.value; }),
+                    backgroundColor: items.map(function(it) { return it.color; }),
+                    borderWidth: 0,
+                    spacing: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '58%',
+                plugins: { legend: legendLabels }
+            }
+        });
+    })();
+
+    // ── Subject Comparison (stacked bar) ──
+    (function() {
+        var canvas = document.getElementById('dashBarChart');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var subjects = <?= json_encode($dashSubjectStats) ?>;
+        var wrapper = canvas.closest('.chart-wrapper');
+        if (!subjects.length) {
+            if (wrapper) wrapper.innerHTML = '<div class="chart-empty">No subject records yet.</div>';
+            return;
+        }
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: subjects.map(function(s) { return s.name; }),
+                datasets: [
+                    { label: 'Present', data: subjects.map(function(s) { return s.present; }), backgroundColor: '#10b981', borderRadius: 4 },
+                    { label: 'Late', data: subjects.map(function(s) { return s.late; }), backgroundColor: '#f59e0b', borderRadius: 4 },
+                    { label: 'Absent', data: subjects.map(function(s) { return s.absent; }), backgroundColor: '#ef4444', borderRadius: 4 },
+                    { label: 'Excused', data: subjects.map(function(s) { return s.excused; }), backgroundColor: '#06b6d4', borderRadius: 4 },
+                    { label: 'Pending', data: subjects.map(function(s) { return s.pending; }), backgroundColor: '#94a3b8', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, family: chartFont, weight: '600' }, color: 'rgba(255,255,255,0.4)' } },
+                    y: { stacked: true, beginAtZero: true, ticks: { font: { size: 11, family: chartFont }, color: 'rgba(255,255,255,0.4)' } }
+                },
+                plugins: { legend: legendLabels }
+            }
+        });
+    })();
+
+    // ── Gender Distribution (doughnut) ──
+    (function() {
+        var canvas = document.getElementById('dashGenderChart');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var male = <?= (int)($dashGender['Male'] ?? 0) ?>;
+        var female = <?= (int)($dashGender['Female'] ?? 0) ?>;
+        var wrapper = canvas.closest('.chart-wrapper');
+        if (!male && !female) {
+            if (wrapper) wrapper.innerHTML = '<div class="chart-empty">No student roster data yet.</div>';
+            return;
+        }
+        var items = [];
+        if (male) items.push({ label: 'Boys', value: male, color: '#60A5FA' });
+        if (female) items.push({ label: 'Girls', value: female, color: '#F472B6' });
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: items.map(function(it) { return it.label + ' (' + it.value + ')'; }),
+                datasets: [{
+                    data: items.map(function(it) { return it.value; }),
+                    backgroundColor: items.map(function(it) { return it.color; }),
+                    borderWidth: 0,
+                    spacing: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '58%',
+                plugins: { legend: legendLabels }
+            }
+        });
+    })();
+
+    // ── Daily Status Breakdown (last 7 days, stacked bar) ──
+    (function() {
+        var canvas = document.getElementById('dashDailyChart');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var days = <?= json_encode($dashDaily) ?>;
+        var wrapper = canvas.closest('.chart-wrapper');
+        var any = days.some(function(d) { return d.present || d.late || d.absent || d.pending; });
+        if (!any) {
+            if (wrapper) wrapper.innerHTML = '<div class="chart-empty">No records in the last 7 days.</div>';
+            return;
+        }
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: days.map(function(d) { return d.label; }),
+                datasets: [
+                    { label: 'Present', data: days.map(function(d) { return d.present; }), backgroundColor: '#10b981', borderRadius: 3 },
+                    { label: 'Late', data: days.map(function(d) { return d.late; }), backgroundColor: '#f59e0b', borderRadius: 3 },
+                    { label: 'Absent', data: days.map(function(d) { return d.absent; }), backgroundColor: '#ef4444', borderRadius: 3 },
+                    { label: 'Pending', data: days.map(function(d) { return d.pending; }), backgroundColor: '#94a3b8', borderRadius: 3 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, family: chartFont, weight: '600' }, color: 'rgba(255,255,255,0.4)' } },
+                    y: { stacked: true, beginAtZero: true, ticks: { font: { size: 11, family: chartFont }, color: 'rgba(255,255,255,0.4)' } }
+                },
+                plugins: { legend: legendLabels }
+            }
+        });
+    })();
+
+    // ── Student Attendance Leaders (horizontal bar, top 5) ──
+    (function() {
+        var canvas = document.getElementById('dashLeadersChart');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var leaders = <?= json_encode($dashLeaders) ?>;
+        var wrapper = canvas.closest('.chart-wrapper');
+        if (!leaders.length) {
+            if (wrapper) wrapper.innerHTML = '<div class="chart-empty">No attendance data yet.</div>';
+            return;
+        }
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: leaders.map(function(l) { return l.name; }),
+                datasets: [{
+                    label: 'Attendance Rate',
+                    data: leaders.map(function(l) { return l.rate; }),
+                    backgroundColor: 'rgba(16,185,129,0.75)',
+                    borderColor: '#10b981',
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                    maxBarThickness: 22
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: function(v) { return v + '%'; }, font: { size: 11, family: chartFont }, color: 'rgba(255,255,255,0.4)' } },
+                    y: { grid: { display: false }, ticks: { font: { size: 11, family: chartFont, weight: '600' }, color: 'rgba(255,255,255,0.6)' } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function(t) { return ' ' + t.parsed.x + '%'; } } }
+                }
+            }
+        });
+    })();
 })();
 </script>
 

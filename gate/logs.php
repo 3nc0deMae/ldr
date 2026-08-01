@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * View all gate session history and attendance records
  */
@@ -135,8 +135,6 @@ foreach ($records as $r) {
         .stat-value { font-size: 24px; }
         .stat-label { font-size: 10px; margin-top: 4px; }
         .stat-icon { width: 38px; height: 38px; font-size: 15px; border-radius: 10px; }
-        .mobile-title-left h5 { font-size: 17px; }
-        .mobile-title-left small { font-size: 12px; }
     }
 
     @media (max-width: 576px) {
@@ -147,8 +145,6 @@ foreach ($records as $r) {
         .navbar-actions { gap: 4px; }
         .nav-icon-btn { width: 34px; height: 34px; font-size: 14px; }
         #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
-        .mobile-title-left h5 { font-size: 15px; }
-        .mobile-title-left small { font-size: 11px; }
         .mobile-date { font-size: 10px; padding: 5px 8px; }
         .content-area { padding: 8px 8px 24px; }
         .stat-card { padding: 12px 10px; }
@@ -189,7 +185,7 @@ foreach ($records as $r) {
 
         <!-- Stats Summary -->
         <div class="row g-3 mb-4">
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="stat-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -200,7 +196,7 @@ foreach ($records as $r) {
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="stat-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -211,7 +207,7 @@ foreach ($records as $r) {
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="stat-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -222,7 +218,7 @@ foreach ($records as $r) {
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="stat-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -239,18 +235,18 @@ foreach ($records as $r) {
         <div class="card mb-4">
             <div class="card-body py-3">
                 <form method="GET" class="row g-2 align-items-end">
-                    <div class="col-md-2">
+                    <div class="col-6 col-md-2">
                         <label class="form-label fs-sm fw-600">Date</label>
                         <input type="date" class="form-control" name="date"
                                value="<?= sanitize($dateFilter) ?>">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <label class="form-label fs-sm fw-600">Search</label>
                         <input type="text" class="form-control" name="search"
                                value="<?= sanitize($search) ?>"
                                placeholder="Student name or ID...">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-6 col-md-2">
                         <label class="form-label fs-sm fw-600">Session Type</label>
                         <select name="session_type" class="form-select">
                             <option value="">All Types</option>
@@ -258,7 +254,7 @@ foreach ($records as $r) {
                             <option value="time_out" <?= $typeFilter === 'time_out' ? 'selected' : '' ?>>Time-Out</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-6 col-md-2">
                         <label class="form-label fs-sm fw-600">Status</label>
                         <select name="status" class="form-select">
                             <option value="">All Status</option>
@@ -266,12 +262,12 @@ foreach ($records as $r) {
                             <option value="late"    <?= $statusFilter === 'late' ? 'selected' : '' ?>>Late</option>
                         </select>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-6 col-md-1">
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="bi bi-funnel"></i>
                         </button>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-6 col-md-2">
                         <a href="<?= BASE_URL ?>/gate/logs.php" class="btn btn-outline-secondary w-100">Clear</a>
                     </div>
                 </form>
@@ -291,6 +287,7 @@ foreach ($records as $r) {
                             <tr>
                                 <th>Session ID</th>
                                 <th>Type</th>
+                                <th>Period</th>
                                 <th>Start</th>
                                 <th>End</th>
                                 <th>Late Threshold</th>
@@ -305,6 +302,11 @@ foreach ($records as $r) {
                                 <td>
                                     <span class="badge bg-<?= $sess['session_type'] === 'time_in' ? 'success' : 'warning' ?>-soft text-<?= $sess['session_type'] === 'time_in' ? 'success' : 'warning' ?>">
                                         <?= ucfirst(str_replace('_', '-', $sess['session_type'])) ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-<?= ($sess['session_period'] ?? '') === 'morning' ? 'info' : 'primary' ?>-soft text-<?= ($sess['session_period'] ?? '') === 'morning' ? 'info' : 'primary' ?>">
+                                        <?= ucfirst($sess['session_period'] ?? 'General') ?>
                                     </span>
                                 </td>
                                 <td><?= date('h:i A', strtotime($sess['start_time'])) ?></td>

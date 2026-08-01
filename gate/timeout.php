@@ -23,6 +23,19 @@ try {
     $activeSession = $activeSessions[0] ?? null;
 } catch (Exception $e) {}
 
+// Auto-select session period from current time (AM = morning, PM = afternoon)
+$autoPeriod = getGateSessionPeriod($db, 'time_out');
+
+// Prefer the active session that matches the auto-detected period
+$targetSessionId = null;
+foreach ($activeSessions as $s) {
+    if (($s['session_period'] ?? '') === $autoPeriod) {
+        $targetSessionId = $s['id'];
+        break;
+    }
+}
+$targetSessionId = $targetSessionId ?: ($activeSession['id'] ?? null);
+
 // Get today's timeout attendance counts
 $todayStats = ['scanned' => 0, 'total' => 0];
 try {
@@ -122,8 +135,6 @@ try {
         .stat-value { font-size: 24px; }
         .stat-label { font-size: 10px; margin-top: 4px; }
         .stat-icon { width: 38px; height: 38px; font-size: 15px; border-radius: 10px; }
-        .mobile-title-left h5 { font-size: 17px; }
-        .mobile-title-left small { font-size: 12px; }
     }
 
     @media (max-width: 576px) {
@@ -134,8 +145,6 @@ try {
         .navbar-actions { gap: 4px; }
         .nav-icon-btn { width: 34px; height: 34px; font-size: 14px; }
         #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
-        .mobile-title-left h5 { font-size: 15px; }
-        .mobile-title-left small { font-size: 11px; }
         .mobile-date { font-size: 10px; padding: 5px 8px; }
         .content-area { padding: 8px 8px 24px; }
         .stat-card { padding: 12px 10px; }
@@ -257,25 +266,25 @@ try {
                             <input type="hidden" name="action" value="start_session">
                             <input type="hidden" name="session_type" value="time_out">
 
-                            <div class="col-md-4">
+                            <div class="col-6 col-md-4">
                                 <label class="form-label fw-600">Session Period</label>
-                                <select class="form-control" name="session_period" required>
-                                    <option value="morning">Morning</option>
-                                    <option value="afternoon">Afternoon</option>
-                                </select>
+                                <input type="hidden" name="session_period" value="<?= $autoPeriod ?>">
+                                <input type="text" class="form-control"
+                                       value="<?= ucfirst($autoPeriod) ?>" readonly disabled>
+                                <small class="text-muted">Auto-selected from current time (<?= date('A') ?>)</small>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-6 col-md-4">
                                 <label class="form-label fw-600">Start Time</label>
                                 <input type="time" class="form-control" name="start_time"
                                        value="<?= date('H:i') ?>" disabled>
                                 <small class="text-muted">Auto-set to current server time</small>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-6 col-md-4">
                                 <label class="form-label fw-600">End Time</label>
                                 <input type="time" class="form-control" name="end_time"
                                        value="<?= date('H:i', strtotime('+1 hour')) ?>" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-6 col-md-4">
                                 <label class="form-label fw-600">Late Threshold (min)</label>
                                 <input type="number" class="form-control" name="late_threshold"
                                        value="15" min="1" max="120" required>
@@ -318,12 +327,12 @@ try {
                         <label class="form-label fw-600 mb-1" style="font-size:13px;">Scanning Target Session</label>
                         <select class="form-control form-control-sm" id="scanSessionSelect" onchange="document.getElementById('scanSessionId').value=this.value">
                             <?php foreach ($activeSessions as $s): ?>
-                            <option value="<?= $s['id'] ?>" <?= ($s['id'] == ($activeSession['id'] ?? 0)) ? 'selected' : '' ?>>
+                            <option value="<?= $s['id'] ?>" <?= ($s['id'] == $targetSessionId) ? 'selected' : '' ?>>
                                 <?= ucfirst($s['session_period'] ?? 'General') ?> (<?= date('h:i A', strtotime($s['start_time'])) ?> - <?= date('h:i A', strtotime($s['end_time'])) ?>)
                             </option>
                             <?php endforeach; ?>
                         </select>
-                        <input type="hidden" id="scanSessionId" value="<?= $activeSession['id'] ?? '' ?>">
+                        <input type="hidden" id="scanSessionId" value="<?= $targetSessionId ?? '' ?>">
                     </div>
                 </div>
                 <?php endif; ?>

@@ -55,7 +55,7 @@ CREATE TABLE `attendance` (
   `subject_id` int(11) UNSIGNED DEFAULT NULL,
   `date` date NOT NULL,
   `time` time DEFAULT NULL,
-  `status` enum('present','absent','late') NOT NULL DEFAULT 'present',
+  `status` enum('present','absent','late','pending','excused') NOT NULL DEFAULT 'present',
   `session_type` enum('gate','class') NOT NULL DEFAULT 'class',
   `recorded_by` int(11) UNSIGNED DEFAULT NULL COMMENT 'Teacher or gate personnel ID',
   `created_at` datetime NOT NULL DEFAULT current_timestamp()

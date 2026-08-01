@@ -113,8 +113,6 @@ foreach ($gateLogs as $log) {
         .stat-value { font-size: 24px; }
         .stat-label { font-size: 10px; margin-top: 4px; }
         .stat-icon { width: 38px; height: 38px; font-size: 15px; border-radius: 10px; }
-        .mobile-title-left h5 { font-size: 17px; }
-        .mobile-title-left small { font-size: 12px; }
     }
 
     /* SMALL PHONE (max-width: 576px) */
@@ -126,8 +124,6 @@ foreach ($gateLogs as $log) {
         .navbar-actions { gap: 4px; }
         .nav-icon-btn { width: 34px; height: 34px; font-size: 14px; }
         #sidebarToggle { width: 34px; height: 34px; font-size: 18px; }
-        .mobile-title-left h5 { font-size: 15px; }
-        .mobile-title-left small { font-size: 11px; }
         .mobile-date { font-size: 10px; padding: 5px 8px; }
         .content-area { padding: 8px 8px 24px; }
         .stat-card { padding: 12px 10px; }

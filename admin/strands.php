@@ -292,7 +292,7 @@ try {
         .content-area{padding:20px}
         .navbar-brand{display:flex}.navbar-brand-logo{width:44px;height:44px}
         .navbar-brand-name{font-size:12px}.navbar-brand-sub{font-size:9px;opacity:0.45}
-        .desktop-title{display:none!important}.mobile-title{display:block}
+        .desktop-title{display:none!important}.mobile-title{display:block!important}
         .navbar-actions{gap:6px}.nav-icon-btn{width:38px;height:38px;font-size:15px}
         .btn-add-track{padding:8px 12px!important;font-size:12px!important}.btn-add-track .btn-text{display:none}
         .content-area{padding:10px 12px 28px}
@@ -322,17 +322,11 @@ try {
         .toast-container{bottom:24px;right:12px;left:12px}.toast-notification{max-width:100%;font-size:12px;padding:12px 16px}
     }
 
-    @media(max-width:767px){
-        .mobile-title-left h5 { font-size: 17px; }
-        .mobile-title-left small { font-size: 12px; }
-    }
-
     /* SMALL PHONE */
     @media(max-width:576px){
         .top-navbar{padding:10px 10px}.navbar-brand-logo{width:38px;height:38px}
         .navbar-brand-name{font-size:11px}.navbar-brand-sub{font-size:8px}
         .navbar-actions{gap:4px}.nav-icon-btn{width:34px;height:34px;font-size:14px}
-        .mobile-title-left h5{font-size:15px}.mobile-title-left small{font-size:11px}
         .content-area{padding:8px 8px 24px}
         .stat-card{padding:10px 8px}.stat-value{font-size:18px}.stat-label{font-size:8px}
         .stat-icon{width:28px;height:28px;font-size:11px;border-radius:8px}
@@ -358,7 +352,7 @@ try {
             <button class="btn btn-primary btn-add-track" id="openAddTrack"><i class="bi bi-plus-lg"></i> <span class="btn-text">Add Tracks</span></button>
         </div>
 
-        <div class="page-title mobile-title"><div class="mobile-title-inner"><div class="mobile-title-left"><h5>Elective Management</h5><small>SHS Tracks and Electives</small></div></div></div>
+        <div class="page-title mobile-title"><div class="mobile-title-inner"><div class="mobile-title-left"><h5>Elective Management</h5><small>SHS Tracks and Electives</small></div><button class="btn btn-primary btn-add-track" id="openAddTrackMobile"><i class="bi bi-plus-lg"></i></button></div></div>
 
         <!-- ============================================================
         STAT CARDS - Total Tracks, Total Electives, Total Subjects
@@ -773,7 +767,9 @@ try {
     /* ===== TRACKS ===== */
     var trackO=document.getElementById('addTrackOverlay'),trackF=document.getElementById('addTrackForm'),trackB=document.getElementById('addTrackSave');
     if(trackB) trackB.setAttribute('data-original', trackB.innerHTML);
-    document.getElementById('openAddTrack').addEventListener('click',function(){if(trackF)trackF.reset();openModal(trackO);});
+    var openTrack=function(){if(trackF)trackF.reset();openModal(trackO);};
+    document.getElementById('openAddTrack').addEventListener('click',openTrack);
+    var openTrackMobile=document.getElementById('openAddTrackMobile');if(openTrackMobile)openTrackMobile.addEventListener('click',openTrack);
     document.getElementById('addTrackClose').addEventListener('click',function(){closeModal(trackO);});
     document.getElementById('addTrackCancel').addEventListener('click',function(){closeModal(trackO);});
     if(trackF){

@@ -42,19 +42,15 @@ try {
         case 'start_session':
             requireRole(['admin', 'gate']);
 
-            $sessionType   = sanitize($_POST['session_type'] ?? 'time_in');
-            $sessionPeriod = sanitize($_POST['session_period'] ?? '');
+            $sessionType = sanitize($_POST['session_type'] ?? 'time_in');
+            if (!in_array($sessionType, ['time_in', 'time_out'], true)) {
+                $sessionType = 'time_in';
+            }
+            // Auto-select the session period from the current time (AM = morning, PM = afternoon)
+            $sessionPeriod = getGateSessionPeriod($db, $sessionType);
             $startTime     = date('Y-m-d H:i:s');
             $endTime       = sanitize($_POST['end_time'] ?? '');
             $lateThreshold = intval($_POST['late_threshold'] ?? 15);
-
-            if (!in_array($sessionPeriod, ['morning', 'afternoon'], true)) {
-                echo json_encode([
-                    'success' => false,
-                    'error'   => 'Invalid session period. Please select Morning or Afternoon.'
-                ]);
-                exit;
-            }
 
             if (empty($endTime)) {
                 echo json_encode([
@@ -77,14 +73,15 @@ try {
 
             $stmt = $db->prepare(
                 "SELECT id FROM gate_sessions 
-                 WHERE session_type = ? AND session_period = ? AND status = 'active'"
+                 WHERE session_type = ? AND session_period = ? AND DATE(start_time) = CURDATE()
+                   AND status != 'cancelled'"
             );
             $stmt->execute([$sessionType, $sessionPeriod]);
             if ($stmt->fetch()) {
-                error_log("GATE API: start_session rejected - active session exists for $sessionType/$sessionPeriod");
+                error_log("GATE API: start_session rejected - $sessionType/$sessionPeriod session already exists today");
                 echo json_encode([
                     'success' => false,
-                    'error'   => 'An active ' . $sessionPeriod . ' ' . $sessionType . ' session already exists.'
+                    'error'   => 'A ' . $sessionPeriod . ' ' . $sessionType . ' session already exists today. Only 4 gate sessions are allowed per day (morning/afternoon time-in and time-out).'
                 ]);
                 exit;
             }
@@ -792,13 +789,13 @@ try {
             $faceApi = new FaceRecognitionAPI();
             
             // Pre-flight quality check on front face
-            $frontDecoded = null;
-            if (function_exists('base64_decode') && !empty($frontFace)) {
+            if (!empty($frontFace)) {
                 $frontBase64 = preg_replace('#^data:image/\w+;base64,#i', '', $frontFace);
-                $frontBinary = base64_decode($frontBase64);
-                if ($frontBinary) {
-                    $frontDecoded = imagecreatefromstring($frontBinary);
-                    if ($frontDecoded) {
+                $frontBinary = base64_decode($frontBase64, true);
+                if ($frontBinary !== false && !empty($frontBinary)) {
+                    $magic = substr($frontBinary, 0, 4);
+                    $isImage = ($magic === "\xFF\xD8\xFF" || $magic === "\x89PNG" || $magic === 'GIF8');
+                    if ($isImage) {
                         $qualityCheck = $faceApi->checkQuality($frontFace);
                         if ($qualityCheck && !$qualityCheck['quality_ok']) {
                             $issues = implode(' ', $qualityCheck['issues']);
@@ -808,7 +805,6 @@ try {
                             ]);
                             exit;
                         }
-                        imagedestroy($frontDecoded);
                     }
                 }
             }
@@ -1114,4 +1110,3 @@ function callFaceAPI($endpoint, $data = []) {
 
     return json_decode($response, true) ?: ['error' => 'Invalid API response.'];
 }
-?>

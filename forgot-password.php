@@ -19,10 +19,23 @@ $role = sanitize($_GET['role'] ?? 'admin');
         * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 
         body {
+            position: relative;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background: url('assets/images/background.png') center center / cover no-repeat fixed !important;
+            background: transparent;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a url('assets/images/background.png') center center / cover no-repeat fixed;
+            filter: blur(8px);
+            -webkit-filter: blur(8px);
+            z-index: -1;
         }
 
         .ldb-navbar {

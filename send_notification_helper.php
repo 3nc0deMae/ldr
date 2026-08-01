@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/notifications.php';
 
 /**
  * Dispatch parent notification based on trigger event and system configuration.

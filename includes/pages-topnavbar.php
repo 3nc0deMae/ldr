@@ -29,14 +29,36 @@ if (!function_exists('relTime')) {
         $icon = $cat === 'calendar' ? 'bi-calendar-event' : ($cat === 'attendance' ? 'bi-clipboard-check' : ($cat === 'security' ? 'bi-shield-lock' : ($cat === 'automated' ? 'bi-robot' : 'bi-info-circle')));
         $color = $cat === 'calendar' ? 'bg-blue-100 text-blue-600' : ($cat === 'attendance' ? 'bg-emerald-100 text-emerald-600' : ($cat === 'security' ? 'bg-red-100 text-red-600' : ($cat === 'automated' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-600')));
         $rel = relTime($n['created_at']);
+        $role = $_SESSION['user_role'] ?? 'guest';
         $destMap = [
-            'calendar' => '/admin/MyCalendar.php',
-            'attendance' => '/admin/attendance.php',
-            'security' => '/admin/audit-logs.php',
-            'system' => '/admin/notifications.php',
-            'automated' => '/admin/notifications.php',
+            'calendar' => (match($role) {
+                'teacher' => '/teacher/MyCalendar.php',
+                'gate'    => '/gate/notifications.php',
+                default   => '/admin/MyCalendar.php',
+            }),
+            'attendance' => (match($role) {
+                'teacher' => '/teacher/attendance.php',
+                'gate'    => '/gate/logs.php',
+                default   => '/admin/attendance.php',
+            }),
+            'security' => (match($role) {
+                'teacher' => '/teacher/notifications.php',
+                'gate'    => '/gate/logs.php',
+                'admin'   => '/admin/audit-logs.php',
+                default   => '/admin/notifications.php',
+            }),
+            'system' => (match($role) {
+                'teacher' => '/teacher/notifications.php',
+                'gate'    => '/gate/notifications.php',
+                default   => '/admin/notifications.php',
+            }),
+            'automated' => (match($role) {
+                'teacher' => '/teacher/notifications.php',
+                'gate'    => '/gate/notifications.php',
+                default   => '/admin/notifications.php',
+            }),
         ];
-        $dest = $n['destination_url'] ?? ($destMap[$cat] ?? '/admin/notifications.php');
+        $dest = $destMap[$cat] ?? '/admin/notifications.php';
         ?>
         <div class="ntf-card flex items-start gap-3 p-3 rounded-xl transition cursor-pointer <?= $is_earlier ? 'bg-gray-50/50 opacity-75 hover:bg-gray-50' : 'bg-white hover:bg-gray-50' ?>" data-unread="<?= (int)$unread ?>" data-type="regular" data-id="<?= (int)($n['id'] ?? 0) ?>" data-destination="<?= htmlspecialchars($dest, ENT_QUOTES) ?>">
             <div class="w-9 h-9 rounded-full <?= $color ?> flex items-center justify-center text-sm flex-shrink-0">

@@ -171,30 +171,38 @@ try {
                 jsonResponse(['error' => 'No teacher record found with this email. Contact admin.'], 400);
             }
 
-            $existingUser = getUserByEmail($db, $email);
+            $userStmt = $db->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
+            $userStmt->execute([$email]);
+            $existingUser = $userStmt->fetch();
+
             if ($existingUser) {
-                jsonResponse(['error' => 'An account with this email already exists'], 400);
-            }
-
-            $userId = createUser($db, [
-                'role'     => 'teacher',
-                'email'    => $email,
-                'password' => $password,
-                'status'   => 'active'
-            ]);
-
-            if ($userId) {
-                $stmt = $db->prepare("UPDATE teachers SET user_id = ?, privacy_accepted_at = NOW() WHERE id = ?");
-                $stmt->execute([$userId, $teacher['id']]);
-
-                jsonResponse([
-                    'success' => true,
-                    'message' => 'Registration successful! You can now login.',
-                    'user_id' => $userId
-                ]);
+                if ($existingUser['role'] !== 'teacher') {
+                    jsonResponse(['error' => 'This email is already used by a non-teacher account.'], 400);
+                }
+                $userId = $existingUser['id'];
+                if (!updatePassword($db, $userId, $password)) {
+                    jsonResponse(['error' => 'Failed to set your password. Please try again.'], 500);
+                }
             } else {
-                jsonResponse(['error' => 'Registration failed. Please try again.'], 500);
+                $userId = createUser($db, [
+                    'role'     => 'teacher',
+                    'email'    => $email,
+                    'password' => $password,
+                    'status'   => 'active'
+                ]);
+                if (!$userId) {
+                    jsonResponse(['error' => 'Registration failed. Please try again.'], 500);
+                }
             }
+
+            $stmt = $db->prepare("UPDATE teachers SET user_id = ?, privacy_accepted_at = NOW() WHERE id = ?");
+            $stmt->execute([$userId, $teacher['id']]);
+
+            jsonResponse([
+                'success' => true,
+                'message' => 'Registration successful! You can now login.',
+                'user_id' => $userId
+            ]);
             break;
 
         default:

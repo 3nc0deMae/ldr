@@ -18,6 +18,10 @@ try {
     $col = $db->query("SHOW COLUMNS FROM teachers LIKE 'track_elective_handled'")->fetchAll();
     if (empty($col)) $db->exec("ALTER TABLE teachers ADD COLUMN track_elective_handled TEXT DEFAULT NULL AFTER core_subjects_handled");
 } catch (Exception $e) { error_log('teachers mig track_elective_handled: ' . $e->getMessage()); }
+try {
+    $col = $db->query("SHOW COLUMNS FROM teachers LIKE 'middle_name'")->fetchAll();
+    if (empty($col)) $db->exec("ALTER TABLE teachers ADD COLUMN middle_name VARCHAR(100) DEFAULT '' AFTER first_name");
+} catch (Exception $e) { error_log('teachers mig middle_name: ' . $e->getMessage()); }
 
 
 $search = sanitize($_GET['search'] ?? '');
@@ -520,7 +524,6 @@ function formatTeacherTrackElectiveText($details) {
         .brand-name{font-size:11px}.brand-subtitle{font-size:8px}
         .navbar-actions{gap:4px}.nav-icon-btn{width:34px;height:34px;font-size:14px}
         #sidebarToggle{width:34px;height:34px;font-size:18px}
-        .mobile-title-left h5{font-size:15px}.mobile-title-left small{font-size:11px}
         .content-area{padding:8px 8px 24px}
         .stat-card{padding:12px 10px}.stat-value{font-size:20px}.stat-label{font-size:9px}
         .stat-icon{width:32px;height:32px;font-size:13px}
@@ -561,7 +564,7 @@ function formatTeacherTrackElectiveText($details) {
             </div>
 
         <div class="card mb-4"><div class="card-body py-3 search-form"><form method="GET" class="row g-2 align-items-end">
-            <div class="col-md-8"><div class="input-icon-wrapper"><i class="bi bi-search input-icon"></i><input type="text" class="form-control" name="search" placeholder="Search by name, email or employee ID..." value="<?= sanitize($search) ?>"></div></div>
+            <div class="col-md-8"><div class="input-icon-wrapper"><i class="bi bi-search input-icon"></i><input type="text" class="form-control" name="search" placeholder="Search by name or email" value="<?= sanitize($search) ?>"></div></div>
             <div class="col-6 col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Search</button></div>
             <div class="col-6 col-md-2"><a href="<?= BASE_URL ?>/admin/teachers.php" class="btn btn-outline-secondary w-100">Clear</a></div>
         </form></div></div>
@@ -587,7 +590,7 @@ function formatTeacherTrackElectiveText($details) {
                         $jhDetails = getTeacherGradeSectionDetails($t, $teacherSections, $teacherSubjects);
                         $shsDetails = getTeacherCoreSubjectDetails($t, $teacherSections, $teacherSubjects);
                     ?><tr>
-                        <td class="teacher-name"><?= sanitize($t['first_name'].' '.$t['last_name']) ?></td>
+                        <td class="teacher-name"><?= sanitize($t['first_name'] . (!empty($t['middle_name']) ? ' ' . strtoupper($t['middle_name'][0]) . '.' : '') . ' ' . $t['last_name']) ?></td>
                         <td class="teacher-email"><a href="mailto:<?= sanitize($t['email']) ?>"><?= sanitize($t['email']) ?></a></td>
                         <td style="font-size:13px"><?= sanitize($t['phone']??'-') ?></td>
                         <td class="teacher-subjects">
@@ -616,7 +619,14 @@ function formatTeacherTrackElectiveText($details) {
                         <td class="teacher-department"><?php if(!empty($t['department'])): ?><span class="badge bg-success-soft text-success"><?= sanitize($t['department']) ?></span><?php else: ?><span class="text-muted" style="font-size:12px">-</span><?php endif; ?></td>
                         <td><div class="action-btns">
                             <button class="btn btn-icon btn-sm btn-outline-primary tm-edit-trigger" data-teacher='<?= htmlspecialchars(json_encode($t),ENT_QUOTES,'UTF-8') ?>' title="Edit"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-icon btn-sm btn-outline-danger tm-delete-trigger" data-delete-id="<?= (int)$t['id'] ?>" data-delete-name="<?= sanitize($t['first_name'].' '.$t['last_name']) ?>" title="Delete"><i class="bi bi-trash3"></i></button>
+                            <?php
+                        $deleteName = $t['first_name'];
+                        if (!empty($t['middle_name'])) {
+                            $deleteName .= ' ' . strtoupper($t['middle_name'][0]) . '.';
+                        }
+                        $deleteName .= ' ' . $t['last_name'];
+                        ?>
+                            <button class="btn btn-icon btn-sm btn-outline-danger tm-delete-trigger" data-delete-id="<?= (int)$t['id'] ?>" data-delete-name="<?= sanitize($deleteName) ?>" title="Delete"><i class="bi bi-trash3"></i></button>
                         </div></td>
                     </tr><?php endforeach; ?></tbody>
                 </table></div><?php endif; ?>
@@ -646,6 +656,7 @@ function formatTeacherTrackElectiveText($details) {
                 <div class="evt-section-label"><i class="bi bi-person"></i> Personal Information</div>
                 <div class="evt-row">
                     <div class="evt-field evt-flex-1"><label>First Name <span class="required">*</span></label><input type="text" name="first_name" placeholder="e.g. Juan" required maxlength="100"></div>
+                    <div class="evt-field evt-flex-1"><label>Middle Name</label><input type="text" name="middle_name" placeholder="e.g. Delos" maxlength="100"></div>
                     <div class="evt-field evt-flex-1"><label>Last Name <span class="required">*</span></label><input type="text" name="last_name" placeholder="e.g. Dela Cruz" required maxlength="100"></div>
                 </div>
                 <div class="evt-field"><label>Email Address <span class="required">*</span></label><input type="email" name="email" placeholder="e.g. juan.delacruz@liceo.edu.ph" required maxlength="150"><div class="form-hint">This will be used as the teacher's login credential.</div></div>
@@ -696,6 +707,7 @@ function formatTeacherTrackElectiveText($details) {
                 <div class="evt-section-label"><i class="bi bi-person"></i> Personal Information</div>
                 <div class="evt-row">
                     <div class="evt-field evt-flex-1"><label>First Name <span class="required">*</span></label><input type="text" id="edit-first_name" name="first_name" required maxlength="100"></div>
+                    <div class="evt-field evt-flex-1"><label>Middle Name</label><input type="text" id="edit-middle_name" name="middle_name" maxlength="100"></div>
                     <div class="evt-field evt-flex-1"><label>Last Name <span class="required">*</span></label><input type="text" id="edit-last_name" name="last_name" required maxlength="100"></div>
                 </div>
                 <div class="evt-field"><label>Email Address</label><input type="email" id="edit-email" name="email" maxlength="150"></div>
@@ -1031,7 +1043,7 @@ function formatTeacherTrackElectiveText($details) {
         }
         addF.addEventListener('submit',function(e){
             e.preventDefault();
-            var fn=addF.querySelector('[name="first_name"]').value.trim(),ln=addF.querySelector('[name="last_name"]').value.trim(),em=addF.querySelector('[name="email"]').value.trim();
+            var fn=addF.querySelector('[name="first_name"]').value.trim(),mn=addF.querySelector('[name="middle_name"]').value.trim(),ln=addF.querySelector('[name="last_name"]').value.trim(),em=addF.querySelector('[name="email"]').value.trim();
             if(!fn||!ln||!em){showToast('Please fill in all required fields.','error');return;}
             updateGradeHandledHidden(addGradeContainer, addGradeHidden);
             updateCoreSubjectHidden(addCoreSubjectContainer, addCoreSubjectHidden);
@@ -1089,6 +1101,7 @@ function formatTeacherTrackElectiveText($details) {
                     var teacherData = {
                         id: t.id,
                         first_name: t.first_name,
+                        middle_name: t.middle_name || '',
                         last_name: t.last_name,
                         email: t.email,
                         phone: t.phone,
@@ -1169,16 +1182,26 @@ function formatTeacherTrackElectiveText($details) {
                     }
                     if (!subjectsCellHtml) subjectsCellHtml = '<span class="text-muted" style="font-size:12px">None</span>';
                     
-                    row.innerHTML = '<td class="teacher-name">' + escapeHtml(t.first_name + ' ' + t.last_name) + '</td>' +
-                        '<td class="teacher-email"><a href="mailto:' + escapeHtml(t.email) + '">' + escapeHtml(t.email) + '</a></td>' +
-                        '<td style="font-size:13px">' + escapeHtml(t.phone || '-') + '</td>' +
-                        '<td class="teacher-subjects">' + subjectsCellHtml + '</td>' +
-                        '<td class="teacher-advisory">' + (t.advisory_class ? '<span class="badge bg-primary-soft text-primary">' + escapeHtml(t.advisory_class) + '</span>' : '<span class="text-muted" style="font-size:12px">-</span>') + '</td>' +
-                        '<td class="teacher-department">' + (t.department ? '<span class="badge bg-success-soft text-success">' + escapeHtml(t.department) + '</span>' : '<span class="text-muted" style="font-size:12px">-</span>') + '</td>' +
-                        '<td><div class="action-btns">' +
-                            '<button class="btn btn-icon btn-sm btn-outline-primary tm-edit-trigger" data-teacher=\'' + teacherJson + '\' title="Edit"><i class="bi bi-pencil"></i></button>' +
-                            '<button class="btn btn-icon btn-sm btn-outline-danger tm-delete-trigger" data-delete-id="' + t.id + '" data-delete-name="' + escapeHtml(t.first_name + ' ' + t.last_name) + '" title="Delete"><i class="bi bi-trash3"></i></button>' +
-                        '</div></td>';
+var teacherName = escapeHtml(t.first_name);
+                     if (t.middle_name) {
+                         teacherName += ' ' + escapeHtml(t.middle_name.charAt(0).toUpperCase() + '.');
+                     }
+                     teacherName += ' ' + escapeHtml(t.last_name);
+                     var deleteName = t.first_name;
+                     if (t.middle_name) {
+                         deleteName += ' ' + t.middle_name.charAt(0).toUpperCase() + '.';
+                     }
+                     deleteName += ' ' + t.last_name;
+                     row.innerHTML = '<td class="teacher-name">' + teacherName + '</td>' +
+                         '<td class="teacher-email"><a href="mailto:' + escapeHtml(t.email) + '">' + escapeHtml(t.email) + '</a></td>' +
+                         '<td style="font-size:13px">' + escapeHtml(t.phone || '-') + '</td>' +
+                         '<td class="teacher-subjects">' + subjectsCellHtml + '</td>' +
+                         '<td class="teacher-advisory">' + (t.advisory_class ? '<span class="badge bg-primary-soft text-primary">' + escapeHtml(t.advisory_class) + '</span>' : '<span class="text-muted" style="font-size:12px">-</span>') + '</td>' +
+                         '<td class="teacher-department">' + (t.department ? '<span class="badge bg-success-soft text-success">' + escapeHtml(t.department) + '</span>' : '<span class="text-muted" style="font-size:12px">-</span>') + '</td>' +
+                         '<td><div class="action-btns">' +
+                             '<button class="btn btn-icon btn-sm btn-outline-primary tm-edit-trigger" data-teacher=\'' + teacherJson + '\' title="Edit"><i class="bi bi-pencil"></i></button>' +
+                             '<button class="btn btn-icon btn-sm btn-outline-danger tm-delete-trigger" data-delete-id="' + t.id + '" data-delete-name="' + deleteName + '" title="Delete"><i class="bi bi-trash3"></i></button>' +
+                         '</div></td>';
                     if(desktopTbody) desktopTbody.insertBefore(row, desktopTbody.firstChild);
                     
                     var showingEl = document.querySelector('.teacher-table-wrapper .card-header .text-muted');
@@ -1217,6 +1240,7 @@ function formatTeacherTrackElectiveText($details) {
         var t; try { t = JSON.parse(btn.getAttribute('data-teacher')); } catch(er) { return; }
         document.getElementById('edit-id').value = t.id || '';
         document.getElementById('edit-first_name').value = t.first_name || '';
+        document.getElementById('edit-middle_name').value = t.middle_name || '';
         document.getElementById('edit-last_name').value = t.last_name || '';
         document.getElementById('edit-email').value = t.email || '';
         document.getElementById('edit-phone').value = t.phone || '';
