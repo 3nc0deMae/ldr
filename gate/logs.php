@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * View all gate session history and attendance records
  */
