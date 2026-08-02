@@ -971,9 +971,11 @@ require_once __DIR__ . '/config.php';
             .form-panel {
                 width: 100%;
                 min-width: 100%;
-            background: url('assets/images/background.png') center center / cover no-repeat fixed;
-            filter: blur(8px);
-            -webkit-filter: blur(8px);
+                background: transparent;
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+                filter: none;
+                -webkit-filter: none;
             }
 
             .form-panel::before {
@@ -984,8 +986,15 @@ require_once __DIR__ . '/config.php';
                 max-width: 480px;
                 margin: 0 auto;
                 padding: 48px 28px;
-                justify-content: center;
+                justify-content: flex-start;
                 border-radius: 12px;
+                background: rgba(10, 34, 76, 0.50);
+                backdrop-filter: blur(24px) saturate(1.6);
+                -webkit-backdrop-filter: blur(24px) saturate(1.6);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                box-shadow:
+                    0 8px 32px rgba(0, 0, 0, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.08);
             }
 
             .mobile-brand-header {

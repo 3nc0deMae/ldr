@@ -231,8 +231,8 @@ $rate = $total > 0 ? round((($pCount + $lCount) / $total) * 100, 1) : 0;
        MOBILE
        ===================================================== */
     @media (max-width: 767px) {
-        .top-navbar { padding: 8px 12px; flex-wrap: wrap; gap: 8px; height: auto; }
-        .navbar-left { flex-shrink: 0; gap: 10px; }
+        .top-navbar { padding: 12px 14px; flex-wrap: nowrap; gap: 8px; }
+        .navbar-left { flex: 1; gap: 10px; min-width: 0; }
         .navbar-brand { display: flex; }
         .navbar-brand-logo { width: 44px; height: 44px; }
         .navbar-brand-name { font-size: 12px; }

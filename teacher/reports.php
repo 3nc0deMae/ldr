@@ -29,6 +29,15 @@ $gradeLevel = sanitize($_GET['grade_level'] ?? '');
 $section    = sanitize($_GET['section']    ?? '');
 $subjectId  = intval($_GET['subject_id']   ?? 0);
 
+/* Advisory class (JHS/SHS) assigned to this teacher — the print signature shows
+   "Adviser" instead of "Subject Teacher" when the filtered grade & section is the advisory. */
+$isAdvisoryPrint = false;
+$advisoryRecord  = getAdvisorySectionRecord($db);
+if ($advisoryRecord && $gradeLevel !== '' && $section !== '') {
+    $isAdvisoryPrint = ((string)$gradeLevel === (string)$advisoryRecord['grade_level']
+        && strtolower(trim($section)) === strtolower(trim((string)$advisoryRecord['section_name'])));
+}
+
 $gradeSql = "SELECT DISTINCT s.grade_level FROM students s
                 JOIN attendance a ON a.student_id = s.id
                 WHERE a.recorded_by = :tid AND a.date BETWEEN :df AND :dt
@@ -284,8 +293,8 @@ foreach ($allRecords as $r) {
        MOBILE
        ===================================================== */
     @media (max-width: 767px) {
-        .top-navbar { padding: 8px 12px; flex-wrap: wrap; gap: 8px; height: auto; }
-        .navbar-left { flex-shrink: 0; gap: 10px; }
+        .top-navbar { padding: 12px 14px; flex-wrap: nowrap; gap: 8px; }
+        .navbar-left { flex: 1; gap: 10px; min-width: 0; }
         .navbar-brand { display: flex; }
         .navbar-brand-logo { width: 44px; height: 44px; }
         .navbar-brand-name { font-size: 12px; }
@@ -767,7 +776,7 @@ foreach ($allRecords as $r) {
                 <div style="flex:1;text-align:center;">
                     <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">
                     <strong><?= sanitize($teacherName ?? 'ANGELYN S. PARRABA') ?></strong>
-                    <span>Subject Teacher</span>
+                    <span><?= $isAdvisoryPrint ? 'Adviser' : 'Subject Teacher' ?></span>
                 </div>
                 <div style="flex:1;text-align:center;">
                     <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">

@@ -33,13 +33,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
 
 /* ── Roster: real registered Grade & Section combos from the students table ── */
 $classes = [];
+$userRole = $_SESSION['user_role'] ?? 'admin';
+
+/* Teachers only see the Grade & Section combos assigned to them by the admin.
+   Junior High comes from grade_section_handled, Senior High from
+   core_subjects_handled / track_elective_handled — all three carry section_id. */
+$allowedClasses = null; // null = no restriction (admin)
+if ($userRole === 'teacher') {
+    $assignedSectionIds = [];
+    try {
+        $stmt = $db->prepare("SELECT t.* FROM teachers t JOIN users u ON t.user_id = u.id WHERE u.id = ? LIMIT 1");
+        $stmt->execute([getCurrentUserId()]);
+        $teacher = $stmt->fetch();
+    } catch (Exception $e) {
+        $teacher = null;
+    }
+    if ($teacher) {
+        foreach (['grade_section_handled', 'core_subjects_handled', 'track_elective_handled'] as $field) {
+            $raw = $teacher[$field] ?? '';
+            if (is_string($raw)) { $raw = json_decode($raw, true); }
+            if (!is_array($raw)) { continue; }
+            foreach ($raw as $item) {
+                if (isset($item['section_id']) && is_numeric($item['section_id'])) {
+                    $assignedSectionIds[] = (int)$item['section_id'];
+                }
+            }
+        }
+        $assignedSectionIds = array_values(array_unique(array_filter($assignedSectionIds, function ($id) { return $id > 0; })));
+        if (!empty($assignedSectionIds)) {
+            $ph = implode(',', array_fill(0, count($assignedSectionIds), '?'));
+            try {
+                $stmt = $db->prepare("SELECT DISTINCT grade_level, section_name FROM sections WHERE id IN ($ph)");
+                $stmt->execute($assignedSectionIds);
+                foreach ($stmt->fetchAll() as $sec) {
+                    $gl = trim((string)($sec['grade_level'] ?? ''));
+                    $sn = trim((string)($sec['section_name'] ?? ''));
+                    if ($gl === '' || $sn === '') { continue; }
+                    $allowedClasses[] = ['grade_level' => $gl, 'section' => $sn];
+                }
+            } catch (Exception $e) {
+                error_log('Interactive Tools assigned sections: ' . $e->getMessage());
+            }
+        }
+    }
+}
+
 try {
-    $stmt = $db->query("
-        SELECT DISTINCT grade_level, section
-        FROM students
-        WHERE grade_level IS NOT NULL AND section IS NOT NULL AND section != ''
-        ORDER BY grade_level, section
-    ");
+    $sql = "SELECT DISTINCT grade_level, section
+            FROM students
+            WHERE grade_level IS NOT NULL AND section IS NOT NULL AND section != ''";
+    $params = [];
+    if ($allowedClasses !== null) {
+        if (!empty($allowedClasses)) {
+            $ors = [];
+            foreach ($allowedClasses as $pair) {
+                $ors[] = "(grade_level = ? AND section = ?)";
+                $params[] = $pair['grade_level'];
+                $params[] = $pair['section'];
+            }
+            $sql .= " AND (" . implode(' OR ', $ors) . ")";
+        } else {
+            $sql .= " AND 1 = 0";
+        }
+    }
+    $sql .= " ORDER BY grade_level, section";
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     foreach ($stmt->fetchAll() as $c) {
         $label = 'Grade ' . $c['grade_level'] . ' - ' . $c['section'];
         $st = $db->prepare("SELECT first_name, last_name FROM students WHERE grade_level = ? AND section = ? ORDER BY last_name, first_name");
@@ -51,8 +110,8 @@ try {
     error_log('Interactive Tools roster load failed: ' . $e->getMessage());
 }
 
-/* ── Mock fallback (only when no classes are registered yet) ── */
-if (empty($classes)) {
+/* ── Mock fallback (admin preview only; never shown to a teacher) ── */
+if (empty($classes) && $userRole !== 'teacher') {
     $classes = [
         'Grade 7 - Aquila' => ['Maria Santos','John Dela Cruz','Angela Reyes','Mark Villanueva','Sofia Mendoza','Liam Gonzales','Bea Castillo','Kenji Tan','Hannah Lim','Paolo Garcia'],
         'Grade 8 - Corvus' => ['Jasmine Reyes','Adrian Lopez','Patricia San Juan','Kevin Soriano','Angelica Fausto','Marco Dimaculangan','Liza Cordero','Rafael Baltazar','Nicole Quinto','Jonathan Escobar'],

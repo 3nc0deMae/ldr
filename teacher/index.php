@@ -452,8 +452,8 @@ $dashDaily = array_values($dashDaily);
        MOBILE
        ===================================================== */
     @media (max-width: 767px) {
-        .top-navbar { padding: 8px 12px; flex-wrap: wrap; gap: 8px; height: auto; }
-        .navbar-left { flex-shrink: 0; gap: 10px; }
+        .top-navbar { padding: 12px 14px; flex-wrap: nowrap; gap: 8px; }
+        .navbar-left { flex: 1; gap: 10px; min-width: 0; }
         #sidebarToggle { width: 38px; height: 38px; font-size: 20px; flex-shrink: 0; }
         .navbar-brand { display: flex; }
         .navbar-brand-logo { width: 44px; height: 44px; }

@@ -108,6 +108,12 @@ if ($teacher) {
 }
 if (empty($teacherName)) $teacherName = 'ANGELYN S. PARRABA';
 $principalName = 'ERWIN M. ESPENILLA';
+
+/* Advisory class (JHS/SHS) assigned to this teacher by the admin — when the
+   printed grade & section is the advisory, the signature reads "Adviser". */
+$advisoryRecord = getAdvisorySectionRecord($db);
+$advisoryGrade        = $advisoryRecord ? (string)$advisoryRecord['grade_level']   : '';
+$advisorySectionName  = $advisoryRecord ? trim((string)$advisoryRecord['section_name']) : '';
 ?>
 
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
@@ -341,6 +347,8 @@ $principalName = 'ERWIN M. ESPENILLA';
     
     const teacherName = '<?= addslashes(sanitize($teacherName)) ?>';
     const principalName = '<?= addslashes(sanitize($principalName)) ?>';
+    const advisoryGrade = '<?= addslashes(sanitize($advisoryGrade)) ?>';
+    const advisorySectionName = '<?= addslashes(sanitize($advisorySectionName)) ?>';
 
     const subjectSelect = document.getElementById('subjectFilter');
     const gradeSelect   = document.getElementById('gradeFilter');
@@ -536,6 +544,9 @@ $principalName = 'ERWIN M. ESPENILLA';
         const gradeLevel = data.grade_level || '';
         const sectionName = data.section || '';
         const strandName = selectedStrandName || '';
+
+        const isAdvisory = String(gradeLevel) === advisoryGrade &&
+            (!advisorySectionName || String(sectionName) === advisorySectionName);
         
         let gradeSectionHeader = 'GRADE ' + gradeLevel;
         
@@ -625,7 +636,7 @@ $principalName = 'ERWIN M. ESPENILLA';
                         <div style="flex:1;text-align:center;">
                             <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">
                             <strong>${teacherName}</strong><br>
-                            <span>Subject Teacher</span>
+                            <span>${isAdvisory ? 'Adviser' : 'Subject Teacher'}</span>
                         </div>
                         <div style="flex:1;text-align:center;">
                             <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">

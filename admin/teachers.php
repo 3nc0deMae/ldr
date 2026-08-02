@@ -40,6 +40,7 @@ try { $advisoryCount = $db->query("SELECT COUNT(*) FROM teachers WHERE advisory_
 
 $teacherSubjects = [];
 $teacherSections = [];
+$jhsSections = [];
 $shsSections = [];
 $tracks = [];
 $electives = [];
@@ -54,6 +55,9 @@ try {
 } catch (Exception $e) {}
 try {
     $shsSections = $db->query("SELECT s.id, s.section_name, s.grade_level, s.strand_id, st.strand_name, st.strand_code FROM sections s LEFT JOIN strands st ON s.strand_id = st.id WHERE CAST(s.grade_level AS UNSIGNED) >= 11 ORDER BY CAST(s.grade_level AS UNSIGNED) ASC, s.section_name ASC")->fetchAll();
+} catch (Exception $e) {}
+try {
+    $jhsSections = $db->query("SELECT s.id, s.section_name, s.grade_level, s.strand_id, st.strand_name, st.strand_code FROM sections s LEFT JOIN strands st ON s.strand_id = st.id WHERE CAST(s.grade_level AS UNSIGNED) <= 10 ORDER BY CAST(s.grade_level AS UNSIGNED) ASC, s.section_name ASC")->fetchAll();
 } catch (Exception $e) {}
 try {
     $tracks = $db->query("SELECT id, track_name FROM tracks ORDER BY track_name ASC")->fetchAll();
@@ -465,16 +469,16 @@ function formatTeacherTrackElectiveText($details) {
 
     /* MOBILE */
     @media(max-width:767px){
-        .top-navbar{padding:10px 12px;flex-wrap:wrap;gap:8px;height:auto}
-        .navbar-left{flex:1;gap:10px}
+        .top-navbar{padding:12px 14px;flex-wrap:nowrap;gap:8px}
+        .navbar-left{flex:1;gap:10px;min-width:0}
         .navbar-center{display:none!important}
         .navbar-right{gap:6px}
         .navbar-profile-compact{max-width:none;padding:4px 10px}
         .navbar-profile-info{display:none}
         .sidebar-toggle{width:38px;height:38px;font-size:20px}
-        .brand-logo{width:36px;height:36px}
-        .brand-name{font-size:11px}
-        .brand-subtitle{font-size:8px}
+        .brand-logo{width:44px;height:44px}
+        .brand-name{font-size:12px}
+        .brand-subtitle{font-size:9px;opacity:.45}
         .btn-add-teacher{padding:8px 12px!important;font-size:12px!important}.btn-add-teacher .btn-text{display:none}
         .page-header-row{display:none !important}.page-header-mobile{display:block !important}
 
@@ -780,6 +784,7 @@ function formatTeacherTrackElectiveText($details) {
 
     var gradeSectionOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>trim((string)($s['grade_level'].($s['section_name']?' - '.$s['section_name']:'')).($s['strand_code']?' ('.$s['strand_code'].')':''))];}, $teacherSections), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var shsGradeSectionOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>trim((string)($s['grade_level'].($s['section_name']?' - '.$s['section_name']:'')).($s['strand_code']?' ('.$s['strand_code'].')':''))];}, $shsSections), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
+    var jhsGradeSectionOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>trim((string)($s['grade_level'].($s['section_name']?' - '.$s['section_name']:'')).($s['strand_code']?' ('.$s['strand_code'].')':''))];}, $jhsSections), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var sectionGradeMap = <?= json_encode(array_combine(array_column($teacherSections,'id'), array_column($teacherSections,'grade_level')), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var subjectOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>$s['subject_name'],'grade_level'=>$s['grade_level'],'grade_level_end'=>$s['grade_level_end']??$s['grade_level']];}, $teacherSubjects), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var coreSubjectOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>$s['subject_name'],'grade_level'=>$s['grade_level'],'grade_level_end'=>$s['grade_level_end']??$s['grade_level']];}, $coreSubjectOptions), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
@@ -793,7 +798,7 @@ function formatTeacherTrackElectiveText($details) {
         var gsLbl=document.createElement('label');gsLbl.innerHTML='<span class="required">*</span> Grade & Section';
         var gsSel=document.createElement('select');gsSel.className='form-select grade-section-select';gsSel.required=true;
         var defOpt=document.createElement('option');defOpt.value='';defOpt.textContent='Select';gsSel.appendChild(defOpt);
-        (gradeSectionOptions||[]).forEach(function(o){var opt=document.createElement('option');opt.value=o.value;opt.textContent=o.text;gsSel.appendChild(opt);});
+        (jhsGradeSectionOptions||[]).forEach(function(o){var opt=document.createElement('option');opt.value=o.value;opt.textContent=o.text;gsSel.appendChild(opt);});
         gsWrap.appendChild(gsLbl);gsWrap.appendChild(gsSel);row.appendChild(gsWrap);
 
         var subjWrap=document.createElement('div');subjWrap.className='evt-field';

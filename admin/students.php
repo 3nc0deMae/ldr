@@ -657,7 +657,7 @@ select.filter-input option{
         <div class="card student-table-wrapper">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-table me-2"></i>Student Records (<?= $totalStudents ?>)</span>
-                <a href="<?= BASE_URL ?>/admin/student-add.php" class="btn btn-sm" style="background:var(--pg-primary);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;"><i class="bi bi-plus-lg"></i> Add New</a>
+                <button type="button" id="btnOpenAddStudentModalRecords" class="btn btn-sm" style="background:var(--pg-primary);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;border:none;text-decoration:none;cursor:pointer;"><i class="bi bi-plus-lg"></i> Add New</button>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($students)): ?>
@@ -816,6 +816,7 @@ window.showToast=function(msg,type){type=type||'success';var c=document.getEleme
     var btnCancel = document.getElementById('btn-cancel');
     var btnOpen1 = document.getElementById('btnOpenAddStudentModal');
     var btnOpen2 = document.getElementById('btnOpenAddStudentModalMobile');
+    var btnOpen3 = document.getElementById('btnOpenAddStudentModalRecords');
 
     function updateNextButton() {
         if (!btnNext || !checkbox) return;
@@ -851,6 +852,10 @@ window.showToast=function(msg,type){type=type||'success';var c=document.getEleme
         openTcsModal();
     });
     if (btnOpen2) btnOpen2.addEventListener('click', function(e) {
+        e.preventDefault();
+        openTcsModal();
+    });
+    if (btnOpen3) btnOpen3.addEventListener('click', function(e) {
         e.preventDefault();
         openTcsModal();
     });
