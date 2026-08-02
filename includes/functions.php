@@ -649,15 +649,17 @@ function resolveAdvisorySection($db, $label) {
     $label = trim((string)$label);
     if ($label === '') return null;
 
+    // Grade run must not be followed by another digit (labels such as "10St. Peter"
+    // have no separator between the grade and the section name, so \b would fail).
     $grade = null;
-    if (preg_match('/(?:Grade\s+)?(\d{1,2})\b/i', $label, $m)) {
+    if (preg_match('/(?:Grade\s+)?(\d{1,2})(?![0-9])/i', $label, $m)) {
         $grade = $m[1];
     }
     if ($grade === null) return null;
 
     // Candidate section names derived from the label
     $candidates = [];
-    $rest = trim(preg_replace('/^\s*(?:Grade\s+)?\d{1,2}\b\s*[- ]?/i', '', $label));
+    $rest = trim(preg_replace('/^\s*(?:Grade\s+)?\d{1,2}(?![0-9])\s*(?:-\s*)?/i', '', $label));
     if ($rest !== '') {
         $candidates[] = trim($rest, " \t\r\n-");
         // Strip a strand suffix such as " - STEM" or " - ABM"
@@ -672,6 +674,23 @@ function resolveAdvisorySection($db, $label) {
         if ($cand === '') continue;
         $stmt->execute([$grade, $cand]);
         $id = $stmt->fetchColumn();
+        if ($id) return (int)$id;
+    }
+
+    // Flexible fallback: match a section whose name matches ignoring spaces,
+    // dashes and dots, and optionally its strand suffix (e.g. "STEM-A" vs "STEM A").
+    $flex = $db->prepare(
+        "SELECT s.id FROM sections s
+         WHERE s.grade_level = ?
+           AND LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(s.section_name),' ',''),'-',''),'.',''),'''',''),'/','')) = ?
+         ORDER BY s.id LIMIT 1"
+    );
+    foreach (array_unique($candidates) as $cand) {
+        if ($cand === '') continue;
+        $normalized = strtolower(preg_replace('/[^a-z0-9]/i', '', $cand));
+        if ($normalized === '') continue;
+        $flex->execute([$grade, $normalized]);
+        $id = $flex->fetchColumn();
         if ($id) return (int)$id;
     }
 
@@ -693,26 +712,43 @@ function getAdvisorySectionId($db) {
     $uid = getCurrentUserId();
     if (!$uid) return null;
 
-    if (isset($_SESSION['advisory_section_id']) && !empty($_SESSION['advisory_section_id'])) {
-        return (int)$_SESSION['advisory_section_id'];
+    // Reuse a previously resolved id, but only while its section still exists.
+    if (!empty($_SESSION['advisory_section_id'])) {
+        $cached = (int)$_SESSION['advisory_section_id'];
+        $check = $db->prepare("SELECT id FROM sections WHERE id = ? LIMIT 1");
+        $check->execute([$cached]);
+        if ($check->fetch()) return $cached;
+        unset($_SESSION['advisory_section_id']);
     }
 
+    // Locate the teacher row by user id (fall back to email).
+    $teacher = null;
     $stmt = $db->prepare(
         "SELECT advisory_class, advisory_section_id FROM teachers
-         WHERE user_id = ? AND status = 'active'
-           AND (advisory_class IS NOT NULL AND advisory_class != '')
+         WHERE user_id = ? AND (advisory_class IS NOT NULL AND advisory_class != '')
          LIMIT 1"
     );
     $stmt->execute([$uid]);
     $teacher = $stmt->fetch();
+    if (!$teacher) {
+        $email = getCurrentUserEmail();
+        if ($email) {
+            $stmt = $db->prepare(
+                "SELECT advisory_class, advisory_section_id FROM teachers
+                 WHERE email = ? AND (advisory_class IS NOT NULL AND advisory_class != '')
+                 LIMIT 1"
+            );
+            $stmt->execute([$email]);
+            $teacher = $stmt->fetch();
+        }
+    }
+    if (!$teacher) return null;
 
     $sectionId = null;
-    if ($teacher) {
-        if (!empty($teacher['advisory_section_id'])) {
-            $sectionId = (int)$teacher['advisory_section_id'];
-        } elseif (!empty($teacher['advisory_class'])) {
-            $sectionId = resolveAdvisorySection($db, $teacher['advisory_class']);
-        }
+    if (!empty($teacher['advisory_section_id'])) {
+        $sectionId = (int)$teacher['advisory_section_id'];
+    } elseif (!empty($teacher['advisory_class'])) {
+        $sectionId = resolveAdvisorySection($db, $teacher['advisory_class']);
     }
     if ($sectionId) {
         $_SESSION['advisory_section_id'] = $sectionId;

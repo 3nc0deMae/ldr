@@ -54,6 +54,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Face Registration Kiosk - <?= APP_NAME ?></title>
+    <link rel="icon" type="image/png" href="<?= BASE_URL ?>/assets/images/icon.png">
     <meta name="csrf-token" content="<?= generateCSRFToken() ?>">
     <link href="<?= BASE_URL ?>/assets/vendor/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?= BASE_URL ?>/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">

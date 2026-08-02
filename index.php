@@ -20,7 +20,7 @@ $baseUrl = BASE_URL;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= APP_FULL_NAME ?></title>
     <link href="<?= BASE_URL ?>/assets/vendor/fonts/fonts.css" rel="stylesheet">
-
+    <link rel="icon" type="image/png" href="assets/images/icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         /* ========== RESET & BASE ========== */

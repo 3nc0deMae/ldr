@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?= generateCSRFToken() ?>">
     <title><?= $pageTitle ?? APP_NAME ?> - <?= APP_FULL_NAME ?></title>
+    <link rel="icon" type="image/png" href="<?= BASE_URL ?>/assets/images/icon.png">
 
     <!-- Bootstrap 5 CSS -->
     <link href="<?= BASE_URL ?>/assets/vendor/css/bootstrap.min.css" rel="stylesheet">

@@ -13,6 +13,7 @@ $role = sanitize($_GET['role'] ?? 'admin');
     <title>Forgot Password - <?= APP_FULL_NAME ?></title>
     <link href="<?= BASE_URL ?>/assets/vendor/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?= BASE_URL ?>/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/images/icon.png">
     <link href="<?= BASE_URL ?>/assets/vendor/fonts/fonts.css" rel="stylesheet">
 
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">

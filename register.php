@@ -10,6 +10,7 @@ require_once __DIR__ . '/config.php';
     <title>Teacher Registration — <?= APP_FULL_NAME ?></title>
     <link href="<?= BASE_URL ?>/assets/vendor/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?= BASE_URL ?>/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/images/icon.png">
     <link href="<?= BASE_URL ?>/assets/vendor/fonts/fonts.css" rel="stylesheet">
 
     <script src="<?= BASE_URL ?>/assets/vendor/js/tailwind.js"></script>
