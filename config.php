@@ -103,7 +103,7 @@ define('UPLOADS_PATH', __DIR__ . '/uploads');
 define('FACES_PATH', __DIR__ . '/uploads/faces');
 
 // Python Face Recognition API
-define('PYTHON_API_URL', 'http://localhost:5000');
+define('PYTHON_API_URL', 'https://creative-rejoicing-production-9ea0.up.railway.app');
 define('PYTHON_API_KEY', 'ldb_fras_api_key_2026');
 
 // User Roles
