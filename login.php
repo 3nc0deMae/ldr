@@ -81,6 +81,7 @@ $roleColor = $roleColors[$role] ?? '#0066FE';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $roleLabel ?> Login — <?= APP_FULL_NAME ?></title>
     <link href="<?= BASE_URL ?>/assets/vendor/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/images/icon.png">
     <link href="<?= BASE_URL ?>/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link href="<?= BASE_URL ?>/assets/vendor/fonts/fonts.css" rel="stylesheet">
 
