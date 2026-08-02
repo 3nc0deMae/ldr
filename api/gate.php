@@ -74,14 +74,14 @@ try {
             $stmt = $db->prepare(
                 "SELECT id FROM gate_sessions 
                  WHERE session_type = ? AND session_period = ? AND DATE(start_time) = CURDATE()
-                   AND status != 'cancelled'"
+                   AND status = 'active'"
             );
             $stmt->execute([$sessionType, $sessionPeriod]);
             if ($stmt->fetch()) {
-                error_log("GATE API: start_session rejected - $sessionType/$sessionPeriod session already exists today");
+                error_log("GATE API: start_session rejected - $sessionType/$sessionPeriod session already active today");
                 echo json_encode([
                     'success' => false,
-                    'error'   => 'A ' . $sessionPeriod . ' ' . $sessionType . ' session already exists today. Only 4 gate sessions are allowed per day (morning/afternoon time-in and time-out).'
+                    'error'   => 'A ' . $sessionPeriod . ' ' . $sessionType . ' session is currently active. End it before starting a new one.'
                 ]);
                 exit;
             }
