@@ -1609,9 +1609,13 @@ $baseUrl = BASE_URL;
     }
 
     // Flash messages from PHP redirect
-    <?php if (!empty($_SESSION['flash_message'])): ?>
-    showToast('<?= $_SESSION['flash_message']['type'] ?>', <?= json_encode($_SESSION['flash_message']['message']) ?>);
-    <?php unset($_SESSION['flash_message']); endif; ?>
+    <?php if (!empty($_SESSION['flash_message'])):
+        $f = $_SESSION['flash_message'];
+        $fType = is_array($f) ? ($f['type'] ?? 'info') : ($_SESSION['flash_type'] ?? 'info');
+        $fMsg  = is_array($f) ? ($f['message'] ?? '') : $f;
+    ?>
+    showToast('<?= $fType ?>', <?= json_encode($fMsg) ?>);
+    <?php unset($_SESSION['flash_message'], $_SESSION['flash_type']); endif; ?>
 
     // ─── Helper ─────────────────────────────────────────────────────────
     function esc(s) {

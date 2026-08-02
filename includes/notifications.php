@@ -467,41 +467,70 @@ function embedEmailImages($mail, $html, $images = []) {
  * @return bool
  */
 function sendViaPHPMailer($host, $port, $username, $password, $encryption, $fromEmail, $fromName, $to, $subject, $htmlBody, $embedImages = []) {
-    try {
-        $mail = new PHPMailer(true);
-
-        $mail->isSMTP();
-        $mail->Host       = $host;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $username;
-        $mail->Password   = $password;
-        $mail->SMTPSecure = match($encryption) {
-            'ssl' => PHPMailer::ENCRYPTION_SMTPS,
-            'tls' => PHPMailer::ENCRYPTION_STARTTLS,
-            default => ''
-        };
-        $mail->Port       = $port;
-        $mail->Timeout    = SMTP_TIMEOUT;
-
-        $mail->setFrom($fromEmail, $fromName);
-        $mail->addAddress($to);
-
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        if (!empty($embedImages)) {
-            $htmlBody = embedEmailImages($mail, $htmlBody, $embedImages);
+    // Build ordered SMTP connection profiles. The configured one is tried first;
+    // Gmail alternates are appended so sends still succeed when a cloud/datacenter
+    // IP has one port (587/STARTTLS) blocked but the other (465/implicit TLS) open.
+    $profiles = [
+        ['host' => $host, 'port' => (int)$port, 'enc' => $encryption],
+    ];
+    $hostLower = strtolower(trim($host));
+    if (in_array($hostLower, ['smtp.gmail.com', 'smtp.googlemail.com'], true)) {
+        $alternates = [
+            ['host' => $hostLower, 'port' => 465, 'enc' => 'ssl'],
+            ['host' => $hostLower, 'port' => 587, 'enc' => 'tls'],
+        ];
+        foreach ($alternates as $alt) {
+            $dup = false;
+            foreach ($profiles as $p) {
+                if ((int)$p['port'] === $alt['port'] && $p['enc'] === $alt['enc']) { $dup = true; break; }
+            }
+            if (!$dup) $profiles[] = $alt;
         }
-        $mail->Body    = $htmlBody;
-        $mail->AltBody = strip_tags(str_replace(['<br>', '</p>', '<p>'], ["\n", "\n", "\n"], $htmlBody));
-
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        $msg = $e->getMessage();
-        error_log("PHPMailer error: " . $msg);
-        _emailLastError('SMTP send failed: ' . $msg);
-        return false;
     }
+
+    $lastError = '';
+    $attempted = count($profiles);
+    foreach ($profiles as $idx => $profile) {
+        try {
+            $mail = new PHPMailer(true);
+
+            $mail->isSMTP();
+            $mail->Host       = $profile['host'];
+            $mail->SMTPAuth   = true;
+            $mail->Username   = $username;
+            $mail->Password   = $password;
+            $mail->SMTPSecure = match($profile['enc']) {
+                'ssl' => PHPMailer::ENCRYPTION_SMTPS,
+                'tls' => PHPMailer::ENCRYPTION_STARTTLS,
+                default => ''
+            };
+            $mail->Port       = $profile['port'];
+            $mail->Timeout    = SMTP_TIMEOUT;
+
+            $mail->setFrom($fromEmail, $fromName);
+            $mail->addAddress($to);
+
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            if (!empty($embedImages)) {
+                $htmlBody = embedEmailImages($mail, $htmlBody, $embedImages);
+            }
+            $mail->Body    = $htmlBody;
+            $mail->AltBody = strip_tags(str_replace(['<br>', '</p>', '<p>'], ["\n", "\n", "\n"], $htmlBody));
+
+            $mail->send();
+            if ($idx > 0) {
+                error_log("PHPMailer fallback used: {$profile['host']}:{$profile['port']} ({$profile['enc']})");
+            }
+            return true;
+        } catch (Exception $e) {
+            $lastError = $e->getMessage();
+            error_log("PHPMailer error (attempt " . ($idx + 1) . "/{$attempted} {$profile['host']}:{$profile['port']}): " . $lastError);
+        }
+    }
+
+    _emailLastError('SMTP send failed: ' . $lastError);
+    return false;
 }
 
 /**
