@@ -808,7 +808,7 @@ function formatTeacherTrackElectiveText($details) {
         subjWrap.appendChild(subjLbl);subjWrap.appendChild(subjSel);row.appendChild(subjWrap);
 
         var rm=document.createElement('button');rm.type='button';rm.className='rm-row-btn';rm.title='Remove';rm.innerHTML='<i class="bi bi-x-lg"></i>';
-        rm.addEventListener('click',function(){if(row.parentNode&&row.parentNode.children.length>1)row.remove();});
+        rm.addEventListener('click',function(){if(row.parentNode)row.remove();});
         row.appendChild(rm);
 
         function updateSubjects(){
@@ -880,7 +880,7 @@ function formatTeacherTrackElectiveText($details) {
         subjWrap.appendChild(subjLbl);subjWrap.appendChild(subjSel);row.appendChild(subjWrap);
 
         var rm=document.createElement('button');rm.type='button';rm.className='rm-row-btn';rm.title='Remove';rm.innerHTML='<i class="bi bi-x-lg"></i>';
-        rm.addEventListener('click',function(){if(row.parentNode&&row.parentNode.children.length>1)row.remove();});
+        rm.addEventListener('click',function(){if(row.parentNode)row.remove();});
         row.appendChild(rm);
 
         if(data && data.section_id) gsSel.value = String(data.section_id);
@@ -948,7 +948,7 @@ function formatTeacherTrackElectiveText($details) {
         row.appendChild(bottomRow);
 
         var rm=document.createElement('button');rm.type='button';rm.className='rm-row-btn';rm.title='Remove';rm.innerHTML='<i class="bi bi-x-lg"></i>';
-        rm.addEventListener('click',function(){if(row.parentNode&&row.parentNode.children.length>1)row.remove();});
+        rm.addEventListener('click',function(){if(row.parentNode)row.remove();});
         row.appendChild(rm);
 
         function updateElectives(){
