@@ -708,6 +708,9 @@ $baseUrl = BASE_URL;
     /* ─── Action Buttons ──────────────────────────────────────────────── */
     .btn-export { padding: 7px 12px; font-size: 11px; }
     .btn-print { padding: 7px 12px; font-size: 11px; }
+    .btn-table-export { padding: 7px 10px; gap: 0; }
+    .btn-table-export .btn-text { display: none; }
+    #printOrientationTable { font-size: 11px; padding: 6px 10px; }
 
     /* ─── Table → mobile scroll ────────────────────────────────────────── */
     .report-table{min-width:600px}
@@ -1021,9 +1024,9 @@ $baseUrl = BASE_URL;
                         <option value="portrait" selected>Portrait</option>
                         <option value="landscape">Landscape</option>
                     </select>
-                    <button onclick="printReport()" class="btn-table-export"><i class="bi bi-printer"></i> Print</button>
+                    <button onclick="printReport()" class="btn-table-export"><i class="bi bi-printer"></i> <span class="btn-text">Print</span></button>
                     <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>" class="btn-table-export">
-                        <i class="bi bi-download"></i> Export
+                        <i class="bi bi-download"></i> <span class="btn-text">Export</span>
                     </a>
                 </div>
             </div>

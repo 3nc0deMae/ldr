@@ -479,7 +479,7 @@ function formatTeacherTrackElectiveText($details) {
         .brand-logo{width:44px;height:44px}
         .brand-name{font-size:12px}
         .brand-subtitle{font-size:9px;opacity:.45}
-        .btn-add-teacher{padding:8px 12px!important;font-size:12px!important}.btn-add-teacher .btn-text{display:none}
+        .btn-add-teacher{padding:8px 12px!important;font-size:12px!important}
         .page-header-row{display:none !important}.page-header-mobile{display:block !important}
 
         .content-area{padding:10px 12px 28px}

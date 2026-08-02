@@ -1244,15 +1244,17 @@ $roleColors = [
                     <h5><i></i> Audit Logs</h5>
                     <small>Security audit trail and activity tracking</small>
                 </div>
-                <div class="d-flex gap-2">
-                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>" class="btn-export"><i class="bi bi-file-earmark-excel"></i> <span class="btn-text">Export CSV</span></a>
-                    <select id="auditPrintOrientationMobile" class="aud-select" style="width:auto;display:inline-block;" onchange="var q=new URLSearchParams(window.location.search);q.set('print_all','1');q.set('orientation',this.value);document.getElementById('auditPrintAllLinkMobile').href='?'+q.toString()">
-                        <option value="portrait" <?= (!isset($_GET['orientation']) || $_GET['orientation'] !== 'landscape') ? 'selected' : '' ?>>Portrait</option>
-                        <option value="landscape" <?= (isset($_GET['orientation']) && $_GET['orientation'] === 'landscape') ? 'selected' : '' ?>>Landscape</option>
-                    </select>
-                    <a href="?<?= http_build_query(array_merge($_GET, ['print_all' => '1'])) ?>" class="btn-print" id="auditPrintAllLinkMobile"><i class="bi bi-printer"></i> <span class="btn-text">Print All</span></a>
-                </div>
             </div>
+        </div>
+
+        <!-- MOBILE ACTIONS (below title) -->
+        <div class="d-flex gap-2 align-items-center mb-3" style="flex-wrap:wrap;">
+            <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>" class="btn-export"><i class="bi bi-file-earmark-excel"></i> <span class="btn-text">Export CSV</span></a>
+            <select id="auditPrintOrientationMobile" class="aud-select" style="width:auto;display:inline-block;" onchange="var q=new URLSearchParams(window.location.search);q.set('print_all','1');q.set('orientation',this.value);document.getElementById('auditPrintAllLinkMobile').href='?'+q.toString()">
+                <option value="portrait" <?= (!isset($_GET['orientation']) || $_GET['orientation'] !== 'landscape') ? 'selected' : '' ?>>Portrait</option>
+                <option value="landscape" <?= (isset($_GET['orientation']) && $_GET['orientation'] === 'landscape') ? 'selected' : '' ?>>Landscape</option>
+            </select>
+            <a href="?<?= http_build_query(array_merge($_GET, ['print_all' => '1'])) ?>" class="btn-print" id="auditPrintAllLinkMobile"><i class="bi bi-printer"></i> <span class="btn-text">Print All</span></a>
         </div>
 
         <!-- ═══ Stats Summary ═══ -->

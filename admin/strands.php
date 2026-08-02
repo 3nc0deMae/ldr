@@ -291,7 +291,7 @@ try {
         .navbar-brand-name{font-size:12px}.navbar-brand-sub{font-size:9px;opacity:0.45}
         .desktop-title{display:none!important}.mobile-title{display:block!important}
         .navbar-actions{gap:6px}.nav-icon-btn{width:38px;height:38px;font-size:15px}
-        .btn-add-track{padding:8px 12px!important;font-size:12px!important}.btn-add-track .btn-text{display:none}
+        .btn-add-track{padding:8px 12px!important;font-size:12px!important}
         .content-area{padding:10px 12px 28px}
         .stat-card{padding:14px 12px}.stat-value{font-size:22px}.stat-label{font-size:10px;margin-top:3px}
         .stat-icon{width:36px;height:36px;font-size:14px;border-radius:10px}
@@ -349,14 +349,14 @@ try {
             <button class="btn btn-primary btn-add-track" id="openAddTrack"><i class="bi bi-plus-lg"></i> <span class="btn-text">Add Tracks</span></button>
         </div>
 
-        <div class="page-title mobile-title"><div class="mobile-title-inner"><div class="mobile-title-left"><h5>Elective Management</h5><small>SHS Tracks and Electives</small></div><button class="btn btn-primary btn-add-track" id="openAddTrackMobile"><i class="bi bi-plus-lg"></i></button></div></div>
+        <div class="page-title mobile-title"><div class="mobile-title-inner"><div class="mobile-title-left"><h5>Elective Management</h5><small>SHS Tracks and Electives</small></div><button class="btn btn-primary btn-add-track" id="openAddTrackMobile"><i class="bi bi-plus-lg"></i> <span class="btn-text">Add</span></button></div></div>
 
         <!-- ============================================================
         STAT CARDS - Total Tracks, Total Electives, Total Subjects
         ============================================================ -->
         <div class="row g-3 mb-4">
             <!-- Total Tracks -->
-            <div class="col-4 col-md-4">
+            <div class="col-6 col-md-4">
                 <div class="stat-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -371,7 +371,7 @@ try {
             </div>
             
             <!-- Total Electives -->
-            <div class="col-4 col-md-4">
+            <div class="col-6 col-md-4">
                 <div class="stat-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -386,7 +386,7 @@ try {
             </div>
             
             <!-- Total Subjects (based on electives they belong to) -->
-            <div class="col-4 col-md-4">
+            <div class="col-6 col-md-4">
                 <div class="stat-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>

@@ -637,9 +637,6 @@ $baseUrl = BASE_URL;
                     <h5>System Settings</h5>
                     <small>Configure school info, email, SMS, and attendance rules</small>
                 </div>
-                <div class="mobile-date">
-                    <i class="bi bi-calendar3"></i> <?= date('D, M j, Y') ?>
-                </div>
             </div>
         </div>
 
@@ -1594,9 +1591,6 @@ $baseUrl = BASE_URL;
         <div class="mobile-title-left">
             <h5>Account Settings</h5>
             <small>Manage your profile, security, and workspace preferences</small>
-        </div>
-        <div class="mobile-date">
-            <i class="bi bi-calendar3"></i> <?= date('D, M j, Y') ?>
         </div>
     </div>
 </div>
