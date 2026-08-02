@@ -3,6 +3,19 @@ $currentRole = getCurrentUserRole();
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $activeSection = $_GET['section'] ?? '';
 
+// For teachers, "Class Advisories" is only shown when an advisory class is assigned by the admin.
+$__teacherHasAdvisory = false;
+if ($currentRole === 'teacher') {
+    try {
+        $stmt = $db->prepare("SELECT advisory_class FROM teachers WHERE user_id = ? LIMIT 1");
+        $stmt->execute([getCurrentUserId()]);
+        $__teacherAdvisory = $stmt->fetchColumn();
+        $__teacherHasAdvisory = !empty(trim((string)$__teacherAdvisory));
+    } catch (Exception $e) {
+        $__teacherHasAdvisory = false;
+    }
+}
+
 // Unread notification badge for the sidebar "Notifications" link.
 $__navUnread = 0;
 if (isset($db) && $currentRole) {
@@ -148,12 +161,14 @@ if (isset($db) && $currentRole) {
                     <span>My Calendar</span>
                 </a>
             </li>
+            <?php if ($__teacherHasAdvisory): ?>
             <li class="nav-item">
                 <a class="nav-link <?= $currentPage === 'advisory' ? 'active' : '' ?>" href="<?= BASE_URL ?>/teacher/advisory.php">
                     <i class="bi bi-megaphone"></i>
                     <span>Class Advisories</span>
                 </a>
             </li>
+            <?php endif; ?>
         </ul>
 
         <div class="nav-section-title">Attendance</div>

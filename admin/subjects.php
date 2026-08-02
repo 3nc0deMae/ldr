@@ -601,7 +601,7 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
 
         <!-- SUBJECTS -->
         <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-grid me-2"></i>Subjects</span><span class="badge bg-secondary-soft subjects-header-badge"><?= count($subjects) ?></span></div>
+            <div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-grid me-2"></i>Subjects</span><div class="d-flex align-items-center gap-2"><span class="badge bg-secondary-soft subjects-header-badge"><?= count($subjects) ?></span><button class="btn-add-action btn-add-subject" id="btnAddSubjectInline" style="padding:6px 14px;font-size:11px"><i class="bi bi-plus-lg"></i> Add</button></div></div>
             <div class="card-body">
                 <?php if(empty($subjects)): ?><div class="empty-state"><div class="empty-icon bg-primary-soft"><i class="bi bi-book"></i></div><h6>No Subjects Found</h6><p>Add your first subject to get started.</p></div>
                 <?php else: ?><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr>
@@ -851,10 +851,12 @@ document.getElementById('edit-from').addEventListener('change',function(){
 });
 
 // BUTTONS
-document.getElementById('btnAddSubject').addEventListener('click',function(){
-    document.getElementById('addSubjectForm').reset();
-    updateToOptions('add-from','add-to');
-    openModal('addSubjectOverlay');
+document.querySelectorAll('#btnAddSubject,#btnAddSubjectInline').forEach(function(b){
+    b.addEventListener('click',function(){
+        document.getElementById('addSubjectForm').reset();
+        updateToOptions('add-from','add-to');
+        openModal('addSubjectOverlay');
+    });
 });
 
 document.querySelectorAll('#btnAddSection,#btnAddSectionInline').forEach(function(b){

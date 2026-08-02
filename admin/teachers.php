@@ -795,15 +795,15 @@ function formatTeacherTrackElectiveText($details) {
     function buildGradeHandledRow(data){
         var row=document.createElement('div');row.className='grade-handled-row';
         var gsWrap=document.createElement('div');gsWrap.className='evt-field';
-        var gsLbl=document.createElement('label');gsLbl.innerHTML='<span class="required">*</span> Grade & Section';
-        var gsSel=document.createElement('select');gsSel.className='form-select grade-section-select';gsSel.required=true;
+        var gsLbl=document.createElement('label');gsLbl.innerHTML='Grade & Section <small>(optional)</small>';
+        var gsSel=document.createElement('select');gsSel.className='form-select grade-section-select';
         var defOpt=document.createElement('option');defOpt.value='';defOpt.textContent='Select';gsSel.appendChild(defOpt);
         (jhsGradeSectionOptions||[]).forEach(function(o){var opt=document.createElement('option');opt.value=o.value;opt.textContent=o.text;gsSel.appendChild(opt);});
         gsWrap.appendChild(gsLbl);gsWrap.appendChild(gsSel);row.appendChild(gsWrap);
 
         var subjWrap=document.createElement('div');subjWrap.className='evt-field';
-        var subjLbl=document.createElement('label');subjLbl.innerHTML='<span class="required">*</span> Subject Handled';
-        var subjSel=document.createElement('select');subjSel.className='form-select subject-select';subjSel.required=true;
+        var subjLbl=document.createElement('label');subjLbl.innerHTML='Subject Handled <small>(optional)</small>';
+        var subjSel=document.createElement('select');subjSel.className='form-select subject-select';
         var defOpt2=document.createElement('option');defOpt2.value='';defOpt2.textContent='Select';subjSel.appendChild(defOpt2);
         subjWrap.appendChild(subjLbl);subjWrap.appendChild(subjSel);row.appendChild(subjWrap);
 
@@ -863,15 +863,15 @@ function formatTeacherTrackElectiveText($details) {
     function buildCoreSubjectRow(data){
         var row=document.createElement('div');row.className='core-subject-row';
         var gsWrap=document.createElement('div');gsWrap.className='evt-field';
-        var gsLbl=document.createElement('label');gsLbl.innerHTML='Grade & Section <span class="required">*</span>';
-        var gsSel=document.createElement('select');gsSel.className='form-select shs-grade-section-select';gsSel.required=true;
+        var gsLbl=document.createElement('label');gsLbl.innerHTML='Grade & Section <small>(optional)</small>';
+        var gsSel=document.createElement('select');gsSel.className='form-select shs-grade-section-select';
         var defOpt=document.createElement('option');defOpt.value='';defOpt.textContent='Select';gsSel.appendChild(defOpt);
         (shsGradeSectionOptions||[]).forEach(function(o){var opt=document.createElement('option');opt.value=o.value;opt.textContent=o.text;gsSel.appendChild(opt);});
         gsWrap.appendChild(gsLbl);gsWrap.appendChild(gsSel);row.appendChild(gsWrap);
 
         var subjWrap=document.createElement('div');subjWrap.className='evt-field';
-        var subjLbl=document.createElement('label');subjLbl.innerHTML='Core Subject Handled <span class="required">*</span>';
-        var subjSel=document.createElement('select');subjSel.className='form-select core-subject-select';subjSel.required=true;
+        var subjLbl=document.createElement('label');subjLbl.innerHTML='Core Subject Handled <small>(optional)</small>';
+        var subjSel=document.createElement('select');subjSel.className='form-select core-subject-select';
         var defOpt2=document.createElement('option');defOpt2.value='';defOpt2.textContent='Select';subjSel.appendChild(defOpt2);
         (coreSubjectOptions||[]).forEach(function(o){
             var gl=parseInt(o.grade_level), ge=parseInt(o.grade_level_end||o.grade_level);
@@ -919,15 +919,15 @@ function formatTeacherTrackElectiveText($details) {
         var row=document.createElement('div');row.className='track-elective-row';
         var topRow=document.createElement('div');topRow.className='track-elective-inner-row';
         var gsWrap=document.createElement('div');gsWrap.className='evt-field';
-        var gsLbl=document.createElement('label');gsLbl.innerHTML='Grade & Section <span class="required">*</span>';
-        var gsSel=document.createElement('select');gsSel.className='form-select shs-grade-section-select-te';gsSel.required=true;
+        var gsLbl=document.createElement('label');gsLbl.innerHTML='Grade & Section <small>(optional)</small>';
+        var gsSel=document.createElement('select');gsSel.className='form-select shs-grade-section-select-te';
         var defOpt=document.createElement('option');defOpt.value='';defOpt.textContent='Select';gsSel.appendChild(defOpt);
         (shsGradeSectionOptions||[]).forEach(function(o){var opt=document.createElement('option');opt.value=o.value;opt.textContent=o.text;gsSel.appendChild(opt);});
         gsWrap.appendChild(gsLbl);gsWrap.appendChild(gsSel);topRow.appendChild(gsWrap);
 
         var trackWrap=document.createElement('div');trackWrap.className='evt-field';
-        var trackLbl=document.createElement('label');trackLbl.innerHTML='Track <span class="required">*</span>';
-        var trackSel=document.createElement('select');trackSel.className='form-select track-select';trackSel.required=true;
+        var trackLbl=document.createElement('label');trackLbl.innerHTML='Track <small>(optional)</small>';
+        var trackSel=document.createElement('select');trackSel.className='form-select track-select';
         var defOpt2=document.createElement('option');defOpt2.value='';defOpt2.textContent='Select';trackSel.appendChild(defOpt2);
         (trackOptions||[]).forEach(function(o){var opt=document.createElement('option');opt.value=o.value;opt.textContent=o.text;trackSel.appendChild(opt);});
         trackWrap.appendChild(trackLbl);trackWrap.appendChild(trackSel);topRow.appendChild(trackWrap);
@@ -935,14 +935,14 @@ function formatTeacherTrackElectiveText($details) {
 
         var bottomRow=document.createElement('div');bottomRow.className='track-elective-inner-row';
         var elecWrap=document.createElement('div');elecWrap.className='evt-field';
-        var elecLbl=document.createElement('label');elecLbl.innerHTML='Elective <span class="required">*</span>';
-        var elecSel=document.createElement('select');elecSel.className='form-select elective-select';elecSel.required=true;
+        var elecLbl=document.createElement('label');elecLbl.innerHTML='Elective <small>(optional)</small>';
+        var elecSel=document.createElement('select');elecSel.className='form-select elective-select';
         var defOpt3=document.createElement('option');defOpt3.value='';defOpt3.textContent='Select';elecSel.appendChild(defOpt3);
         elecWrap.appendChild(elecLbl);elecWrap.appendChild(elecSel);bottomRow.appendChild(elecWrap);
 
         var subjWrap=document.createElement('div');subjWrap.className='evt-field';
-        var subjLbl=document.createElement('label');subjLbl.innerHTML='Subject <span class="required">*</span>';
-        var subjSel=document.createElement('select');subjSel.className='form-select elective-subject-select';subjSel.required=true;
+        var subjLbl=document.createElement('label');subjLbl.innerHTML='Subject <small>(optional)</small>';
+        var subjSel=document.createElement('select');subjSel.className='form-select elective-subject-select';
         var defOpt4=document.createElement('option');defOpt4.value='';defOpt4.textContent='Select';subjSel.appendChild(defOpt4);
         subjWrap.appendChild(subjLbl);subjWrap.appendChild(subjSel);bottomRow.appendChild(subjWrap);
         row.appendChild(bottomRow);
