@@ -26,10 +26,145 @@ if (!in_array($role, ['admin', 'teacher'], true)) {
 
 csrfMiddleware();
 
-$action = sanitize($_POST['action'] ?? '');
-if (!in_array($action, ['create', 'save_draft'], true)) {
+$rawRequest = file_get_contents('php://input');
+$parsedJson = json_decode($rawRequest, true);
+$request = is_array($parsedJson) ? $parsedJson : $_POST;
+
+$action = sanitize($request['action'] ?? '');
+$announcementId = intval($request['announcement_id'] ?? 0);
+if (!in_array($action, ['create', 'save_draft', 'send_draft'], true)) {
     $_SESSION['flash_message'] = ['type' => 'danger', 'message' => 'Invalid announcement action.'];
     redirectToOrigin($role);
+}
+
+if ($action === 'send_draft') {
+    $announcementId = intval($_POST['announcement_id'] ?? 0);
+    if (!$announcementId) {
+        respondJson(false, 'Announcement ID is required to send draft.');
+    }
+
+    try {
+        $stmt = $db->prepare("SELECT * FROM announcements WHERE id = ? LIMIT 1");
+        $stmt->execute([$announcementId]);
+        $draft = $stmt->fetch();
+    } catch (Exception $e) {
+        respondJson(false, 'Failed to load draft announcement.');
+    }
+
+    if (!$draft) {
+        respondJson(false, 'Draft announcement not found.');
+    }
+
+    if ($role === 'teacher') {
+        $currentSectionId = getAdvisorySectionId($db);
+        if ($draft['scope'] !== 'advisory' || (int)$draft['target_section_id'] !== $currentSectionId) {
+            respondJson(false, 'Unauthorized to send this draft announcement.');
+        }
+    } elseif ($role === 'admin') {
+        if ($draft['scope'] !== 'school') {
+            respondJson(false, 'Unauthorized to send this draft announcement.');
+        }
+    }
+
+    $subject      = $draft['subject'] ?? 'Announcement';
+    $bodyHTML     = $draft['body_html'] ?? ($draft['body'] ?? '');
+    $channels     = json_decode($draft['channels'] ?? '[]', true) ?: [];
+    $recipients   = json_decode($draft['recipients'] ?? '{}', true) ?: [];
+    $recipientList = [];
+    $contactFilter = function ($row) use (&$recipientList, $channels) {
+        $hasEmail = in_array('email', $channels, true) && !empty($row['email']);
+        $hasPhone = in_array('sms', $channels, true) && !empty($row['phone']);
+        if (!$hasEmail && !$hasPhone) return;
+        $key = !empty($row['email']) ? 'email:' . $row['email'] : 'sms:' . $row['phone'];
+        if (!isset($recipientList[$key])) $recipientList[$key] = $row;
+    };
+
+    if (empty($channels)) {
+        respondJson(false, 'Draft cannot be sent because no channels were selected.');
+    }
+
+    try {
+        require_once __DIR__ . '/includes/notifications.php';
+
+        if ($role === 'teacher') {
+            $sectionRow = null;
+            try {
+                $st2 = $db->prepare("SELECT grade_level, section_name FROM sections WHERE id = ?");
+                $st2->execute([(int)$draft['target_section_id']]);
+                $sectionRow = $st2->fetch();
+            } catch (Exception $e) { $sectionRow = null; }
+
+            if ($sectionRow) {
+                $sql = "SELECT g.guardian_name, g.email, g.phone
+                        FROM students s
+                        INNER JOIN guardians g ON s.id = g.student_id
+                        WHERE s.status = 'active' AND s.grade_level = ? AND s.section = ?";
+                $params = [$sectionRow['grade_level'], $sectionRow['section_name']];
+                if (!empty($recipients['recipient_type']) && $recipients['recipient_type'] === 'individual' && !empty($recipients['student_ids'])) {
+                    $studentIds = array_map('intval', (array)$recipients['student_ids']);
+                    if ($studentIds) {
+                        $sql .= " AND s.id IN (" . implode(',', array_fill(0, count($studentIds), '?')) . ")";
+                        $params = array_merge($params, $studentIds);
+                    }
+                }
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+                foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
+            }
+        } else {
+            $studentConditions = ["s.status = 'active'"];
+            $studentParams     = [];
+            if (!empty($recipients['grades'])) {
+                $studentConditions[] = "s.grade_level IN (" . implode(',', array_fill(0, count($recipients['grades']), '?')) . ")";
+                $studentParams = array_merge($studentParams, array_map('intval', (array)$recipients['grades']));
+            } elseif (!empty($recipients['student_ids'])) {
+                $studentConditions[] = "s.id IN (" . implode(',', array_fill(0, count($recipients['student_ids']), '?')) . ")";
+                $studentParams = array_merge($studentParams, array_map('intval', (array)$recipients['student_ids']));
+            }
+
+            $hasEmail = in_array('email', $channels, true);
+            $hasSMS   = in_array('sms', $channels, true);
+            $contactFilters = [];
+            if ($hasEmail) $contactFilters[] = "(g.email IS NOT NULL AND g.email != '')";
+            if ($hasSMS)   $contactFilters[] = "(g.phone IS NOT NULL AND g.phone != '')";
+            $contactClause = !empty($contactFilters) ? 'AND (' . implode(' OR ', $contactFilters) . ')' : '';
+
+            $sql = "SELECT g.guardian_name, g.email, g.phone
+                    FROM students s
+                    LEFT JOIN guardians g ON s.id = g.student_id
+                    WHERE " . implode(' AND ', $studentConditions) . " {$contactClause}";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($studentParams);
+            foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
+        }
+
+        if (!empty($recipientList)) {
+            $bulkResult = sendBulkNotification($db, array_values($recipientList), $subject, $bodyHTML, $channels);
+            $notifDeliveryStatus = (($bulkResult['failed'] ?? 0) > 0) ? 'failed' : 'sent';
+            if ($notifDeliveryStatus === 'failed') {
+                $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([$announcementId]);
+            } else {
+                $db->prepare("UPDATE announcements SET status = 'sent', updated_at = NOW() WHERE id = ?")->execute([$announcementId]);
+            }
+        } else {
+            $notifDeliveryStatus = 'failed';
+            $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([$announcementId]);
+        }
+
+        createUserNotification($db, [
+            'user_role'       => ($role === 'teacher') ? 'teacher' : 'admin',
+            'category'        => 'announcement',
+            'title'           => $subject,
+            'message'         => strip_tags($bodyHTML),
+            'delivery_status' => $notifDeliveryStatus,
+            'reference_id'    => $announcementId,
+            'destination_url' => ($role === 'teacher') ? '/teacher/advisory.php' : '/admin/announcements.php',
+        ]);
+    } catch (Exception $e) {
+        respondJson(false, 'Failed to send draft announcement.');
+    }
+
+    respondJson(true, 'Draft announcement sent successfully.');
 }
 
 // ─── Capture common fields ───────────────────────────────────────────────────
@@ -38,7 +173,7 @@ $bodyHTML      = trim($_POST['body_html'] ?? '');
 $bodyPlain     = trim(strip_tags($bodyHTML));
 $templateType  = sanitize($_POST['template_type'] ?? 'general');
 $channelEmail  = !empty($_POST['channel_email']) ? 1 : 0;
-$channelSMS    = !empty($_POST['channel_sms'])   ? 1 : 0;
+$channelSMS    = !empty($_POST['channel_sms']) ? 1 : 0;
 $scheduleType  = sanitize($_POST['schedule_type'] ?? 'now');
 $scheduleDate  = sanitize($_POST['schedule_date'] ?? '');
 $scheduleTime  = sanitize($_POST['schedule_time'] ?? '');
@@ -168,37 +303,116 @@ if ($scheduleType === 'scheduled' && $scheduleDate && $scheduleTime) {
     $scheduledAt = $scheduleDate . ' ' . $scheduleTime . ':00';
 }
 
-$announcementId = null;
-try {
-    $stmt = $db->prepare(
-        "INSERT INTO announcements
-         (template_type, recipient_type, target_section_id, scope, subject, body, body_html,
-          recipients, channels, attachment_path, status, scheduled_at, created_by, created_at)
-         VALUES (:template_type, :recipient_type, :target_section_id, :scope, :subject, :body,
-                 :body_html, :recipients, :channels, :attachment_path, :status, :scheduled_at, :created_by, NOW())"
-    );
-    $stmt->execute([
-        ':template_type'     => $templateType,
-        ':recipient_type'    => $recipientType,
-        ':target_section_id' => $targetSectionId,
-        ':scope'             => $scope,
-        ':subject'           => $subject,
-        ':body'              => $bodyPlain,
-        ':body_html'         => $bodyHTML,
-        ':recipients'        => json_encode($recipients),
-        ':channels'          => json_encode($channels),
-        ':attachment_path'   => $imagePath,
-        ':status'            => $status,
-        ':scheduled_at'      => $scheduledAt,
-        ':created_by'        => (int)$_SESSION['user_id']
-    ]);
-    $announcementId = (int)$db->lastInsertId();
-} catch (Exception $e) {
-    error_log('process_announcement insert: ' . $e->getMessage());
-    $announcementId = null;
+$existingAttachmentPath = trim($_POST['existing_attachment_path'] ?? '');
+
+$existingAnnouncement = null;
+if ($announcementId > 0) {
+    try {
+        $stmt = $db->prepare("SELECT * FROM announcements WHERE id = ? LIMIT 1");
+        $stmt->execute([$announcementId]);
+        $existingAnnouncement = $stmt->fetch();
+    } catch (Exception $e) {
+        $existingAnnouncement = null;
+    }
+    if (!$existingAnnouncement) {
+        $message = 'Announcement not found.';
+        if (!empty($_POST['ajax'])) { respondJson(false, $message); }
+        $_SESSION['flash_message'] = ['type' => 'danger', 'message' => $message];
+        redirectToOrigin($role);
+    }
+    if ($role === 'teacher') {
+        $currentSectionId = getAdvisorySectionId($db);
+        if ($existingAnnouncement['scope'] !== 'advisory' || (int)$existingAnnouncement['target_section_id'] !== $currentSectionId) {
+            $message = 'Unauthorized to update this announcement.';
+            if (!empty($_POST['ajax'])) { respondJson(false, $message); }
+            $_SESSION['flash_message'] = ['type' => 'danger', 'message' => $message];
+            redirectToOrigin($role);
+        }
+    } elseif ($role === 'admin' && $existingAnnouncement['scope'] !== 'school') {
+        $message = 'Unauthorized to update this announcement.';
+        if (!empty($_POST['ajax'])) { respondJson(false, $message); }
+        $_SESSION['flash_message'] = ['type' => 'danger', 'message' => $message];
+        redirectToOrigin($role);
+    }
 }
 
-if (!$announcementId) {
+if (!$imagePath && $existingAttachmentPath) {
+    $imagePath = $existingAttachmentPath;
+}
+
+$announcementSaved = false;
+if ($announcementId > 0) {
+    try {
+        $stmt = $db->prepare(
+            "UPDATE announcements SET
+             template_type = :template_type,
+             recipient_type = :recipient_type,
+             target_section_id = :target_section_id,
+             scope = :scope,
+             subject = :subject,
+             body = :body,
+             body_html = :body_html,
+             recipients = :recipients,
+             channels = :channels,
+             attachment_path = :attachment_path,
+             status = :status,
+             scheduled_at = :scheduled_at,
+             updated_at = NOW()
+             WHERE id = :id"
+        );
+        $stmt->execute([
+            ':template_type'     => $templateType,
+            ':recipient_type'    => $recipientType,
+            ':target_section_id' => $targetSectionId,
+            ':scope'             => $scope,
+            ':subject'           => $subject,
+            ':body'              => $bodyPlain,
+            ':body_html'         => $bodyHTML,
+            ':recipients'        => json_encode($recipients),
+            ':channels'          => json_encode($channels),
+            ':attachment_path'   => $imagePath,
+            ':status'            => $status,
+            ':scheduled_at'      => $scheduledAt,
+            ':id'                => $announcementId,
+        ]);
+        $announcementSaved = true;
+    } catch (Exception $e) {
+        error_log('process_announcement update: ' . $e->getMessage());
+        $announcementSaved = false;
+    }
+} else {
+    try {
+        $stmt = $db->prepare(
+            "INSERT INTO announcements
+             (template_type, recipient_type, target_section_id, scope, subject, body, body_html,
+              recipients, channels, attachment_path, status, scheduled_at, created_by, created_at)
+             VALUES (:template_type, :recipient_type, :target_section_id, :scope, :subject, :body,
+                     :body_html, :recipients, :channels, :attachment_path, :status, :scheduled_at, :created_by, NOW())"
+        );
+        $stmt->execute([
+            ':template_type'     => $templateType,
+            ':recipient_type'    => $recipientType,
+            ':target_section_id' => $targetSectionId,
+            ':scope'             => $scope,
+            ':subject'           => $subject,
+            ':body'              => $bodyPlain,
+            ':body_html'         => $bodyHTML,
+            ':recipients'        => json_encode($recipients),
+            ':channels'          => json_encode($channels),
+            ':attachment_path'   => $imagePath,
+            ':status'            => $status,
+            ':scheduled_at'      => $scheduledAt,
+            ':created_by'        => (int)$_SESSION['user_id']
+        ]);
+        $announcementId = (int)$db->lastInsertId();
+        $announcementSaved = $announcementId > 0;
+    } catch (Exception $e) {
+        error_log('process_announcement insert: ' . $e->getMessage());
+        $announcementSaved = false;
+    }
+}
+
+if (!$announcementSaved) {
     $message = 'Failed to save announcement. Please try again.';
     if (!empty($_POST['ajax'])) { respondJson(false, $message); }
     $_SESSION['flash_message'] = ['type' => 'danger', 'message' => $message];
@@ -300,6 +514,7 @@ if (!empty($channels) && $status === 'sent') {
             }
         }
 
+        $notificationDestination = ($role === 'teacher') ? '/teacher/advisory.php' : '/admin/announcements.php';
         createUserNotification($db, [
             'user_role'       => ($role === 'teacher') ? 'teacher' : 'admin',
             'category'        => 'announcement',
@@ -307,6 +522,7 @@ if (!empty($channels) && $status === 'sent') {
             'message'         => strip_tags($bodyHTML),
             'delivery_status' => $notifDeliveryStatus,
             'reference_id'    => $announcementId,
+            'destination_url' => $notificationDestination,
         ]);
     } catch (Exception $e) {
         error_log('process_announcement notify: ' . $e->getMessage());

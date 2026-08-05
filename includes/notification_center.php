@@ -142,13 +142,14 @@ try {
 
 // Per-category counts for the filter badges.
 $countAll = count($allNotifs);
-$countCal = 0; $countAtt = 0; $countSec = 0; $countAuto = 0;
+$countCal = 0; $countAtt = 0; $countSec = 0; $countAuto = 0; $countAnn = 0;
 foreach ($allNotifs as $n) {
     $c = $n['category'] ?? 'system';
     if ($c === 'calendar') $countCal++;
     elseif ($c === 'attendance') $countAtt++;
     elseif ($c === 'security' || $c === 'system') $countSec++;
     elseif ($c === 'automated') $countAuto++;
+    elseif ($c === 'announcement') $countAnn++;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -219,6 +220,11 @@ $destinationMap = [
         'gate'    => '/gate/notifications.php',
         default   => '/admin/notifications.php',
     },
+    'announcement' => match($currentRole) {
+        'teacher' => '/teacher/advisory.php',
+        'gate'    => '/gate/notifications.php',
+        default   => '/admin/announcements.php',
+    },
 ];
 
 $catMeta = [
@@ -227,6 +233,7 @@ $catMeta = [
     'security'            => ['label' => 'System Security',     'icon' => 'bi-shield-lock'],
     'system'              => ['label' => 'System',              'icon' => 'bi-gear'],
     'automated'           => ['label' => 'Automated Notification', 'icon' => 'bi-robot'],
+    'announcement'        => ['label' => 'Announcement',        'icon' => 'bi-megaphone'],
 ];
 $statusMeta = [
     'sent'     => 'db-sent',
@@ -300,6 +307,7 @@ $failedMessage = '🔴 Delivery Failed: Automated calendar reminder failed to se
     .nic.security   { background: rgba(239,68,68,.14);   color: #F87171; }
     .nic.system     { background: rgba(245,158,11,.14);  color: #FBBF24; }
     .nic.automated  { background: rgba(168,85,247,.14);  color: #A855F7; }
+    .nic.announcement { background: rgba(56,189,248,.14); color: #38bdf8; }
 
     .nic-body { flex: 1; min-width: 0; }
     .nic-title { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -354,6 +362,7 @@ $failedMessage = '🔴 Delivery Failed: Automated calendar reminder failed to se
                     <button class="notif-tab" data-filter="attendance"><i class="bi bi-clipboard-check"></i> Attendance Highlights <span class="count"><?= $countAtt ?></span></button>
                     <button class="notif-tab" data-filter="security"><i class="bi bi-shield-lock"></i> System Security <span class="count"><?= $countSec ?></span></button>
                     <button class="notif-tab" data-filter="automated"><i class="bi bi-robot"></i> Automated Notification <span class="count"><?= $countAuto ?></span></button>
+                    <button class="notif-tab" data-filter="announcement"><i class="bi bi-megaphone"></i> Announcements <span class="count"><?= $countAnn ?></span></button>
                 </nav>
             </div>
         </div>
@@ -405,8 +414,8 @@ $failedMessage = '🔴 Delivery Failed: Automated calendar reminder failed to se
                                  data-status="<?= htmlspecialchars($status) ?>" data-title="<?= htmlspecialchars($title, ENT_QUOTES) ?>"
                                  data-search="<?= htmlspecialchars($search, ENT_QUOTES) ?>" data-date="<?= htmlspecialchars($n['created_at'] ?? '', ENT_QUOTES) ?>"
                                  data-reference-id="<?= (int)($n['reference_id'] ?? 0) ?>"
-                                 data-destination="<?= htmlspecialchars($destinationMap[$cat] ?? '/admin/notifications.php', ENT_QUOTES) ?>">
-                                <div class="nic <?= $cat === 'automated' ? 'automated' : ($cat === 'attendance' ? 'attendance' : ($cat === 'security' ? 'security' : ($cat === 'calendar' ? 'calendar' : 'system'))) ?>">
+                                 data-destination="<?= htmlspecialchars($n['destination_url'] ?? $destinationMap[$cat] ?? '/admin/notifications.php', ENT_QUOTES) ?>">
+                                <div class="nic <?= $cat === 'announcement' ? 'announcement' : ($cat === 'automated' ? 'automated' : ($cat === 'attendance' ? 'attendance' : ($cat === 'security' ? 'security' : ($cat === 'calendar' ? 'calendar' : 'system')))) ?>">
                                     <i class="bi <?= $meta['icon'] ?>"></i>
                                 </div>
                                 <div class="nic-body">
@@ -518,7 +527,9 @@ $failedMessage = '🔴 Delivery Failed: Automated calendar reminder failed to se
         cards.forEach(function (c) {
             var cat = c.dataset.category;
             var matchCat = f === 'all' ||
-                (f === 'security' ? (cat === 'security' || cat === 'system') : (f === 'automated' ? cat === 'automated' : cat === f));
+                (f === 'security' ? (cat === 'security' || cat === 'system') :
+                (f === 'automated' ? cat === 'automated' :
+                (f === 'announcement' ? cat === 'announcement' : cat === f)));
             var hay = (c.dataset.search || '').toLowerCase();
             var matchQ = !q || hay.indexOf(q) !== -1;
             var show = matchCat && matchQ;

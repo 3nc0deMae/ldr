@@ -122,12 +122,13 @@ switch ($action) {
                     }
 
                     createUserNotification($db, [
-                        'user_role'       => 'all',
+                        'user_role'       => 'admin',
                         'category'        => 'announcement',
                         'title'           => $data['subject'],
                         'message'         => strip_tags($data['body'] ?? ''),
                         'delivery_status' => $notifDeliveryStatus,
                         'reference_id'    => $annId,
+                        'destination_url' => '/admin/announcements.php',
                     ]);
                 } catch (Exception $e) {
                     $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")
@@ -215,6 +216,7 @@ switch ($action) {
                 'message'         => 'Announcement was resent successfully to all recipients.',
                 'delivery_status' => 'sent',
                 'reference_id'    => $id,
+                'destination_url' => '/admin/announcements.php',
             ]);
 
             jsonResponse(['success' => true, 'message' => 'Announcement resent successfully.']);

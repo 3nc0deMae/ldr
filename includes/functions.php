@@ -1421,8 +1421,8 @@ function createNotification($db, $data) {
  */
 function createUserNotification($db, $data) {
     $sql = "INSERT INTO user_notifications
-            (user_role, category, title, message, delivery_status, reference_id, is_read)
-            VALUES (:user_role, :category, :title, :message, :delivery_status, :reference_id, 0)";
+            (user_role, category, title, message, delivery_status, reference_id, destination_url, is_read)
+            VALUES (:user_role, :category, :title, :message, :delivery_status, :reference_id, :destination_url, 0)";
     $stmt = $db->prepare($sql);
     return $stmt->execute([
         ':user_role'       => $data['user_role'] ?? 'all',
@@ -1431,6 +1431,7 @@ function createUserNotification($db, $data) {
         ':message'         => $data['message'] ?? '',
         ':delivery_status' => $data['delivery_status'] ?? 'sent',
         ':reference_id'    => $data['reference_id'] ?? null,
+        ':destination_url' => $data['destination_url'] ?? null,
     ]) ? $db->lastInsertId() : false;
 }
 

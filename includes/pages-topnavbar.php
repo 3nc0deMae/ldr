@@ -57,8 +57,13 @@ if (!function_exists('relTime')) {
                 'gate'    => '/gate/notifications.php',
                 default   => '/admin/notifications.php',
             }),
+            'announcement' => (match($role) {
+                'teacher' => '/teacher/advisory.php',
+                'gate'    => '/gate/notifications.php',
+                default   => '/admin/announcements.php',
+            }),
         ];
-        $dest = $destMap[$cat] ?? '/admin/notifications.php';
+        $dest = $n['destination_url'] ?? $destMap[$cat] ?? '/admin/notifications.php';
         ?>
         <div class="ntf-card flex items-start gap-3 p-3 rounded-xl transition cursor-pointer <?= $is_earlier ? 'bg-gray-50/50 opacity-75 hover:bg-gray-50' : 'bg-white hover:bg-gray-50' ?>" data-unread="<?= (int)$unread ?>" data-type="regular" data-id="<?= (int)($n['id'] ?? 0) ?>" data-destination="<?= htmlspecialchars($dest, ENT_QUOTES) ?>">
             <div class="w-9 h-9 rounded-full <?= $color ?> flex items-center justify-center text-sm flex-shrink-0">
@@ -348,7 +353,7 @@ if (!document.getElementById('ntf-tailwind-script')) {
         });
     });
     // Dot removal on hover/click for unread regular cards
-    document.querySelectorAll('.ntf-card[data-unread="1"]').forEach(function (card) {
+    document.querySelectorAll('.ntf-card').forEach(function (card) {
         card.addEventListener('mouseenter', function () {
             var dot = card.querySelector('.ntf-dot');
             if (dot) dot.classList.add('hidden');

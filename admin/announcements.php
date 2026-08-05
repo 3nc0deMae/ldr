@@ -85,7 +85,7 @@ $perPage = 10;
 $currentPage = max(1, intval($_GET['page'] ?? 1));
 
 $totalAnnouncements = 0;
-try { $totalAnnouncements = (int)$db->query("SELECT COUNT(*) FROM announcements")->fetchColumn(); } catch (Exception $e) {}
+try { $totalAnnouncements = (int)$db->query("SELECT COUNT(*) FROM announcements WHERE scope != 'advisory'")->fetchColumn(); } catch (Exception $e) {}
 
 $totalPages = max(1, (int)ceil($totalAnnouncements / $perPage));
 $currentPage = min($currentPage, $totalPages);
@@ -93,7 +93,7 @@ $offset = ($currentPage - 1) * $perPage;
 
 $announcements = [];
 try {
-    $stmt = $db->prepare("SELECT a.*, u.email AS created_by_email FROM announcements a LEFT JOIN users u ON a.created_by = u.id ORDER BY a.created_at DESC LIMIT :limit OFFSET :offset");
+    $stmt = $db->prepare("SELECT a.*, u.email AS created_by_email FROM announcements a LEFT JOIN users u ON a.created_by = u.id WHERE a.scope != 'advisory' ORDER BY a.created_at DESC LIMIT :limit OFFSET :offset");
     $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
@@ -1427,6 +1427,8 @@ if (isset($_GET['resend'])) {
         <form method="POST" action="<?= BASE_URL ?>/process_announcement.php" id="announcementForm" enctype="multipart/form-data">
             <?= csrfField() ?>
             <input type="hidden" name="action" value="create" id="formAction">
+            <input type="hidden" name="announcement_id" id="announcement_id" value="0">
+            <input type="hidden" name="existing_attachment_path" id="existing_attachment_path" value="">
             <input type="hidden" name="template_type" id="ann-template_type" value="general">
             <input type="hidden" name="body_html" id="body_html">
 
@@ -1830,6 +1832,7 @@ if (isset($_GET['resend'])) {
         </div>
         <div class="event-modal-body" id="view-announcement-content"></div>
         <div class="event-modal-footer">
+            <button type="button" class="evt-btn evt-btn-secondary" id="editDraftBtn" style="display:none;">Edit Draft</button>
             <button type="button" class="evt-btn evt-btn-cancel" id="viewModalCancel">Close</button>
         </div>
     </div>
@@ -2372,10 +2375,108 @@ function describeRecipients(ann) {
     return parts.length ? parts.join(' + ') : 'N/A';
 }
 var viewOverlay = document.getElementById('viewAnnouncementOverlay');
+var currentViewAnnouncement = null;
+var editDraftBtn = document.getElementById('editDraftBtn');
+
+function updateViewDraftButtons(ann) {
+    if (!editDraftBtn) return;
+    if (ann && ann.status === 'draft') {
+        editDraftBtn.style.display = '';
+    } else {
+        editDraftBtn.style.display = 'none';
+    }
+}
+
+function loadDraftIntoCompose(ann) {
+    if (!ann) return;
+    currentViewAnnouncement = ann;
+    var subjectInput = document.getElementById('ann-subject');
+    var tplTypeInput = document.getElementById('ann-template_type');
+    var chEmail = document.getElementById('chEmail');
+    var chSMS = document.getElementById('chSMS');
+    var recAllParents = document.getElementById('recAllParents');
+    var recAllTeachers = document.getElementById('recAllTeachers');
+    var recAdvisers = document.getElementById('recAdvisers');
+    var recGrade = document.getElementById('recGrade');
+    var recIndiv = document.getElementById('recIndividual');
+    var gradeBox = document.getElementById('gradeCheckboxes');
+    var indivBox = document.getElementById('individualSearch');
+
+    try {
+        if (subjectInput) subjectInput.value = ann.subject || ann.title || '';
+        if (tplTypeInput) tplTypeInput.value = ann.template_type || 'general';
+        if (chEmail) chEmail.checked = false;
+        if (chSMS) chSMS.checked = false;
+        var channels = [];
+        try { channels = JSON.parse(ann.channels || '[]'); } catch(e) { channels = []; }
+        if (chEmail) chEmail.checked = channels.indexOf('email') !== -1;
+        if (chSMS) chSMS.checked = channels.indexOf('sms') !== -1;
+        var recipients = {};
+        try { recipients = JSON.parse(ann.recipients || '{}'); } catch(e) { recipients = {}; }
+        var rt = (ann.recipient_type || recipients.recipient_type || '').toString().split(',');
+        var hasRt = function(v) { return rt.indexOf(v) !== -1; };
+
+        if (recAllParents) recAllParents.checked = hasRt('all_parents') || hasRt('all') || !!recipients.all;
+        if (recAllTeachers) recAllTeachers.checked = hasRt('all_teachers');
+        if (recAdvisers) recAdvisers.checked = hasRt('advisers_only');
+        if (recGrade) {
+            recGrade.checked = hasRt('grade') || !!recipients.grades;
+            gradeBox.style.display = recGrade.checked ? 'block' : 'none';
+            if (recipients.grades && Array.isArray(recipients.grades)) {
+                recipients.grades.forEach(function(g) {
+                    var cb = document.getElementById('g' + g);
+                    if (cb) { cb.checked = true; var chip = document.getElementById('gradeChip' + g); if (chip) chip.classList.add('active'); }
+                });
+            }
+        }
+        if (recIndiv) {
+            recIndiv.checked = hasRt('individual') || !!recipients.student_ids;
+            indivBox.style.display = recIndiv.checked ? 'block' : 'none';
+            if (recipients.student_ids && Array.isArray(recipients.student_ids)) {
+                recipients.student_ids.forEach(function(id) {
+                    if (typeof selMap === 'object' && !selMap.has(parseInt(id))) {
+                        selMap.set(parseInt(id), { name: 'Student #' + id, sid: '', grade: '' });
+                    }
+                });
+                if (typeof renderStudents === 'function') renderStudents();
+            }
+        }
+
+        if (typeof quill !== 'undefined') {
+            var body = ann.body_html || ann.body || '';
+            quill.setContents([]);
+            quill.clipboard.dangerouslyPasteHTML(0, body);
+            var bodyHidden = document.getElementById('body_html');
+            var charCount = document.getElementById('charCount');
+            if (bodyHidden) bodyHidden.value = body;
+            if (charCount) {
+                var len = quill.getText().trim().length;
+                charCount.textContent = len.toLocaleString() + ' character' + (len !== 1 ? 's' : '');
+                charCount.classList.toggle('active', len > 0);
+            }
+        }
+
+        document.getElementById('announcement_id').value = ann.id || 0;
+        document.getElementById('existing_attachment_path').value = ann.attachment_path || '';
+        if (document.getElementById('formAction')) {
+            document.getElementById('formAction').value = 'create';
+        }
+        closeModal(viewOverlay);
+        if (subjectInput) subjectInput.focus();
+        showToast('Draft loaded for editing.', 'success');
+        setTimeout(function(){ document.getElementById('announcementForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
+    } catch (e) {
+        console.error('Load draft error:', e);
+        showToast('Unable to load draft for editing.', 'danger');
+    }
+}
+
 document.querySelectorAll('.view-announcement-trigger').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
         if (!this.dataset.announcement) return;
         var ann = JSON.parse(this.dataset.announcement);
+        currentViewAnnouncement = ann;
+        updateViewDraftButtons(ann);
         var recH = describeRecipients(ann);
         var ch = [];
         try { ch = JSON.parse(ann.channels || '[]'); } catch(err) { ch = []; }
@@ -2390,6 +2491,14 @@ document.querySelectorAll('.view-announcement-trigger').forEach(function(btn) {
         openModal(viewOverlay);
     });
 });
+
+if (editDraftBtn) {
+    editDraftBtn.addEventListener('click', function() {
+        if (currentViewAnnouncement && currentViewAnnouncement.status === 'draft') {
+            loadDraftIntoCompose(currentViewAnnouncement);
+        }
+    });
+}
 
 // ─── Custom Template Modal trigger ────────────────────────────────────
 document.getElementById('openCustomTemplateModal').addEventListener('click', function() {
