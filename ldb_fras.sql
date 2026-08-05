@@ -412,7 +412,6 @@ CREATE TABLE `student_faces` (
 CREATE TABLE `subjects` (
   `id` int(11) UNSIGNED NOT NULL,
   `subject_name` varchar(255) NOT NULL,
-  `subject_code` varchar(50) NOT NULL,
   `grade_level` enum('7','8','9','10','11','12') NOT NULL,
   `description` text DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
@@ -613,8 +612,6 @@ ALTER TABLE `student_faces`
 --
 ALTER TABLE `subjects`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `subject_code` (`subject_code`),
-  ADD KEY `idx_subjects_code` (`subject_code`),
   ADD KEY `idx_subjects_grade` (`grade_level`);
 
 --

@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         $instructions = [
             ['Field', 'Required', 'Format / Allowed Values'],
-            ['LRN', 'Yes', 'exactly 12 digits, must start with 1134'],
+            ['LRN', 'Yes', 'exactly 12 digits'],
             ['first_name', 'Yes', 'Text'],
             ['middle_name', 'No', 'Text'],
             ['last_name', 'Yes', 'Text'],

@@ -41,12 +41,11 @@ switch ($action) {
     case 'add':
         $data = [
             'subject_name' => sanitize($_POST['subject_name'] ?? ''),
-            'subject_code' => sanitize($_POST['subject_code'] ?? ''),
             'grade_level'  => sanitize($_POST['grade_level'] ?? ''),
             'description'  => sanitize($_POST['description'] ?? '')
         ];
-        if (empty($data['subject_name']) || empty($data['subject_code']) || empty($data['grade_level'])) {
-            redirect('/admin/subjects.php', 'Subject name, code, and grade level are required.', 'danger');
+        if (empty($data['subject_name']) || empty($data['grade_level'])) {
+            redirect('/admin/subjects.php', 'Subject name and grade level are required.', 'danger');
         }
         $result = addSubject($db, $data);
         if ($result) {
@@ -61,7 +60,6 @@ switch ($action) {
         if (!$id) redirect('/admin/subjects.php', 'Subject ID required.', 'danger');
         $data = [
             'subject_name' => sanitize($_POST['subject_name'] ?? ''),
-            'subject_code' => sanitize($_POST['subject_code'] ?? ''),
             'grade_level'  => sanitize($_POST['grade_level'] ?? ''),
             'description'  => sanitize($_POST['description'] ?? '')
         ];
@@ -252,28 +250,28 @@ switch ($action) {
     case 'add_elective_subject_bulk':
         $electiveId = intval($_POST['elective_id'] ?? 0);
         if (!$electiveId) jsonResponse(['error' => 'Elective ID required'], 400);
-        $codes     = $_POST['subject_code']     ?? [];
         $names     = $_POST['subject_name']     ?? [];
         $gradeFrom = $_POST['grade_from']       ?? [];
         $gradeTo   = $_POST['grade_to']         ?? [];
         $descs     = $_POST['subject_desc']     ?? [];
-        if (!is_array($codes) || empty($codes)) jsonResponse(['error' => 'At least one subject is required'], 400);
+        if (!is_array($names) || empty($names)) jsonResponse(['error' => 'At least one subject is required'], 400);
         $added = 0;
-        foreach ($codes as $i => $code) {
-            $code = trim($code);
-            $name = trim($names[$i] ?? '');
-            if ($code === '' || $name === '') continue;
+        foreach ($names as $i => $name) {
+            $name = trim($name);
+            if ($name === '') continue;
             $subjectId = null;
-            $dup = $db->prepare("SELECT id FROM subjects WHERE subject_code = ? LIMIT 1");
-            $dup->execute([$code]);
+            // Try to find existing subject by name
+            $dup = $db->prepare("SELECT id FROM subjects WHERE subject_name = ? LIMIT 1");
+            $dup->execute([$name]);
             $row = $dup->fetch();
             if ($row) {
                 $subjectId = (int)$row['id'];
                 $db->prepare("UPDATE subjects SET subject_name = ?, description = ?, grade_level = ?, grade_level_end = ? WHERE id = ?")
                    ->execute([$name, trim($descs[$i] ?? ''), trim($gradeFrom[$i] ?? ''), trim($gradeTo[$i] ?? ''), $subjectId]);
             } else {
-                $stmt = $db->prepare("INSERT INTO subjects (subject_code, subject_name, description, grade_level, grade_level_end, strand_id) VALUES (?,?,?,?,?,NULL)");
-                $stmt->execute([$code, $name, trim($descs[$i] ?? ''), trim($gradeFrom[$i] ?? ''), trim($gradeTo[$i] ?? '')]);
+                // Insert subject record (subject_code removed from schema)
+                $stmt = $db->prepare("INSERT INTO subjects (subject_name, description, grade_level, grade_level_end, strand_id) VALUES (?,?,?,?,NULL)");
+                $stmt->execute([$name, trim($descs[$i] ?? ''), trim($gradeFrom[$i] ?? ''), trim($gradeTo[$i] ?? '')]);
                 $subjectId = (int)$db->lastInsertId();
             }
             $link = $db->prepare("INSERT IGNORE INTO elective_subjects (elective_id, subject_id) VALUES (?, ?)");
@@ -315,17 +313,16 @@ switch ($action) {
         $subjectId = intval($_POST['subject_id'] ?? 0);
         if (!$subjectId) jsonResponse(['error' => 'Subject ID required'], 400);
         $data = [
-            'subject_code'    => sanitize($_POST['subject_code'] ?? ''),
             'subject_name'    => sanitize($_POST['subject_name'] ?? ''),
             'grade_level'     => sanitize($_POST['grade_level'] ?? ''),
             'grade_level_end' => sanitize($_POST['grade_level_end'] ?? ''),
             'description'     => sanitize($_POST['description'] ?? '')
         ];
-        if (empty($data['subject_name']) || empty($data['subject_code'])) {
-            jsonResponse(['error' => 'Subject code and name are required'], 400);
+        if (empty($data['subject_name'])) {
+            jsonResponse(['error' => 'Subject name is required'], 400);
         }
-        $stmt = $db->prepare("UPDATE subjects SET subject_code = ?, subject_name = ?, grade_level = ?, grade_level_end = ?, description = ? WHERE id = ?");
-        if ($stmt->execute([$data['subject_code'], $data['subject_name'], $data['grade_level'], $data['grade_level_end'], $data['description'], $subjectId])) {
+        $stmt = $db->prepare("UPDATE subjects SET subject_name = ?, grade_level = ?, grade_level_end = ?, description = ?, updated_at = NOW() WHERE id = ?");
+        if ($stmt->execute([$data['subject_name'], $data['grade_level'], $data['grade_level_end'], $data['description'], $subjectId])) {
             jsonResponse(['success' => true, 'message' => 'Subject updated']);
         } else {
             jsonResponse(['error' => 'Failed to update subject'], 500);

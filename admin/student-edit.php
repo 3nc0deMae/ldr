@@ -44,6 +44,7 @@ $errors = [];
 // Handle update — BEFORE any output (admin only)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentRole === 'admin' && isset($_POST['update_info'])) {
     $data = [
+        'student_id'     => trim($_POST['student_id'] ?? $student['student_id']),
         'name_extension' => sanitize($_POST['name_extension'] ?? ''),
         'first_name'     => sanitize($_POST['first_name'] ?? ''),
         'middle_name'    => sanitize($_POST['middle_name'] ?? ''),
@@ -61,13 +62,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentRole === 'admin' && isset($
     if (empty($data['gender']))      $errors[] = 'Gender is required.';
     if (empty($data['grade_level'])) $errors[] = 'Grade level is required.';
 
+    // LRN validation (editable in edit form)
+    if (empty($data['student_id'])) {
+        $errors[] = 'LRN is required.';
+    } elseif (!preg_match('/^\d{12}$/', $data['student_id'])) {
+        $errors[] = 'LRN must be exactly 12 digits.';
+    }
+
     $guardianPhone = trim($_POST['guardian_phone'] ?? '');
     if (!empty($guardianPhone) && !isValidPhilippinePhone($guardianPhone)) {
         $errors[] = 'Guardian phone number must start with +63 and contain 11 digits only.';
     }
 
     if (empty($errors)) {
-        if (updateStudent($db, $studentId, $data)) {
+        // Check duplicate LRN (exclude current student)
+        $existingLrn = getStudentByStudentId($db, $data['student_id']);
+        if ($existingLrn && intval($existingLrn['id']) !== $studentId) {
+            $errors[] = 'This LRN already exists in the system.';
+        } else {
+            if (updateStudent($db, $studentId, $data)) {
             saveGuardian($db, $studentId, [
                 'guardian_name' => sanitize($_POST['guardian_name'] ?? ''),
                 'relationship'  => sanitize($_POST['relationship'] ?? ''),
@@ -76,8 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentRole === 'admin' && isset($
                 'address'       => sanitize($_POST['guardian_address'] ?? '')
             ]);
             redirect("/admin/student-edit.php?id=$studentId", 'Student updated successfully.', 'success');
-        } else {
-            $errors[] = 'Failed to update student.';
+            } else {
+                $errors[] = 'Failed to update student.';
+            }
         }
     }
 
@@ -409,11 +423,12 @@ require_once __DIR__ . '/../includes/sidebar.php';
                 <div class="card-body">
                     <div class="row g-3">
 
-                        <!-- LRN (read-only) -->
+                        <!-- LRN (editable for admins) -->
                         <div class="col-12 col-md-4">
                             <label class="form-field-label">LRN (Learner Reference Number)</label>
-                            <input type="text" class="form-input lrn-display"
-                                   value="<?= sanitize($student['student_id']) ?>" disabled>
+                            <input type="text" name="student_id" class="form-input lrn-display"
+                                   inputmode="numeric" maxlength="12" pattern="\d{12}"
+                                   value="<?= sanitize($student['student_id']) ?>" <?= $isReadOnly ? 'disabled' : '' ?>>
                         </div>
 
                         <!-- Name Extension (optional) -->

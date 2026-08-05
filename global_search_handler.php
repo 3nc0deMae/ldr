@@ -182,15 +182,14 @@ if ($role === 'admin') {
 
 if ($role === 'admin') {
     try {
-        $stmt = $db->prepare("
-            SELECT sub.id, sub.subject_code, sub.subject_name, sub.grade_level
-            FROM subjects sub
-            WHERE sub.subject_name LIKE :q1
-               OR sub.subject_code LIKE :q2
-            ORDER BY sub.subject_name ASC
-            LIMIT 5
+        $stmt = $db->prepare("\
+            SELECT sub.id, sub.subject_name, sub.grade_level\
+            FROM subjects sub\
+            WHERE sub.subject_name LIKE :q1\
+            ORDER BY sub.subject_name ASC\
+            LIMIT 5\
         ");
-        $stmt->execute([':q1' => $searchPattern, ':q2' => $searchPattern]);
+        $stmt->execute([':q1' => $searchPattern]);
         $subjects = $stmt->fetchAll();
     } catch (Exception $e) {
         error_log('Global search subjects error: ' . $e->getMessage());
@@ -370,7 +369,7 @@ $hasResults = !empty($students) || !empty($teachers) || !empty($subjects)
         </div>
         <div class="search-result-body">
             <div class="search-result-title"><?= esc($sub['subject_name']) ?></div>
-            <div class="search-result-meta"><?= esc($sub['subject_code']) ?> · Grade <?= esc($sub['grade_level']) ?></div>
+            <div class="search-result-meta">Grade <?= esc($sub['grade_level']) ?></div>
         </div>
     </a>
     <?php endforeach; ?>

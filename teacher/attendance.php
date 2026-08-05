@@ -406,7 +406,7 @@ if ($activeSession) {
                                         <option value="">Select Subject</option>
                                         <?php foreach ($subjects as $sub): ?>
                                             <option value="<?= $sub['id'] ?>">
-                                                <?= sanitize($sub['subject_name']) ?> (<?= sanitize($sub['subject_code']) ?>)
+                                                <?= sanitize($sub['subject_name']) ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>

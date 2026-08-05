@@ -245,6 +245,8 @@ switch ($action) {
         }
         if (!is_array($trackElectiveHandled)) $trackElectiveHandled = [];
 
+        // Cross-teacher sharing of the same grade/section + subject is allowed.
+
          $data = [
              'employee_id'     => sanitize($_POST['employee_id'] ?? ''),
              'first_name'      => sanitize($_POST['first_name'] ?? ''),
@@ -266,7 +268,6 @@ switch ($action) {
             jsonResponse(['success' => false, 'message' => 'Failed to update teacher.'], 500);
         }
         break;
-
     case 'delete':
         $id = intval($_POST['id'] ?? 0);
         if (!$id) {

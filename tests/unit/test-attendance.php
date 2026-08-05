@@ -113,7 +113,6 @@ if ($db) {
         // Test recordAttendance
         $attSubjectId = addSubject($db, [
             'subject_name' => 'Att Test Subject ' . time(),
-            'subject_code' => 'ATT' . time(),
             'grade_level'  => '10',
             'description'  => 'Attendance test subject'
         ]);
@@ -175,7 +174,6 @@ if ($db) {
 
     $newSubjectId = addSubject($db, [
         'subject_name' => 'Test Subject ' . time(),
-        'subject_code' => 'TST' . time(),
         'grade_level'  => '10',
         'description'  => 'Test description'
     ]);
@@ -190,7 +188,6 @@ if ($db) {
 
         updateSubject($db, $newSubjectId, [
             'subject_name' => 'Updated Subject',
-            'subject_code' => 'UPD' . time(),
             'grade_level'  => '11',
             'description'  => 'Updated description'
         ]);

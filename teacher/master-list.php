@@ -512,7 +512,7 @@ $advisorySectionName  = $advisoryRecord ? trim((string)$advisoryRecord['section_
 
     function renderStudents(data) {
         const subjectLabel = data.subject
-            ? ' &middot; ' + escapeHtml(data.subject.subject_name) + ' (' + escapeHtml(data.subject.subject_code) + ')'
+            ? ' &middot; ' + escapeHtml(data.subject.subject_name)
             : '';
         const sectionLabel = data.section
             ? ' &middot; Section ' + escapeHtml(data.section.section_name || data.section)

@@ -125,18 +125,29 @@ function dispatchParentNotification($db, $student_id, $trigger_event, $extra_dat
             '{consecutive_absence_limit}' => $config['consecutive_absence_limit']
         ];
 
+        $defaultTemplates = [
+            'TIME_IN'     => '{student_name} has safely arrived at {school_name} on {date} at {time}.',
+            'TIME_OUT'    => '{student_name} has departed {school_name} on {date} at {time}.',
+            'GATE_ABSENT' => '{student_name} was marked ABSENT at the {school_name} gate on {date} at {time}.',
+            '3X_ABSENCE'  => '{student_name} has been absent for {consecutive_absence_limit} consecutive days.'
+        ];
+
         switch ($trigger_event) {
             case 'TIME_IN':
-                $template = $config['template_time_in'] ?? '';
+                $template = trim($config['template_time_in'] ?? '');
+                if ($template === '') $template = $defaultTemplates['TIME_IN'];
                 break;
             case 'TIME_OUT':
-                $template = $config['template_time_out'] ?? '';
+                $template = trim($config['template_time_out'] ?? '');
+                if ($template === '') $template = $defaultTemplates['TIME_OUT'];
                 break;
             case 'GATE_ABSENT':
-                $template = $config['template_gate_absent'] ?? '';
+                $template = trim($config['template_gate_absent'] ?? '');
+                if ($template === '') $template = $defaultTemplates['GATE_ABSENT'];
                 break;
             case '3X_ABSENCE':
-                $template = $config['template_absent_3x'] ?? '';
+                $template = trim($config['template_absent_3x'] ?? '');
+                if ($template === '') $template = $defaultTemplates['3X_ABSENCE'];
                 // Verify consecutive absences before sending
                 if (!verifyConsecutiveAbsences($db, $student_id, (int)($config['consecutive_absence_limit'] ?? 3), $extra_data['subject_id'] ?? null)) {
                     $result['status'] = 'ABSENCE_THRESHOLD_NOT_MET';

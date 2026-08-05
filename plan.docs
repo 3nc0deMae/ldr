@@ -165,12 +165,11 @@ fullname
 email
 phone
 Subjects
-subjects
+Subjects
 
 Fields:
 
 subject_name
-subject_code
 grade_level
 Attendance
 attendance

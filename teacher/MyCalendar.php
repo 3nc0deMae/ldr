@@ -27,14 +27,12 @@ try {
 
 $teacherId = getCurrentUserId();
 $teacherRecord = null;
-$teacherRecordId = 0;
-$teacherSessionIds = []; $teacherSubjectIds = [];
+$teacherSubjectIds = [];
 
 try {
     $stmt = $db->prepare("SELECT t.* FROM teachers t JOIN users u ON t.user_id = u.id WHERE u.id = ? LIMIT 1");
     $stmt->execute([$teacherId]);
     $teacherRecord = $stmt->fetch();
-    $teacherRecordId = $teacherRecord ? (int)$teacherRecord['id'] : 0;
 } catch (Exception $e) {}
 
 if (isset($_POST['ajax_action']) || isset($_GET['ajax_action'])) {
@@ -85,8 +83,6 @@ $pageTitle = 'My Calendar';
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 
-try { $stmt = $db->prepare("SELECT id FROM attendance_sessions WHERE created_by = ?"); $stmt->execute([$teacherRecordId]); $teacherSessionIds = $stmt->fetchAll(PDO::FETCH_COLUMN); } catch (Exception $e) {}
-
 $assignedSubjectIds = [];
 if ($teacherRecord) {
     foreach (['grade_section_handled', 'core_subjects_handled', 'track_elective_handled'] as $field) {
@@ -105,25 +101,22 @@ $teacherSubjectIds = array_values(array_unique(array_filter($assignedSubjectIds,
 $rangeStart = date('Y-m-01', strtotime('-2 months')); $rangeEnd = date('Y-m-t', strtotime('+2 months'));
 $calendarEvents = []; $calendarSessions = []; $adminEvents = [];
 
-if (!empty($teacherSessionIds)) {
-    try {
-        $ph = implode(',', array_fill(0, count($teacherSessionIds), '?'));
-        $stmt = $db->prepare("SELECT DATE(scan_time) as event_date, SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late, COUNT(*) as total FROM attendance_records WHERE session_id IN ($ph) AND DATE(scan_time) BETWEEN ? AND ? GROUP BY DATE(scan_time)");
-        $stmt->execute(array_merge($teacherSessionIds, [$rangeStart, $rangeEnd]));
-        foreach ($stmt->fetchAll() as $row) { $d=$row['event_date']; if(!isset($calendarEvents[$d]))$calendarEvents[$d]=['present'=>0,'absent'=>0,'late'=>0,'total'=>0]; $calendarEvents[$d]['present']+=(int)$row['present']; $calendarEvents[$d]['absent']+=(int)$row['absent']; $calendarEvents[$d]['late']+=(int)$row['late']; $calendarEvents[$d]['total']+=(int)$row['total']; }
-    } catch (Exception $e) {}
-}
+try {
+    $stmt = $db->prepare("SELECT DATE(ar.scan_time) as event_date, SUM(CASE WHEN ar.status='present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN ar.status='absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN ar.status='late' THEN 1 ELSE 0 END) as late, COUNT(*) as total FROM attendance_records ar INNER JOIN gate_sessions gs ON ar.gate_session_id = gs.id WHERE gs.created_by = ? AND DATE(ar.scan_time) BETWEEN ? AND ? GROUP BY DATE(ar.scan_time)");
+    $stmt->execute([$teacherId, $rangeStart, $rangeEnd]);
+    foreach ($stmt->fetchAll() as $row) { $d=$row['event_date']; if(!isset($calendarEvents[$d]))$calendarEvents[$d]=['present'=>0,'absent'=>0,'late'=>0,'total'=>0]; $calendarEvents[$d]['present']+=(int)$row['present']; $calendarEvents[$d]['absent']+=(int)$row['absent']; $calendarEvents[$d]['late']+=(int)$row['late']; $calendarEvents[$d]['total']+=(int)$row['total']; }
+} catch (Exception $e) {}
 if (!empty($teacherSubjectIds)) {
     try {
         $ph = implode(',', array_fill(0, count($teacherSubjectIds), '?'));
-        $stmt = $db->prepare("SELECT date as event_date, SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late, COUNT(*) as total FROM attendance WHERE subject_id IN ($ph) AND date BETWEEN ? AND ? GROUP BY date");
-        $stmt->execute(array_merge($teacherSubjectIds, [$rangeStart, $rangeEnd]));
+        $stmt = $db->prepare("SELECT date as event_date, SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late, COUNT(*) as total FROM attendance WHERE subject_id IN ($ph) AND recorded_by = ? AND date BETWEEN ? AND ? GROUP BY date");
+        $stmt->execute(array_merge($teacherSubjectIds, [$teacherId, $rangeStart, $rangeEnd]));
         foreach ($stmt->fetchAll() as $row) { $d=$row['event_date']; if(!isset($calendarEvents[$d]))$calendarEvents[$d]=['present'=>0,'absent'=>0,'late'=>0,'total'=>0]; $calendarEvents[$d]['present']+=(int)$row['present']; $calendarEvents[$d]['absent']+=(int)$row['absent']; $calendarEvents[$d]['late']+=(int)$row['late']; $calendarEvents[$d]['total']+=(int)$row['total']; }
     } catch (Exception $e) {}
 }
 try {
     $stmt = $db->prepare("SELECT s.*, sub.subject_name FROM attendance_sessions s LEFT JOIN subjects sub ON s.subject_id = sub.id WHERE s.created_by = ? AND s.created_at BETWEEN ? AND ? ORDER BY s.created_at ASC");
-    $stmt->execute([$teacherRecordId, $rangeStart . ' 00:00:00', $rangeEnd . ' 23:59:59']);
+    $stmt->execute([$teacherId, $rangeStart . ' 00:00:00', $rangeEnd . ' 23:59:59']);
     foreach ($stmt->fetchAll() as $row) { $d=date('Y-m-d',strtotime($row['created_at'])); if(!isset($calendarSessions[$d]))$calendarSessions[$d]=[]; $calendarSessions[$d][]=['subject'=>$row['subject_name']??ucfirst($row['session_type']??'Session'),'time'=>date('g:i A',strtotime($row['created_at'])),'type'=>$row['session_type']??'manual','status'=>$row['status']??'completed']; }
 } catch (Exception $e) {}
 try {

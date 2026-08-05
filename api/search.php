@@ -56,12 +56,12 @@ if (in_array($role, ['admin', 'teacher'])) {
 // Sessions/Subjects - admin and teacher roles
 if (in_array($role, ['admin', 'teacher'])) {
     try {
-        $stmt = $db->prepare("
-            SELECT sub.id, sub.subject_code, sub.subject_name as name, sub.grade_level, s.section, 'subject' as type, 'bi-book' as icon, CONCAT('Grade ', sub.grade_level, ' - ', s.section) as meta, CONCAT(:base, '/admin/subjects.php') as url
-            FROM subjects sub
-            LEFT JOIN students s ON 1=1
-            WHERE sub.subject_name LIKE :q OR sub.subject_code LIKE :q
-            LIMIT 5
+        $stmt = $db->prepare("\
+            SELECT sub.id, sub.subject_name as name, sub.grade_level, s.section, 'subject' as type, 'bi-book' as icon, CONCAT('Grade ', sub.grade_level, ' - ', s.section) as meta, CONCAT(:base, '/admin/subjects.php') as url\
+            FROM subjects sub\
+            LEFT JOIN students s ON 1=1\
+            WHERE sub.subject_name LIKE :q\
+            LIMIT 5\
         ");
         $stmt->execute([':q' => $searchPattern, ':base' => BASE_URL]);
         foreach ($stmt->fetchAll() as $row) {

@@ -78,44 +78,41 @@ if (isset($_POST['ajax_action']) || isset($_GET['ajax_action'])) {
     switch ($action) {
 
         case 'add_subject':
-            $code = trim($_POST['subject_code'] ?? '');
             $name = trim($_POST['subject_name'] ?? '');
             $desc = trim($_POST['description'] ?? '');
             $gf   = trim($_POST['grade_from'] ?? '');
             $gt   = trim($_POST['grade_to'] ?? '');
             $sid  = !empty($_POST['strand_id']) ? (int)$_POST['strand_id'] : null;
-            if (empty($code) || empty($name) || empty($gf) || empty($gt)) { echo json_encode(['success'=>false,'message'=>'Subject code, name, and grade range are required.']); exit; }
+            if (empty($name) || empty($gf) || empty($gt)) { echo json_encode(['success'=>false,'message'=>'Subject name and grade range are required.']); exit; }
             $v = ['7','8','9','10','11','12'];
             if (!in_array($gf,$v)||!in_array($gt,$v)) { echo json_encode(['success'=>false,'message'=>'Invalid grade.']); exit; }
             if ((int)$gf > (int)$gt) [$gf,$gt] = [$gt,$gf];
             if ((int)$gf < 11 && (int)$gt < 11) $sid = null;
             try {
-                $dup = $db->prepare("SELECT id FROM subjects WHERE subject_code=?"); $dup->execute([$code]);
-                if ($dup->fetch()) { echo json_encode(['success'=>false,'message'=>'Subject code already exists.']); exit; }
-                $db->prepare("INSERT INTO subjects (subject_code,subject_name,description,grade_level,grade_level_end,strand_id) VALUES (?,?,?,?,?,?)")
-                   ->execute([$code,$name,$desc,$gf,$gt,$sid]);
+                $db->prepare("INSERT INTO subjects (subject_name,description,grade_level,grade_level_end,strand_id) VALUES (?,?,?,?,?)")
+                   ->execute([$name,$desc,$gf,$gt,$sid]);
                 echo json_encode(['success'=>true,'message'=>'Subject added.']);
-            } catch (Exception $e) { echo json_encode(['success'=>false,'message'=>'Database error.']); }
+            } catch (Exception $e) { error_log('add_subject error: '.$e->getMessage()); echo json_encode(['success'=>false,'message'=>'Database error.']); }
             exit;
 
         case 'update_subject':
             $id   = (int)($_POST['id'] ?? 0);
-            $code = trim($_POST['subject_code'] ?? '');
             $name = trim($_POST['subject_name'] ?? '');
             $desc = trim($_POST['description'] ?? '');
             $gf   = trim($_POST['grade_from'] ?? '');
             $gt   = trim($_POST['grade_to'] ?? '');
             $sid  = !empty($_POST['strand_id']) ? (int)$_POST['strand_id'] : null;
-            if ($id<=0||empty($code)||empty($name)||empty($gf)||empty($gt)) { echo json_encode(['success'=>false,'message'=>'All required fields must be filled.']); exit; }
+            if ($id<=0||empty($name)||empty($gf)||empty($gt)) { echo json_encode(['success'=>false,'message'=>'All required fields must be filled.']); exit; }
             $v = ['7','8','9','10','11','12'];
             if (!in_array($gf,$v)||!in_array($gt,$v)) { echo json_encode(['success'=>false,'message'=>'Invalid grade.']); exit; }
             if ((int)$gf > (int)$gt) [$gf,$gt] = [$gt,$gf];
             if ((int)$gf < 11 && (int)$gt < 11) $sid = null;
             try {
-                $db->prepare("UPDATE subjects SET subject_code=?,subject_name=?,description=?,grade_level=?,grade_level_end=?,strand_id=? WHERE id=?")
-                   ->execute([$code,$name,$desc,$gf,$gt,$sid,$id]);
+                // Update subject name/description/grades/strand
+                $db->prepare("UPDATE subjects SET subject_name=?,description=?,grade_level=?,grade_level_end=?,strand_id=?,updated_at=NOW() WHERE id=?")
+                   ->execute([$name,$desc,$gf,$gt,$sid,$id]);
                 echo json_encode(['success'=>true,'message'=>'Subject updated.']);
-            } catch (Exception $e) { echo json_encode(['success'=>false,'message'=>'Database error.']); }
+            } catch (Exception $e) { error_log('update_subject error: '.$e->getMessage()); echo json_encode(['success'=>false,'message'=>'Database error.']); }
             exit;
 
         case 'delete_subject':
@@ -605,18 +602,16 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
             <div class="card-body">
                 <?php if(empty($subjects)): ?><div class="empty-state"><div class="empty-icon bg-primary-soft"><i class="bi bi-book"></i></div><h6>No Subjects Found</h6><p>Add your first subject to get started.</p></div>
                 <?php else: ?><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr>
-                    <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Subject Code</th>
                     <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Subject Name</th>
                     <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Grade Level</th>
                     <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Description</th>
                     <th style="width:100px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Actions</th>
                 </tr></thead><tbody><?php foreach($subjects as $s): ?><tr class="subject-card-item" data-grade-start="<?= (int)$s['grade_level'] ?>" data-grade-end="<?= (int)($s['grade_level_end'] ?? $s['grade_level']) ?>">
-                    <td><code style="font-size:12px"><?= sanitize($s['subject_code']) ?></code></td>
                     <td class="fw-600"><?= sanitize($s['subject_name']) ?></td>
                     <td><span class="grade-range-badge bg-secondary-soft text-primary"><?= sanitize(gradeRangeLabel($s)) ?></span></td>
                     <td style="font-size:12px"><?= !empty($s['description']) ? sanitize($s['description']) : '-' ?></td>
                     <td><div class="d-flex gap-1">
-                        <button class="btn btn-sm btn-outline-primary" style="padding:4px 10px" onclick='openEditSubject(<?= json_encode(['id'=>(int)$s['id'],'subject_code'=>$s['subject_code'],'subject_name'=>$s['subject_name'],'description'=>$s['description']??'','grade_level'=>$s['grade_level'],'grade_level_end'=>$s['grade_level_end']??'','strand_id'=>$s['strand_id']??''],JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>)'><i class="bi bi-pencil" style="font-size:12px"></i></button>
+                        <button class="btn btn-sm btn-outline-primary" style="padding:4px 10px" onclick='openEditSubject(<?= json_encode(['id'=>(int)$s['id'],'subject_name'=>$s['subject_name'],'description'=>$s['description']??'','grade_level'=>$s['grade_level'],'grade_level_end'=>$s['grade_level_end']??'','strand_id'=>$s['strand_id']??''],JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>)'><i class="bi bi-pencil" style="font-size:12px"></i></button>
                         <button class="btn btn-sm btn-outline-danger" style="padding:4px 10px" onclick="openDeleteModal('subject',<?= $s['id'] ?>, '<?= addslashes($s['subject_name']) ?>')"><i class="bi bi-trash" style="font-size:12px"></i></button>
                     </div></td>
                 </tr><?php endforeach; ?></tbody></table></div><?php endif; ?>
@@ -670,7 +665,7 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
 <!-- ADD SUBJECT -->
 <div class="event-modal-overlay" id="addSubjectOverlay"><div class="event-modal"><div class="event-modal-header"><div class="event-modal-title"><i class="bi bi-book-half"></i><span>Add New Subject</span></div><button class="event-modal-close" onclick="closeModal('addSubjectOverlay')"><i class="bi bi-x-lg"></i></button></div>
 <form id="addSubjectForm" autocomplete="off"><input type="hidden" name="ajax_action" value="add_subject"><div class="event-modal-body">
-    <div class="evt-field"><label>Subject Code <span class="required">*</span></label><input type="text" name="subject_code" placeholder="e.g. MATH101" required maxlength="50"></div>
+    <!-- Subject code removed: generated automatically -->
     <div class="evt-field"><label>Subject Name <span class="required">*</span></label><input type="text" name="subject_name" placeholder="e.g. Mathematics" required maxlength="150"></div>
     <div class="evt-separator"></div><div class="evt-section-label"><i class="bi bi-mortarboard"></i> Grade Level Range</div>
      <div class="evt-row"><div class="evt-field evt-flex-1"><label>From <span class="required">*</span></label><select name="grade_from" id="add-from" required><?= buildGradeOptions($strands,true,'From Grade',true) ?></select></div>
@@ -682,11 +677,11 @@ function buildGradeOptions($strands, $includePlaceholder=true, $placeholderText=
 <!-- EDIT SUBJECT -->
 <div class="event-modal-overlay" id="editSubjectOverlay"><div class="event-modal"><div class="event-modal-header"><div class="event-modal-title"><i class="bi bi-pencil-square"></i><span>Edit Subject</span></div><button class="event-modal-close" onclick="closeModal('editSubjectOverlay')"><i class="bi bi-x-lg"></i></button></div>
 <form id="editSubjectForm" autocomplete="off"><input type="hidden" name="ajax_action" value="update_subject"><input type="hidden" name="id" id="edit-id"><div class="event-modal-body">
-    <div class="evt-field"><label>Subject Code <span class="required">*</span></label><input type="text" name="subject_code" id="edit-code" required maxlength="50"></div>
+    <!-- Subject code removed: generated automatically -->
     <div class="evt-field"><label>Subject Name <span class="required">*</span></label><input type="text" name="subject_name" id="edit-name" required maxlength="150"></div>
     <div class="evt-separator"></div><div class="evt-section-label"><i class="bi bi-mortarboard"></i> Grade Level Range</div>
-    <div class="evt-row"><div class="evt-field evt-flex-1"><label>From <span class="required">*</span></label><select name="grade_from" id="edit-from" required><?= buildGradeOptions($strands,false) ?></select></div>
-    <div class="evt-field evt-flex-1"><label>To <span class="required">*</span></label><select name="grade_to" id="edit-to" required><?= buildGradeOptions($strands,false) ?></select></div></div>
+    <div class="evt-row"><div class="evt-field evt-flex-1"><label>From <span class="required">*</span></label><select name="grade_from" id="edit-from" required><?= buildGradeOptions($strands,false,'',true) ?></select></div>
+    <div class="evt-field evt-flex-1"><label>To <span class="required">*</span></label><select name="grade_to" id="edit-to" required><?= buildGradeOptions($strands,false,'',true) ?></select></div></div>
     <div class="evt-separator"></div>
     <div class="evt-field"><label>Description</label><textarea name="description" id="edit-desc" rows="2" maxlength="500"></textarea></div>
 </div><div class="event-modal-footer"><button type="button" class="evt-btn evt-btn-cancel" onclick="closeModal('editSubjectOverlay')">Cancel</button><button type="submit" class="evt-btn evt-btn-save" id="editSubjectSave"><i class="bi bi-check-lg me-1"></i> Save Changes</button></div></form></div></div>
@@ -816,10 +811,7 @@ function parseGradeVal(v){
 }
 
 function gradeValToStr(g,sid){
-    if(!sid||sid===''||sid==='0'||sid===0){
-        return g>=11?g+':0':String(g);
-    }
-    return g>=11?g+':'+sid:String(g);
+    return String(g);
 }
 
 function updateToOptions(fId,tId){
@@ -874,7 +866,6 @@ document.getElementById('btnAddTrack').addEventListener('click',function(){
 // EDIT SUBJECT
 window.openEditSubject=function(s){
     document.getElementById('edit-id').value=s.id;
-    document.getElementById('edit-code').value=s.subject_code||'';
     document.getElementById('edit-name').value=s.subject_name||'';
     document.getElementById('edit-desc').value=s.description||'';
     document.getElementById('edit-from').value=gradeValToStr(parseInt(s.grade_level),s.strand_id);

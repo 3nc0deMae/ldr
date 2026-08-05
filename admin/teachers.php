@@ -777,15 +777,15 @@ function formatTeacherTrackElectiveText($details) {
 
     /* PHONE FORMAT: 09XX-XXX-XXXX */
     function formatPhone(input){input.addEventListener('input',function(){var v=this.value.replace(/\D/g,'');if(v.length>11)v=v.substring(0,11);var f='';if(v.length>0)f=v.substring(0,4);if(v.length>4)f+='-'+v.substring(4,7);if(v.length>7)f+='-'+v.substring(7,11);this.value=f;});}
-    formatPhone(document.getElementById('add-phone'));
-    formatPhone(document.getElementById('edit-phone'));
+    var _addPhoneEl = document.getElementById('add-phone'); if(_addPhoneEl) formatPhone(_addPhoneEl);
+    var _editPhoneEl = document.getElementById('edit-phone'); if(_editPhoneEl) formatPhone(_editPhoneEl);
 
     function syncSubjectSelection(selectEl, selectedValues){if(!selectEl)return;var values=Array.isArray(selectedValues)?selectedValues:String(selectedValues||'').split(',');Array.from(selectEl.options).forEach(function(opt){var isSelected=values.some(function(value){return String(value).trim()===opt.value;});opt.selected=isSelected;});}
 
     var gradeSectionOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>trim((string)($s['grade_level'].($s['section_name']?' - '.$s['section_name']:'')).($s['strand_code']?' ('.$s['strand_code'].')':''))];}, $teacherSections), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var shsGradeSectionOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>trim((string)($s['grade_level'].($s['section_name']?' - '.$s['section_name']:'')).($s['strand_code']?' ('.$s['strand_code'].')':''))];}, $shsSections), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var jhsGradeSectionOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>trim((string)($s['grade_level'].($s['section_name']?' - '.$s['section_name']:'')).($s['strand_code']?' ('.$s['strand_code'].')':''))];}, $jhsSections), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
-    var sectionGradeMap = <?= json_encode(array_combine(array_column($teacherSections,'id'), array_column($teacherSections,'grade_level')), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
+    var sectionGradeMap = <?= json_encode(!empty($teacherSections) ? array_combine(array_column($teacherSections,'id'), array_column($teacherSections,'grade_level')) : [], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var subjectOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>$s['subject_name'],'grade_level'=>$s['grade_level'],'grade_level_end'=>$s['grade_level_end']??$s['grade_level']];}, $teacherSubjects), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var coreSubjectOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>$s['subject_name'],'grade_level'=>$s['grade_level'],'grade_level_end'=>$s['grade_level_end']??$s['grade_level']];}, $coreSubjectOptions), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var trackOptions = <?= json_encode(array_map(function($t){return ['value'=>$t['id'],'text'=>$t['track_name']];}, $tracks), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
@@ -1014,12 +1014,27 @@ function formatTeacherTrackElectiveText($details) {
     var addTrackElectiveContainer = document.getElementById('trackElectiveRepeatable');
     var addTrackElectiveHidden = document.getElementById('track_elective_handled');
     function getCsrf(){var m=document.querySelector('meta[name="csrf-token"]');return m?m.getAttribute('content') : '';}
+    function parseResponseAsJson(resp) {
+        return resp.text().then(function(text) {
+            try {
+                var parsed = JSON.parse(text || '{}');
+                if (!resp.ok) {
+                    throw new Error(parsed.message || parsed.error || ('Error ' + resp.status));
+                }
+                return parsed;
+            } catch (err) {
+                var stripped = (text || '').replace(/<[^>]+>/g, '').trim();
+                var msg = stripped || ('Error ' + resp.status);
+                throw new Error(msg);
+            }
+        });
+    }
     if(addO&&addF&&addB){
         function openAddTeacher(){addF.reset();if(addGradeContainer) addGradeContainer.innerHTML='';if(addGradeHidden) addGradeHidden.value='[]';if(addCoreSubjectContainer) addCoreSubjectContainer.innerHTML='';if(addCoreSubjectHidden) addCoreSubjectHidden.value='[]';if(addTrackElectiveContainer) addTrackElectiveContainer.innerHTML='';if(addTrackElectiveHidden) addTrackElectiveHidden.value='[]';openModal(addO);}
         var openBtn=document.getElementById('openAddTeacher');if(openBtn)openBtn.addEventListener('click',openAddTeacher);
         var openBtnM=document.getElementById('openAddTeacherMobile');if(openBtnM)openBtnM.addEventListener('click',openAddTeacher);
-        document.getElementById('addTeacherClose').addEventListener('click',function(){closeModal(addO);});
-        document.getElementById('addTeacherCancel').addEventListener('click',function(){closeModal(addO);});
+        var _addClose = document.getElementById('addTeacherClose'); if(_addClose) _addClose.addEventListener('click',function(){closeModal(addO);});
+        var _addCancel = document.getElementById('addTeacherCancel'); if(_addCancel) _addCancel.addEventListener('click',function(){closeModal(addO);});
         var addGradeBtn=document.getElementById('addGradeBtn');
         if(addGradeBtn){
             addGradeBtn.addEventListener('click',function(){
@@ -1050,12 +1065,11 @@ function formatTeacherTrackElectiveText($details) {
             updateGradeHandledHidden(addGradeContainer, addGradeHidden);
             updateCoreSubjectHidden(addCoreSubjectContainer, addCoreSubjectHidden);
             updateTrackElectiveHidden(addTrackElectiveContainer, addTrackElectiveHidden);
-            addB.classList.add('loading');addB.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Adding...';
-            var fd=new FormData(addF);fd.append('action','add');fd.append('csrf_token',getCsrf());
-            fetch('<?= BASE_URL ?>/api/teachers.php',{method:'POST',body:fd}).then(function(r){
-                if(!r.ok) { return r.json().then(function(d){ throw new Error(d.message || ('Error ' + r.status)); }); }
-                return r.json();
-            }).then(function(d){
+                addB.classList.add('loading');addB.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Adding...';
+                var fd=new FormData(addF);fd.append('action','add');fd.append('csrf_token',getCsrf());
+                console.debug('Submitting add teacher', {url: '<?= BASE_URL ?>/api/teachers.php'});
+                var controller = new AbortController(); var signal = controller.signal; var timeoutId = setTimeout(function(){ controller.abort(); }, 12000);
+                fetch('<?= BASE_URL ?>/api/teachers.php',{method:'POST',body:fd, signal: signal}).then(function(r){ clearTimeout(timeoutId); return parseResponseAsJson(r); }).then(function(d){
                 if(d.success && d.teacher) {
                     var t = d.teacher;
                     var cardBody = document.querySelector('.teacher-table-wrapper .card-body');
@@ -1224,7 +1238,15 @@ var teacherName = escapeHtml(t.first_name);
                     showToast(d.message || 'Failed.','error');
                 }
             })
-            .catch(function(err){showToast((err && err.message ? err.message : 'Something went wrong. Please try again.'),'error');console.error(err);})
+            .catch(function(err){
+                if (err && err.name === 'AbortError') {
+                    showToast('Request timed out. The server did not respond.','error');
+                    console.error('Add teacher request aborted (timeout)');
+                } else {
+                    showToast((err && err.message ? err.message : 'Something went wrong. Please try again.'),'error');
+                    console.error(err);
+                }
+            })
             .finally(function(){addB.classList.remove('loading');addB.innerHTML='<i class="bi bi-person-plus me-1"></i> Add Teacher';});
         });
     }
@@ -1277,8 +1299,8 @@ var teacherName = escapeHtml(t.first_name);
         });
     }
     
-    document.getElementById('editTeacherClose').addEventListener('click',function(){closeModal(editO);});
-    document.getElementById('editTeacherCancel').addEventListener('click',function(){closeModal(editO);});
+    var _editClose = document.getElementById('editTeacherClose'); if(_editClose) _editClose.addEventListener('click',function(){closeModal(editO);});
+    var _editCancel = document.getElementById('editTeacherCancel'); if(_editCancel) _editCancel.addEventListener('click',function(){closeModal(editO);});
 var editAddGradeBtn=document.getElementById('editAddGradeBtn');
     if(editAddGradeBtn){
         editAddGradeBtn.addEventListener('click',function(){
@@ -1303,13 +1325,19 @@ var editAddGradeBtn=document.getElementById('editAddGradeBtn');
         updateCoreSubjectHidden(editCoreSubjectContainer, editCoreSubjectHidden);
         updateTrackElectiveHidden(editTrackElectiveContainer, editTrackElectiveHidden);
         var fd=new FormData(editF);fd.append('action','update');fd.append('csrf_token',getCsrf());
-        fetch('<?= BASE_URL ?>/api/teachers.php',{method:'POST',body:fd}).then(function(r){
-            if(!r.ok) { return r.json().then(function(d){ throw new Error(d.message || ('Error ' + r.status)); }); }
-            return r.json();
-        }).then(function(d){
+        console.debug('Submitting update teacher', {url: '<?= BASE_URL ?>/api/teachers.php', id: document.getElementById('edit-id')?document.getElementById('edit-id').value:''});
+        var controller = new AbortController(); var signal = controller.signal; var timeoutId = setTimeout(function(){ controller.abort(); }, 12000);
+        fetch('<?= BASE_URL ?>/api/teachers.php',{method:'POST',body:fd, signal: signal}).then(function(r){ clearTimeout(timeoutId); return parseResponseAsJson(r); }).then(function(d){
             if(d.success){showToast('Teacher updated!','success');closeModal(editO);setTimeout(function(){location.reload();},600);}else{showToast(d.message||'Failed.','error');}
-        }).catch(function(err){showToast((err && err.message ? err.message : 'Something went wrong. Please try again.'),'error');})
-        .finally(function(){editB.classList.remove('loading');editB.innerHTML='<i class="bi bi-check-lg me-1"></i> Save Changes';});
+        }).catch(function(err){
+            if (err && err.name === 'AbortError') {
+                showToast('Request timed out. The server did not respond.','error');
+                console.error('Edit teacher request aborted (timeout)');
+            } else {
+                showToast((err && err.message ? err.message : 'Something went wrong. Please try again.'),'error');
+                console.error(err);
+            }
+        }).finally(function(){editB.classList.remove('loading');editB.innerHTML='<i class="bi bi-check-lg me-1"></i> Save Changes';});
     });
 
     /* DELETE */
@@ -1317,13 +1345,35 @@ var editAddGradeBtn=document.getElementById('editAddGradeBtn');
     
     function handleDeleteClick(btn) {
         var id=btn.getAttribute('data-delete-id'),name=btn.getAttribute('data-delete-name')||'this teacher';
-        if(delN)delN.textContent=name;if(delB)delB.href='<?= BASE_URL ?>/admin/teachers.php?delete='+(id||'0');
+        if(delN)delN.textContent=name;if(delB)delB.setAttribute('data-delete-id',id||'0');
         openModal(delO);
     }
     
-    document.getElementById('deleteTeacherClose').addEventListener('click',function(){closeModal(delO);});
-    document.getElementById('deleteTeacherCancel').addEventListener('click',function(){closeModal(delO);});
-    delB.addEventListener('click',function(e){e.preventDefault();var h=delB.href;if(!h||h.endsWith('delete=0'))return;delB.classList.add('disabled');delB.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Deleting...';location.href=h;});
+    var _delClose = document.getElementById('deleteTeacherClose'); if(_delClose) _delClose.addEventListener('click',function(){closeModal(delO);});
+    var _delCancel = document.getElementById('deleteTeacherCancel'); if(_delCancel) _delCancel.addEventListener('click',function(){closeModal(delO);});
+    delB.addEventListener('click',function(e){
+        e.preventDefault();
+        var id=delB.getAttribute('data-delete-id');
+        if(!id||id==='0')return;
+        delB.classList.add('disabled');delB.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Deleting...';
+        var fd=new FormData();fd.append('action','delete');fd.append('id',id);fd.append('csrf_token',getCsrf());
+        fetch('<?= BASE_URL ?>/api/teachers.php',{method:'POST',body:fd})
+            .then(function(r){return parseResponseAsJson(r);})
+            .then(function(d){
+                if(d.success){
+                    showToast('Teacher deleted successfully!','success');
+                    closeModal(delO);
+                    setTimeout(function(){location.reload();},600);
+                } else {
+                    showToast(d.message||d.error||'Failed to delete teacher.','error');
+                    delB.classList.remove('disabled');delB.innerHTML='<i class="bi bi-trash3 me-1"></i> Delete';
+                }
+            })
+            .catch(function(err){
+                showToast((err&&err.message?err.message:'Failed to delete teacher.'),'error');
+                delB.classList.remove('disabled');delB.innerHTML='<i class="bi bi-trash3 me-1"></i> Delete';
+            });
+    });
 
     /* TOAST */
     window.showToast=function(msg,type){type=type||'success';var c=document.getElementById('toastContainer');if(!c)return;var t=document.createElement('div');t.className='toast-notification toast-'+type;var icons={success:'check-circle-fill',info:'info-circle-fill',warning:'exclamation-triangle-fill',error:'exclamation-circle-fill'};var d=document.createElement('div');d.appendChild(document.createTextNode(msg));t.innerHTML='<i class="bi bi-'+(icons[type]||'info-circle-fill')+'"></i><span>'+d.innerHTML+'</span>';c.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove();},4200);};

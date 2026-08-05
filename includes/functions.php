@@ -401,24 +401,40 @@ function addStudent($db, $data) {
  * @return bool
  */
 function updateStudent($db, $id, $data) {
-    $sql = "UPDATE students SET first_name = :first_name, name_extension = :name_extension, middle_name = :middle_name,
-            last_name = :last_name, age = :age, gender = :gender, address = :address,
-            email = :email, grade_level = :grade_level, section = :section, updated_at = NOW()
-            WHERE id = :id";
+    // Allow updating student_id when provided in $data, otherwise leave unchanged
+    $fields = [
+        'first_name' => 'first_name',
+        'name_extension' => 'name_extension',
+        'middle_name' => 'middle_name',
+        'last_name' => 'last_name',
+        'age' => 'age',
+        'gender' => 'gender',
+        'address' => 'address',
+        'email' => 'email',
+        'grade_level' => 'grade_level',
+        'section' => 'section'
+    ];
+
+    $setParts = [];
+    $params = [];
+
+    foreach ($fields as $col => $key) {
+        $setParts[] = "$col = :$col";
+        $params[":$col"] = $data[$key] ?? '';
+    }
+
+    if (isset($data['student_id'])) {
+        $setParts[] = "student_id = :student_id";
+        $params[':student_id'] = $data['student_id'];
+    }
+
+    $setParts[] = "updated_at = NOW()";
+
+    $sql = "UPDATE students SET " . implode(', ', $setParts) . " WHERE id = :id";
+    $params[':id'] = $id;
+
     $stmt = $db->prepare($sql);
-    return $stmt->execute([
-        ':first_name'   => $data['first_name'],
-        ':name_extension' => $data['name_extension'] ?? '',
-        ':middle_name'  => $data['middle_name'] ?? '',
-        ':last_name'    => $data['last_name'],
-        ':age'          => $data['age'] ?? '',
-        ':gender'       => $data['gender'] ?? '',
-        ':address'      => $data['address'] ?? '',
-        ':email'        => $data['email'] ?? '',
-        ':grade_level'  => $data['grade_level'] ?? '',
-        ':section'      => $data['section'] ?? '',
-        ':id'           => $id
-    ]);
+    return $stmt->execute($params);
 }
 
 /**
@@ -1035,8 +1051,32 @@ function updateTeacher($db, $id, $data) {
  * @return bool
  */
 function deleteTeacher($db, $id) {
-    $stmt = $db->prepare("DELETE FROM teachers WHERE id = ?");
-    return $stmt->execute([$id]);
+    try {
+        $db->beginTransaction();
+
+        $stmt = $db->prepare("SELECT user_id FROM teachers WHERE id = ?");
+        $stmt->execute([$id]);
+        $teacher = $stmt->fetch();
+        $userId = $teacher['user_id'] ?? null;
+
+        $db->prepare("DELETE FROM teachers WHERE id = ?")->execute([$id]);
+
+        if ($userId) {
+            $usr = $db->prepare("SELECT role FROM users WHERE id = ?");
+            $usr->execute([$userId]);
+            $u = $usr->fetch();
+            if ($u && ($u['role'] ?? '') === 'teacher') {
+                $db->prepare("DELETE FROM users WHERE id = ?")->execute([$userId]);
+            }
+        }
+
+        $db->commit();
+        return true;
+    } catch (Exception $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('deleteTeacher error: ' . $e->getMessage());
+        return false;
+    }
 }
 
 // ============================================================
@@ -1102,12 +1142,11 @@ function getSubjectLevelBucket($gradeLevel, $gradeLevelEnd = null) {
  * @return int|false
  */
 function addSubject($db, $data) {
-    $sql = "INSERT INTO subjects (subject_name, subject_code, grade_level, description, created_at)
-            VALUES (:subject_name, :subject_code, :grade_level, :description, NOW())";
+    $sql = "INSERT INTO subjects (subject_name, grade_level, description, created_at)\
+            VALUES (:subject_name, :grade_level, :description, NOW())";
     $stmt = $db->prepare($sql);
     return $stmt->execute([
         ':subject_name' => $data['subject_name'],
-        ':subject_code' => $data['subject_code'],
         ':grade_level'  => $data['grade_level'],
         ':description'  => $data['description'] ?? ''
     ]) ? $db->lastInsertId() : false;
@@ -1121,17 +1160,18 @@ function addSubject($db, $data) {
  * @return bool
  */
 function updateSubject($db, $id, $data) {
-    $sql = "UPDATE subjects SET subject_name = :subject_name, subject_code = :subject_code,
-            grade_level = :grade_level, description = :description, updated_at = NOW() WHERE id = :id";
-    $stmt = $db->prepare($sql);
-    return $stmt->execute([
+    $params = [
         ':subject_name' => $data['subject_name'],
-        ':subject_code' => $data['subject_code'],
         ':grade_level'  => $data['grade_level'],
         ':description'  => $data['description'] ?? '',
         ':id'           => $id
-    ]);
+    ];
+    $sql = "UPDATE subjects SET subject_name = :subject_name, grade_level = :grade_level, description = :description, updated_at = NOW() WHERE id = :id";
+    $stmt = $db->prepare($sql);
+    return $stmt->execute($params);
 }
+
+// `subject_code` generation removed — schema no longer stores subject codes.
 
 /**
  * Delete subject

@@ -14,7 +14,7 @@
  *     "success": bool,
  *     "message": string,
  *     "grade_level": string,
- *     "subject": {id, subject_name, subject_code} | null,
+ *     "subject": {id, subject_name} | null,
  *     "total": int,
  *     "boys":  [ {student_id, first_name, middle_name, last_name, name_extension, section, guardian_name}, ... ],
  *     "girls": [ ... ]
@@ -130,7 +130,7 @@ if ($subjectId > 0) {
     if (!empty($assignedSubjectIds)) {
         $ph = implode(',', array_fill(0, count($assignedSubjectIds), '?'));
         try {
-            $stmt = $db->prepare("SELECT id, subject_name, subject_code FROM subjects WHERE id IN ($ph)");
+            $stmt = $db->prepare("SELECT id, subject_name FROM subjects WHERE id IN ($ph)");
             $stmt->execute($assignedSubjectIds);
             foreach ($stmt->fetchAll() as $sub) {
                 if ((int)$sub['id'] === $subjectId) {
@@ -226,7 +226,6 @@ echo json_encode([
     'subject'     => $subject ? [
         'id'           => (int)$subject['id'],
         'subject_name' => $subject['subject_name'],
-        'subject_code' => $subject['subject_code'],
     ] : null,
     'total' => count($boys) + count($girls),
     'boys'  => $boys,

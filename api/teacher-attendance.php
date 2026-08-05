@@ -123,10 +123,10 @@ try {
                     $absentCount++;
 
                     try {
-                        $subjStmt = $db->prepare("SELECT subject_code, subject_name FROM subjects WHERE id = ? LIMIT 1");
+                        $subjStmt = $db->prepare("SELECT subject_name FROM subjects WHERE id = ? LIMIT 1");
                         $subjStmt->execute([$session['subject_id']]);
                         $subject = $subjStmt->fetch();
-                        $subjectName = $subject ? ($subject['subject_name'] ?: $subject['subject_code']) : 'Class';
+                        $subjectName = $subject ? ($subject['subject_name']) : 'Class';
 
                         dispatchParentNotification($db, $studentId, '3X_ABSENCE', [
                             'subject_id' => $session['subject_id'],
@@ -657,10 +657,10 @@ function autoEndClassSessionIfLate($db, $sessionId, $userId) {
         }
 
         try {
-            $subjStmt = $db->prepare("SELECT subject_code, subject_name FROM subjects WHERE id = ? LIMIT 1");
+            $subjStmt = $db->prepare("SELECT subject_name FROM subjects WHERE id = ? LIMIT 1");
             $subjStmt->execute([$session['subject_id']]);
             $subject = $subjStmt->fetch();
-            $subjectName = $subject ? ($subject['subject_name'] ?: $subject['subject_code']) : 'Class';
+            $subjectName = $subject ? ($subject['subject_name']) : 'Class';
 
             if ($session['grade_level'] && $session['section']) {
                 $stmt = $db->prepare(

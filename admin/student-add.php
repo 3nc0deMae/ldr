@@ -38,8 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'LRN is required.';
     } elseif (!preg_match('/^\d{12}$/', $data['student_id'])) {
         $errors[] = 'LRN must be exactly 12 digits.';
-    } elseif (strpos($data['student_id'], '1134') !== 0) {
-        $errors[] = 'LRN must start with 1134.';
     }
 
     // ---- Other Validation ----
@@ -475,14 +473,14 @@ require_once __DIR__ . '/../includes/sidebar.php';
                                        inputmode="numeric"
                                        maxlength="12"
                                        pattern="\d{12}"
-                                       placeholder="113400000001"
+                                       placeholder="123456789012"
                                        value="<?= sanitize($old['student_id'] ?? '') ?>"
                                        autocomplete="off"
                                        required>
                             </div>
                             <div class="lrn-hint">
                                 <i class="bi bi-info-circle"></i>
-                                12 digits, must begin with <strong style="color:rgba(96,165,250,0.7);margin:0 2px;">1134</strong>
+                                12 digits
                                 <span class="lrn-counter empty" id="lrnCounter">0 / 12</span>
                             </div>
                         </div>
@@ -700,18 +698,10 @@ require_once __DIR__ . '/../includes/sidebar.php';
             if (len === 0) {
                 lrnCounter.classList.add('empty');
             } else if (len === 12) {
-                if (val.indexOf('1134') === 0) {
-                    lrnInput.classList.add('lrn-valid');
-                    lrnCounter.classList.add('valid');
-                } else {
-                    lrnInput.classList.add('lrn-invalid');
-                    lrnCounter.classList.add('partial');
-                }
+                lrnInput.classList.add('lrn-valid');
+                lrnCounter.classList.add('valid');
             } else {
                 lrnCounter.classList.add('partial');
-                if (len >= 4 && val.indexOf('1134') !== 0) {
-                    lrnInput.classList.add('lrn-invalid');
-                }
             }
         }
 
@@ -741,12 +731,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                 return;
             }
 
-            if (lrn.indexOf('1134') !== 0) {
-                e.preventDefault();
-                showAlertModal('LRN must start with 1134.', { title: 'Invalid LRN', icon: 'exclamation-circle-fill', type: 'warning' });
-                lrnInput.focus();
-                return;
-            }
+            // No prefix restriction; only enforce 12-digit numeric LRN
 
             var submitBtn = document.getElementById('submitBtn');
             var submitSpinner = document.getElementById('submitSpinner');

@@ -448,7 +448,7 @@ try {
                                             $elecSubjects = [];
                                             try { 
                                                 $elecSubjects = $db->prepare("
-                                                    SELECT s.subject_code, s.subject_name, s.grade_level, s.grade_level_end, s.description, s.id 
+                                                    SELECT s.subject_name, s.grade_level, s.grade_level_end, s.description, s.id 
                                                     FROM elective_subjects es 
                                                     LEFT JOIN subjects s ON es.subject_id = s.id 
                                                     WHERE es.elective_id = ? 
@@ -480,7 +480,6 @@ try {
                                                 <table>
                                                     <thead>
                                                         <tr>
-                                                            <th>Subject Code</th>
                                                             <th>Subject Name</th>
                                                             <th>From Grade</th>
                                                             <th>To Grade</th>
@@ -492,7 +491,6 @@ try {
                                                         <?php if (!empty($elecSubjects)): ?>
                                                             <?php foreach ($elecSubjects as $subj): ?>
                                                               <tr>
-                                                                  <td><?= htmlspecialchars($subj['subject_code'] ?? '-') ?></td>
                                                                   <td><?= htmlspecialchars($subj['subject_name']) ?></td>
                                                                   <td><?= htmlspecialchars($subj['grade_level'] ?? '-') ?></td>
                                                                   <td><?= htmlspecialchars($subj['grade_level_end'] ?? '-') ?></td>
@@ -696,7 +694,7 @@ try {
               <input type="hidden" name="subject_id" id="edit-subject-id">
               <div class="event-modal-body">
                   <div class="evt-section-label"><i class="bi bi-book"></i> Subject Details</div>
-                  <div class="evt-field"><label>Subject Code <span class="required">*</span></label><input type="text" name="subject_code" id="edit-subject-code" required maxlength="50"></div>
+                  <!-- Subject code removed: generated automatically -->
                   <div class="evt-field"><label>Subject Name <span class="required">*</span></label><input type="text" name="subject_name" id="edit-subject-name" required maxlength="255"></div>
                   <div class="evt-row">
                       <div class="evt-flex-1 evt-field"><label>From Grade <span class="required">*</span></label>
@@ -926,10 +924,7 @@ try {
     var subjectRowsContainer=null;
     function buildSubjectRow(){
         var row=document.createElement('div');row.className='repeat-row';
-        var codeWrap=document.createElement('div');codeWrap.className='evt-field';codeWrap.style.cssText='flex:0 0 130px;min-width:100px';
-        var codeLbl=document.createElement('label');codeLbl.innerHTML='<span class="required">*</span> Subject Code';
-        var codeInp=document.createElement('input');codeInp.type='text';codeInp.name='subject_code[]';codeInp.placeholder='e.g. B1';codeInp.maxLength=50;codeInp.required=true;
-        codeWrap.appendChild(codeLbl);codeWrap.appendChild(codeInp);row.appendChild(codeWrap);
+        // Subject code removed; codes will be generated automatically server-side
 
         var nameWrap=document.createElement('div');nameWrap.className='evt-field';nameWrap.style.cssText='flex:1 1 auto;min-width:140px';
         var nameLbl=document.createElement('label');nameLbl.innerHTML='<span class="required">*</span> Subject Name';
@@ -1020,7 +1015,6 @@ try {
             fetch(apiUrl('/api/subjects.php'),{method:'POST',credentials:'same-origin',body:fd}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(d){
                 if(d && d.data){
                     document.getElementById('edit-subject-id').value=d.data.id||sid;
-                    document.getElementById('edit-subject-code').value=d.data.subject_code||'';
                     document.getElementById('edit-subject-name').value=d.data.subject_name||'';
                     document.getElementById('edit-subject-grade-from').value=d.data.grade_level||'';
                     document.getElementById('edit-subject-grade-to').value=d.data.grade_level_end||'';
@@ -1038,11 +1032,10 @@ try {
         editSubjF.addEventListener('submit',function(e){
             e.preventDefault();
             var sid=document.getElementById('edit-subject-id').value;
-            var code=document.getElementById('edit-subject-code').value.trim();
             var name=document.getElementById('edit-subject-name').value.trim();
             var gradeFrom=document.getElementById('edit-subject-grade-from').value;
             var gradeTo=document.getElementById('edit-subject-grade-to').value;
-            if(!sid||!code||!name){showToast('Subject ID, code, and name are required.','error');return;}
+            if(!sid||!name){showToast('Subject ID and name are required.','error');return;}
             if(!gradeFrom||!gradeTo){showToast('Grade levels are required.','error');return;}
             var saveB=document.getElementById('editSubjectSave');if(saveB){saveB.classList.add('loading');saveB.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Saving...';}
             var fd=new FormData(editSubjF);
@@ -1074,11 +1067,11 @@ try {
                     if(d && d.data && d.data.length){
                         var html='';
                         d.data.forEach(function(s){
-                            html+='<tr><td>'+(s.subject_code?escapeHtml(s.subject_code):'-')+'</td><td>'+escapeHtml(s.subject_name)+'</td><td>'+(s.grade_level?escapeHtml(s.grade_level):'-')+'</td><td>'+(s.grade_level_end?escapeHtml(s.grade_level_end):'-')+'</td><td>'+(s.description?escapeHtml(s.description):'-')+'</td><td><button class="action-icon btn-tm-primary" style="border:none" title="Edit"><i class="bi bi-pencil"></i></button><button class="action-icon btn-tm-danger delete-subject-trigger" style="border:none;margin-left:6px" data-elective-id="'+eid+'" data-subject-id="'+s.id+'" title="Delete"><i class="bi bi-trash"></i></button></td></tr>';
+                            html+='<tr><td>'+escapeHtml(s.subject_name)+'</td><td>'+(s.grade_level?escapeHtml(s.grade_level):'-')+'</td><td>'+(s.grade_level_end?escapeHtml(s.grade_level_end):'-')+'</td><td>'+(s.description?escapeHtml(s.description):'-')+'</td><td><button class="action-icon btn-tm-primary" style="border:none" title="Edit"><i class="bi bi-pencil"></i></button><button class="action-icon btn-tm-danger delete-subject-trigger" style="border:none;margin-left:6px" data-elective-id="'+eid+'" data-subject-id="'+s.id+'" title="Delete"><i class="bi bi-trash"></i></button></td></tr>';
                         });
                         tbody.innerHTML=html;
                     }else{
-                        tbody.innerHTML='<tr><td colspan="6" class="no-subjects">No subjects added yet.</td></tr>';
+                        tbody.innerHTML='<tr><td colspan="5" class="no-subjects">No subjects added yet.</td></tr>';
                     }
                 }
             }

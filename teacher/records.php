@@ -77,7 +77,7 @@ $countStmt->execute($params);
 $totalRecords = $countStmt->fetch()['cnt'];
 
 $sql = "SELECT a.*, s.first_name, s.last_name, s.student_id as sid, s.grade_level, s.section,
-               sub.subject_name, sub.subject_code
+             sub.subject_name
         $joinClause $whereClause ORDER BY a.time DESC";
 
 $perPage = 15;
