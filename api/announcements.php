@@ -121,15 +121,18 @@ switch ($action) {
                         $notifDeliveryStatus = 'failed';
                     }
 
-                    createUserNotification($db, [
-                        'user_role'       => 'admin',
-                        'category'        => 'announcement',
-                        'title'           => $data['subject'],
-                        'message'         => strip_tags($data['body'] ?? ''),
-                        'delivery_status' => $notifDeliveryStatus,
-                        'reference_id'    => $annId,
-                        'destination_url' => '/admin/announcements.php',
-                    ]);
+                    if ($notifDeliveryStatus === 'failed') {
+                        createUserNotification($db, [
+                            'user_role'       => 'admin',
+                            'user_id'         => getCurrentUserId(),
+                            'category'        => 'announcement',
+                            'title'           => $data['subject'],
+                            'message'         => 'Announcement delivery failed: ' . strip_tags($data['body'] ?? ''),
+                            'delivery_status' => 'failed',
+                            'reference_id'    => $annId,
+                            'destination_url' => '/admin/announcements.php',
+                        ]);
+                    }
                 } catch (Exception $e) {
                     $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")
                        ->execute([$annId]);
@@ -206,18 +209,8 @@ switch ($action) {
         if (($result['failed'] ?? 0) === 0 && ($result['sent'] ?? 0) > 0) {
             $db->prepare("UPDATE announcements SET status = 'sent', updated_at = NOW() WHERE id = ?")->execute([$id]);
 
-            $db->prepare("UPDATE user_notifications SET delivery_status = 'sent', is_read = 1, updated_at = NOW() WHERE reference_id = ? AND category = 'announcement' AND delivery_status = 'failed'")
+            $db->prepare("DELETE FROM user_notifications WHERE reference_id = ? AND category = 'announcement' AND delivery_status = 'failed'")
               ->execute([$id]);
-
-            createUserNotification($db, [
-                'user_role'       => 'admin',
-                'category'        => 'announcement',
-                'title'           => $subject . ' (Resent)',
-                'message'         => 'Announcement was resent successfully to all recipients.',
-                'delivery_status' => 'sent',
-                'reference_id'    => $id,
-                'destination_url' => '/admin/announcements.php',
-            ]);
 
             jsonResponse(['success' => true, 'message' => 'Announcement resent successfully.']);
         } elseif (($result['sent'] ?? 0) > 0) {

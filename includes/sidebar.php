@@ -20,8 +20,8 @@ if ($currentRole === 'teacher') {
 $__navUnread = 0;
 if (isset($db) && $currentRole) {
     try {
-        $stmt = $db->prepare("SELECT COUNT(*) FROM user_notifications WHERE (user_role = ? OR user_role = 'all') AND is_read = 0");
-        $stmt->execute([$currentRole]);
+        $stmt = $db->prepare("SELECT COUNT(*) FROM user_notifications WHERE (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?) AND is_read = 0");
+        $stmt->execute([$currentRole, getCurrentUserId()]);
         $__navUnread = (int)$stmt->fetchColumn();
     } catch (Exception $e) { /* table may not exist yet */ }
 }

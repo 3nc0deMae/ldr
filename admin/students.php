@@ -76,7 +76,7 @@ if (!empty($studentIds)) {
 }
 
 $upcomingEvents = [];
-try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND is_completed = 0 ORDER BY event_date ASC, event_time IS NULL, event_time ASC LIMIT 20"); $stmt->execute(); $upcomingEvents = $stmt->fetchAll(); } catch (Exception $e) {}
+try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by=? AND event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND is_completed = 0 ORDER BY event_date ASC, event_time IS NULL, event_time ASC LIMIT 20"); $stmt->execute([getCurrentUserId()]); $upcomingEvents = $stmt->fetchAll(); } catch (Exception $e) {}
 ?>
 
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">

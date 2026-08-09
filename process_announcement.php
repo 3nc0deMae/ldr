@@ -151,15 +151,18 @@ if ($action === 'send_draft') {
             $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([$announcementId]);
         }
 
-        createUserNotification($db, [
-            'user_role'       => ($role === 'teacher') ? 'teacher' : 'admin',
-            'category'        => 'announcement',
-            'title'           => $subject,
-            'message'         => strip_tags($bodyHTML),
-            'delivery_status' => $notifDeliveryStatus,
-            'reference_id'    => $announcementId,
-            'destination_url' => ($role === 'teacher') ? '/teacher/advisory.php' : '/admin/announcements.php',
-        ]);
+        if ($notifDeliveryStatus === 'failed') {
+            createUserNotification($db, [
+                'user_role'       => ($role === 'teacher') ? 'teacher' : 'admin',
+                'user_id'         => (int)$_SESSION['user_id'],
+                'category'        => 'announcement',
+                'title'           => $subject,
+                'message'         => 'Announcement delivery failed: ' . strip_tags($bodyHTML),
+                'delivery_status' => 'failed',
+                'reference_id'    => $announcementId,
+                'destination_url' => ($role === 'teacher') ? '/teacher/advisory.php' : '/admin/announcements.php',
+            ]);
+        }
     } catch (Exception $e) {
         respondJson(false, 'Failed to send draft announcement.');
     }
@@ -512,18 +515,24 @@ if (!empty($channels) && $status === 'sent') {
                 }
                 $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([$announcementId]);
             }
+        } else {
+            $notifDeliveryStatus = 'failed';
+            $notifErr = 'No recipients with valid contact details were found for this announcement.';
+            $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([$announcementId]);
         }
 
-        $notificationDestination = ($role === 'teacher') ? '/teacher/advisory.php' : '/admin/announcements.php';
-        createUserNotification($db, [
-            'user_role'       => ($role === 'teacher') ? 'teacher' : 'admin',
-            'category'        => 'announcement',
-            'title'           => $subject,
-            'message'         => strip_tags($bodyHTML),
-            'delivery_status' => $notifDeliveryStatus,
-            'reference_id'    => $announcementId,
-            'destination_url' => $notificationDestination,
-        ]);
+        if ($notifDeliveryStatus === 'failed') {
+            createUserNotification($db, [
+                'user_role'       => ($role === 'teacher') ? 'teacher' : 'admin',
+                'user_id'         => (int)$_SESSION['user_id'],
+                'category'        => 'announcement',
+                'title'           => $subject,
+                'message'         => 'Announcement delivery failed: ' . ($notifErr !== '' ? $notifErr : strip_tags($bodyHTML)),
+                'delivery_status' => 'failed',
+                'reference_id'    => $announcementId,
+                'destination_url' => ($role === 'teacher') ? '/teacher/advisory.php' : '/admin/announcements.php',
+            ]);
+        }
     } catch (Exception $e) {
         error_log('process_announcement notify: ' . $e->getMessage());
         $notifErr = $e->getMessage();

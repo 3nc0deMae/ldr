@@ -25,6 +25,8 @@ try {
     error_log('calendar_events table: ' . $e->getMessage());
 }
 
+$adminUserId = getCurrentUserId();
+
 if (isset($_POST['ajax_action']) || isset($_GET['ajax_action'])) {
     header('Content-Type: application/json; charset=utf-8');
     $action = $_POST['ajax_action'] ?? $_GET['ajax_action'] ?? '';
@@ -49,17 +51,17 @@ if (isset($_POST['ajax_action']) || isset($_GET['ajax_action'])) {
         case 'delete_event':
             $eventId = (int)($_POST['event_id'] ?? 0);
             if ($eventId <= 0) { echo json_encode(['success'=>false,'message'=>'Invalid ID.']); exit; }
-            try { $db->prepare("DELETE FROM calendar_events WHERE id=?")->execute([$eventId]); echo json_encode(['success'=>true,'message'=>'Deleted.']); }
+            try { $db->prepare("DELETE FROM calendar_events WHERE id=? AND created_by=?")->execute([$eventId,$adminUserId]); echo json_encode(['success'=>true,'message'=>'Deleted.']); }
             catch (Exception $e) { echo json_encode(['success'=>false,'message'=>'Error.']); }
             exit;
         case 'toggle_complete':
             $eventId = (int)($_POST['event_id'] ?? 0);
             if ($eventId <= 0) { echo json_encode(['success'=>false,'message'=>'Invalid ID.']); exit; }
-            try { $db->prepare("UPDATE calendar_events SET is_completed=NOT is_completed WHERE id=?")->execute([$eventId]); echo json_encode(['success'=>true,'message'=>'Updated.']); }
+            try { $db->prepare("UPDATE calendar_events SET is_completed=NOT is_completed WHERE id=? AND created_by=?")->execute([$eventId,$adminUserId]); echo json_encode(['success'=>true,'message'=>'Updated.']); }
             catch (Exception $e) { echo json_encode(['success'=>false,'message'=>'Error.']); }
             exit;
         case 'get_upcoming':
-            try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND is_completed = 0 ORDER BY event_date ASC, event_time IS NULL, event_time ASC LIMIT 20"); $stmt->execute(); echo json_encode(['success'=>true,'events'=>$stmt->fetchAll(PDO::FETCH_ASSOC)]); }
+            try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by=? AND event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND is_completed = 0 ORDER BY event_date ASC, event_time IS NULL, event_time ASC LIMIT 20"); $stmt->execute([$adminUserId]); echo json_encode(['success'=>true,'events'=>$stmt->fetchAll(PDO::FETCH_ASSOC)]); }
             catch (Exception $e) { echo json_encode(['success'=>false,'events'=>[]]); }
             exit;
         default: echo json_encode(['success'=>false,'message'=>'Unknown action.']); exit;
@@ -79,11 +81,11 @@ for ($m = -2; $m <= 2; $m++) {
     try { $stmt = $db->prepare("SELECT DATE(scan_time) as event_date, SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late, COUNT(*) as total FROM attendance_records WHERE DATE_FORMAT(scan_time,'%Y-%m')=? GROUP BY DATE(scan_time)"); $stmt->execute([$monthKey]); foreach ($stmt->fetchAll() as $row) { $d=$row['event_date']; if(!isset($calendarEvents[$d]))$calendarEvents[$d]=['present'=>0,'absent'=>0,'late'=>0,'total'=>0]; $calendarEvents[$d]['present']+=(int)$row['present']; $calendarEvents[$d]['absent']+=(int)$row['absent']; $calendarEvents[$d]['late']+=(int)$row['late']; $calendarEvents[$d]['total']+=(int)$row['total']; } } catch (Exception $e) {}
     try { $stmt = $db->prepare("SELECT date as event_date, SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late, COUNT(*) as total FROM attendance WHERE DATE_FORMAT(date,'%Y-%m')=? GROUP BY date"); $stmt->execute([$monthKey]); foreach ($stmt->fetchAll() as $row) { $d=$row['event_date']; if(!isset($calendarEvents[$d]))$calendarEvents[$d]=['present'=>0,'absent'=>0,'late'=>0,'total'=>0]; $calendarEvents[$d]['present']+=(int)$row['present']; $calendarEvents[$d]['absent']+=(int)$row['absent']; $calendarEvents[$d]['late']+=(int)$row['late']; $calendarEvents[$d]['total']+=(int)$row['total']; } } catch (Exception $e) {}
     try { $stmt = $db->prepare("SELECT s.*,sub.subject_name,u.email FROM attendance_sessions s LEFT JOIN subjects sub ON s.subject_id=sub.id LEFT JOIN users u ON s.created_by=u.id WHERE DATE_FORMAT(s.created_at,'%Y-%m')=? ORDER BY s.created_at ASC"); $stmt->execute([$monthKey]); foreach ($stmt->fetchAll() as $row) { $d=date('Y-m-d',strtotime($row['created_at'])); if(!isset($calendarSessions[$d]))$calendarSessions[$d]=[]; $calendarSessions[$d][]=['subject'=>$row['subject_name']??ucfirst($row['session_type']??'Session'),'time'=>date('g:i A',strtotime($row['created_at'])),'type'=>$row['session_type']??'manual','status'=>$row['status']??'completed']; } } catch (Exception $e) {}
-    try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE DATE_FORMAT(event_date,'%Y-%m')=? ORDER BY event_time IS NULL, event_time ASC, created_at ASC"); $stmt->execute([$monthKey]); foreach ($stmt->fetchAll() as $row) { $d=$row['event_date']; if(!isset($adminEvents[$d]))$adminEvents[$d]=[]; $adminEvents[$d][]=['id'=>(int)$row['id'],'title'=>$row['title'],'description'=>$row['description'],'event_time'=>$row['event_time'],'event_type'=>$row['event_type'],'is_completed'=>(int)$row['is_completed']]; } } catch (Exception $e) {}
+    try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by=? AND DATE_FORMAT(event_date,'%Y-%m')=? ORDER BY event_time IS NULL, event_time ASC, created_at ASC"); $stmt->execute([$adminUserId,$monthKey]); foreach ($stmt->fetchAll() as $row) { $d=$row['event_date']; if(!isset($adminEvents[$d]))$adminEvents[$d]=[]; $adminEvents[$d][]=['id'=>(int)$row['id'],'title'=>$row['title'],'description'=>$row['description'],'event_time'=>$row['event_time'],'event_type'=>$row['event_type'],'is_completed'=>(int)$row['is_completed']]; } } catch (Exception $e) {}
 }
 
 $upcomingEvents = [];
-try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND is_completed = 0 ORDER BY event_date ASC, event_time IS NULL, event_time ASC LIMIT 20"); $stmt->execute(); $upcomingEvents = $stmt->fetchAll(); } catch (Exception $e) {}
+try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by=? AND event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND is_completed = 0 ORDER BY event_date ASC, event_time IS NULL, event_time ASC LIMIT 20"); $stmt->execute([$adminUserId]); $upcomingEvents = $stmt->fetchAll(); } catch (Exception $e) {}
 ?>
 
 <!-- Fonts -->

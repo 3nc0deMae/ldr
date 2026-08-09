@@ -34,6 +34,8 @@
             this.notificationBell();
             this.profileDropdown();
             this.refNotif();
+            this.soundToggle();
+            this.pollNotifs();
         },
 
         sidebarToggle: function() {
@@ -165,15 +167,6 @@
                     var events = d.events;
                     if (!events.length) return;
 
-                    // Reflect calendar events in the bell badge (base unread + events)
-                    var badge = document.getElementById('notificationBadge');
-                    if (badge) {
-                        var base = parseInt(badge.getAttribute('data-unread'), 10) || 0;
-                        var total = base + events.length;
-                        badge.textContent = total;
-                        badge.style.display = total > 0 ? '' : 'none';
-                    }
-
                     var todayStr = new Date().toISOString().slice(0, 10);
                     var tmrStr = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 
@@ -217,6 +210,131 @@
                     if (empty && feed.querySelectorAll('.ntf-card').length) empty.remove();
                 })
                 .catch(function() {});
+        },
+
+        soundEnabled: function() {
+            try { return localStorage.getItem('ldb_notif_sound') !== 'off'; } catch (e) { return true; }
+        },
+
+        toggleSound: function() {
+            var on = !this.soundEnabled();
+            try { localStorage.setItem('ldb_notif_sound', on ? 'on' : 'off'); } catch (e) {}
+            this.updateSoundIcon();
+            return on;
+        },
+
+        updateSoundIcon: function() {
+            var btn = document.getElementById('notifSoundToggle');
+            if (!btn) return;
+            var on = this.soundEnabled();
+            btn.innerHTML = on
+                ? '<i class="bi bi-volume-up-fill text-sm"></i>'
+                : '<i class="bi bi-volume-mute-fill text-sm"></i>';
+            btn.classList.toggle('text-gray-500', on);
+            btn.classList.toggle('text-gray-400', !on);
+        },
+
+        soundToggle: function() {
+            var btn = document.getElementById('notifSoundToggle');
+            if (!btn) return;
+            var self = this;
+            this.updateSoundIcon();
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var on = self.toggleSound();
+                showToast('Notification sound ' + (on ? 'enabled' : 'muted'), on ? 'success' : 'warning', 1800);
+            });
+        },
+
+        playNotificationSound: function() {
+            if (!this.soundEnabled()) return;
+            try {
+                var Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return;
+                var ctx = new Ctx();
+                var now = ctx.currentTime;
+                [0, 0.18, 0.36].forEach(function(offset, i) {
+                    var osc = ctx.createOscillator();
+                    var gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = i === 1 ? 880 : 660;
+                    gain.gain.setValueAtTime(0.0001, now + offset);
+                    gain.gain.exponentialRampToValueAtTime(0.3, now + offset + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.25);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.28);
+                });
+                setTimeout(function() { ctx.close(); }, 1500);
+            } catch (e) {}
+        },
+
+        showNotifToast: function(n) {
+            if (!n) return;
+            var dest = n.destination_url || '';
+            var icon = n.category === 'calendar' ? 'bi-calendar-event' : 'bi-bell-fill';
+            var toast = document.createElement('div');
+            toast.setAttribute('role', 'alert');
+            toast.style.cssText = 'position:fixed;top:14px;right:14px;z-index:99999;max-width:340px;background:rgba(10,34,76,0.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.15);box-shadow:0 12px 40px rgba(0,0,0,0.35);color:#fff;border-radius:14px;padding:14px 16px;cursor:pointer;opacity:0;transform:translateX(24px);transition:opacity .25s ease,transform .25s ease;';
+            toast.innerHTML =
+                '<div class="flex items-start gap-3">' +
+                '<div class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm flex-shrink-0"><i class="bi ' + icon + '"></i></div>' +
+                '<div class="flex-1 min-w-0">' +
+                '<div class="text-[13px] font-bold leading-snug">' + this.escHtml(n.title || 'Notification') + '</div>' +
+                (n.message ? '<div class="text-[11px] opacity-80 mt-0.5 line-clamp-2">' + this.escHtml(n.message) + '</div>' : '') +
+                '</div>' +
+                '</div>';
+            toast.addEventListener('click', function() {
+                if (dest) window.location.href = LDB.navbar.baseUrl + dest;
+            });
+            document.body.appendChild(toast);
+            requestAnimationFrame(function() {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(0)';
+            });
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(24px)';
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 6000);
+        },
+
+        // Poll for new notifications on every page; when a calendar event
+        // reaches its set time, the server materializes it and it arrives here
+        // as the latest notification (sound + toast + badge update).
+        pollNotifs: function() {
+            var feed = document.getElementById('ntfFeed');
+            if (!feed) return;
+            var lastId = parseInt(feed.getAttribute('data-last-notif-id') || '0', 10) || 0;
+            var self = this;
+            function tick() {
+                fetch(self.baseUrl + '/notification_handler.php?ajax_action=get_feed', { credentials: 'same-origin' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        if (!d || !d.success) return;
+                        var notifs = d.notifications || [];
+                        var badge = document.getElementById('notificationBadge');
+                        if (badge) {
+                            badge.setAttribute('data-unread', d.unread);
+                            badge.textContent = d.unread;
+                            badge.style.display = d.unread > 0 ? '' : 'none';
+                        }
+                        var newOnes = notifs.filter(function(n) {
+                            return n && (parseInt(n.id, 10) || 0) > lastId;
+                        });
+                        if (newOnes.length) {
+                            self.playNotificationSound();
+                            self.showNotifToast(newOnes[0]);
+                        }
+                        if (notifs.length) {
+                            lastId = notifs.reduce(function(m, n) { return Math.max(m, parseInt(n.id, 10) || 0); }, lastId);
+                        }
+                    })
+                    .catch(function() {});
+            }
+            tick();
+            setInterval(tick, 30000);
         }
     };
 

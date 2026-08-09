@@ -1003,7 +1003,15 @@ $baseUrl = BASE_URL;
                                        placeholder="Baleno, Masbate, Philippines">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <div class="field-group">
+                                <label class="set-label">School ID</label>
+                                <input type="text" class="set-input" name="setting_school_id"
+                                       value="<?= htmlspecialchars($settings['school_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                       placeholder="403756">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="field-group">
                                 <label class="set-label">School Year</label>
                                 <input type="text" class="set-input" name="setting_school_year"
@@ -1011,7 +1019,7 @@ $baseUrl = BASE_URL;
                                        placeholder="2025-2026">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="field-group">
                                 <label class="set-label">Principal Name</label>
                                 <input type="text" class="set-input" name="setting_principal_name"
@@ -1019,7 +1027,7 @@ $baseUrl = BASE_URL;
                                        placeholder="Dr. Juan Dela Cruz">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="field-group">
                                 <label class="set-label">Contact Number</label>
                                 <input type="text" class="set-input" name="setting_school_phone"

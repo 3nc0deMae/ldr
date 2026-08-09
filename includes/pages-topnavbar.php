@@ -105,13 +105,13 @@ if (isset($db)) {
         } catch (Exception $e) {}
     }
     try {
-        $stmt = $db->prepare("SELECT COUNT(*) FROM user_notifications WHERE (user_role = ? OR user_role = 'all') AND is_read = 0");
-        $stmt->execute([$__role]);
+        $stmt = $db->prepare("SELECT COUNT(*) FROM user_notifications WHERE (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?) AND is_read = 0");
+        $stmt->execute([$__role, $__userId]);
         $__unread = (int)$stmt->fetchColumn();
     } catch (Exception $e) { /* table may not exist yet */ }
     try {
-        $stmt = $db->prepare("SELECT * FROM user_notifications WHERE (user_role = ? OR user_role = 'all') ORDER BY created_at DESC, id DESC LIMIT 20");
-        $stmt->execute([$__role]);
+        $stmt = $db->prepare("SELECT * FROM user_notifications WHERE (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?) ORDER BY created_at DESC, id DESC LIMIT 20");
+        $stmt->execute([$__role, $__userId]);
         $__feed = $stmt->fetchAll() ?: [];
     } catch (Exception $e) { /* table may not exist yet */ }
     foreach ($__feed as $__n) {
@@ -183,14 +183,19 @@ $__userInitial = $__userName ? strtoupper(substr($__userName, 0, 1)) : strtouppe
             <div class="notification-dropdown" id="notificationDropdown" style="max-height:none;background:#ffffff;color:#111827;border:1px solid #e5e7eb;box-shadow:0 10px 40px rgba(0,0,0,.15);">
                 <div class="p-4 pb-2">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-base font-bold text-white">Notifications</h3>
-                        <div class="flex bg-gray-100 rounded-lg p-0.5">
-                            <button class="ntf-tab active px-3 py-1 text-xs font-semibold rounded-md bg-white text-gray-900 shadow-sm" data-tab="all">All</button>
-                            <button class="ntf-tab px-3 py-1 text-xs font-semibold rounded-md text-gray-500 hover:text-gray-700" data-tab="unread">Unread</button>
+                        <h3 class="text-base font-bold text-gray-900">Notifications</h3>
+                        <div class="flex items-center gap-2">
+                            <button id="notifSoundToggle" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition" title="Toggle notification sound" aria-label="Toggle notification sound">
+                                <i class="bi bi-volume-up-fill text-sm"></i>
+                            </button>
+                            <div class="flex bg-gray-100 rounded-lg p-0.5">
+                                <button class="ntf-tab active px-3 py-1 text-xs font-semibold rounded-md bg-white text-gray-900 shadow-sm" data-tab="all">All</button>
+                                <button class="ntf-tab px-3 py-1 text-xs font-semibold rounded-md text-gray-500 hover:text-gray-700" data-tab="unread">Unread</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="px-4 pb-2 space-y-3 max-h-[70vh] overflow-y-auto" id="ntfFeed">
+                <div class="px-4 pb-2 space-y-3 max-h-[70vh] overflow-y-auto" id="ntfFeed" data-last-notif-id="<?= (int)($__feed[0]['id'] ?? 0) ?>">
                     <?php if (!empty($__pending) && ($_SESSION['user_role'] ?? '') === 'admin'): ?>
                     <div>
                         <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 px-1">Pending Actions</div>

@@ -25,6 +25,7 @@ $db->exec("
     CREATE TABLE IF NOT EXISTS user_notifications (
         id               INT AUTO_INCREMENT PRIMARY KEY,
         user_role        VARCHAR(20)  NOT NULL DEFAULT 'all',
+        user_id          INT NULL DEFAULT NULL,
         category         VARCHAR(30)  NOT NULL DEFAULT 'system',
         title            VARCHAR(255) NOT NULL,
         message          TEXT,
@@ -43,6 +44,7 @@ $db->exec("
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 ");
 try { $db->exec("ALTER TABLE user_notifications ADD COLUMN IF NOT EXISTS destination_url VARCHAR(500) NULL DEFAULT NULL"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE user_notifications ADD COLUMN IF NOT EXISTS user_id INT NULL DEFAULT NULL"); } catch (Exception $e) {}
 
 /* ───────────────────────────────────────────────────────────────────────────
  * 2. Seed demonstration notifications (only when the table is empty)
@@ -131,10 +133,10 @@ $allNotifs = [];
 try {
     $stmt = $db->prepare(
         "SELECT * FROM user_notifications
-         WHERE user_role = ? OR user_role = 'all'
+         WHERE (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?)
          ORDER BY created_at DESC, id DESC"
     );
-    $stmt->execute([$currentRole]);
+    $stmt->execute([$currentRole, $userId]);
     $allNotifs = $stmt->fetchAll();
 } catch (Exception $e) {
     error_log('notification_center fetch: ' . $e->getMessage());

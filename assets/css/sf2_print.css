@@ -1,0 +1,490 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCHOOL FORM 2 (SF2) — DAILY ATTENDANCE REPORT OF LEARNERS
+   Faithful replica of SF2_Template.xls (school_form_2_ver2014.2.1.1).
+   A4 landscape, 20pt page margins, all-white cells with thin black borders,
+   small Arial fonts sized to match the spreadsheet.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── PAPER SPEC (matches template: A4 landscape, margins ≈20pt) ─────────── */
+@page {
+    size: A4 landscape;
+    margin: 7mm;
+}
+
+html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #000000;
+    font-family: Arial, 'Sans Serif', sans-serif;
+    font-size: 7pt;
+    line-height: 1.15;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+body * {
+    background: transparent;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: #000000;
+}
+
+/* ─── SHEET WRAPPER ──────────────────────────────────────────────────────── */
+.sf2-sheet {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-size: 7pt;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TITLE  (template row 1: 13pt bold; row 2: 5pt)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.sf2-title {
+    text-align: center;
+    font-size: 13pt;
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0 0 1px 0;
+    vertical-align: top;
+}
+
+.sf2-title-sub {
+    text-align: center;
+    font-size: 5pt;
+    margin-bottom: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   META BAR — labels 6pt right-aligned (unbordered), values 8pt centered
+   inside thin boxed cells (template rows 3-4)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.sf2-meta {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-bottom: 4px;
+}
+
+.sf2-meta td {
+    border: 0;
+    padding: 1px 3px;
+    vertical-align: middle;
+}
+
+.sf2-meta-label {
+    font-size: 6pt;
+    font-weight: 400;
+    text-align: right;
+    white-space: nowrap;
+    padding-right: 4px;
+}
+
+.sf2-meta-value {
+    font-size: 8pt;
+    font-weight: 400;
+    text-align: center;
+    border: 1px solid #000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ATTENDANCE MATRIX
+   Template header: No./NAME 6pt bold; "(1st row for date)" 6pt;
+   "Total for the Month" 8pt bold; REMARKS 5pt bold; day letters 6pt;
+   ABSENT/PRESENT 5pt bold. Body: 7pt regular.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.sf2-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 7pt;
+}
+
+.sf2-matrix th,
+.sf2-matrix td {
+    border: 1px solid #000;
+    padding: 1px 2px;
+    vertical-align: middle;
+}
+
+/* Header */
+.sf2-matrix thead th,
+.sf2-matrix thead td {
+    font-weight: 700;
+    text-align: center;
+}
+
+.sf2-matrix thead th.sf2-h-no,
+.sf2-matrix thead th.sf2-h-name { font-size: 6pt; border-top: 2px solid #000; }
+.sf2-matrix thead th.sf2-h-name { text-align: center; }
+.sf2-matrix thead th.sf2-h-date1 { font-size: 6pt; font-weight: 400; border-top: 2px solid #000; }
+.sf2-matrix thead td.sf2-h-date2 { font-size: 6pt; font-weight: 400; border-top: none; }
+.sf2-matrix thead th.sf2-h-day { font-size: 6pt; font-weight: 400; padding: 1px 0; }
+.sf2-matrix thead th.sf2-h-total { font-size: 8pt; border-top: 2px solid #000; }
+.sf2-matrix thead th.sf2-h-count { font-size: 5pt; font-weight: 700; }
+.sf2-matrix thead th.sf2-h-remarks { font-size: 5pt; line-height: 1.15; border-top: 2px solid #000; }
+
+/* Body cells */
+.sf2-matrix td.sf2-td-no {
+    text-align: center;
+    font-size: 7pt;
+    font-weight: 400;
+}
+
+.sf2-matrix td.sf2-td-name {
+    text-align: left;
+    padding-left: 4px;
+    font-size: 7pt;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sf2-matrix td.sf2-td-day {
+    text-align: center;
+    font-family: Arial, 'Sans Serif', sans-serif;
+    font-size: 7pt;
+    font-weight: 400;
+    padding: 1px 0;
+}
+
+.sf2-matrix td.sf2-td-day.cell-absent {
+    font-weight: 700;
+}
+
+.sf2-matrix td.sf2-td-day.cell-late {
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff 48%, #9b9b9b 50%, #9b9b9b 100%);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.sf2-matrix td.sf2-td-count {
+    text-align: center;
+    font-weight: 400;
+    font-size: 7pt;
+}
+
+.sf2-matrix td.sf2-td-remarks {
+    text-align: left;
+    padding-left: 3px;
+    font-size: 5.5pt;
+    line-height: 1.15;
+}
+
+/* Total per day rows — template: 7pt regular (NOT bold), double top border,
+   medium bottom border, white background, number shown in No. column */
+.sf2-matrix tr.sf2-subtotal td {
+    background: #fff;
+    font-weight: 400;
+    text-align: center;
+    font-size: 7pt;
+    border-top: 3px double #000;
+    border-bottom: 2px solid #000;
+}
+
+.sf2-matrix tr.sf2-subtotal td.sf2-td-name {
+    text-align: center;
+    font-weight: 400;
+    font-size: 7pt;
+}
+
+/* Combined row — template: 7pt regular, thin top border, medium bottom */
+.sf2-matrix tr.sf2-combined td {
+    background: #fff;
+    font-weight: 400;
+    text-align: center;
+    font-size: 7pt;
+    border-bottom: 2px solid #000;
+}
+
+.sf2-matrix tr.sf2-combined td.sf2-td-name {
+    text-align: center;
+    font-weight: 400;
+    font-size: 7pt;
+}
+
+.sf2-matrix tbody tr {
+    page-break-inside: avoid;
+}
+
+.sf2-matrix thead {
+    display: table-header-group;
+}
+
+.sf2-matrix thead tr:last-child th,
+.sf2-matrix thead tr:last-child td {
+    border-top: none;
+}
+
+.sf2-matrix tr.sf2-subtotal,
+.sf2-matrix tr.sf2-combined {
+    page-break-inside: avoid;
+    page-break-after: avoid;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOTTOM PANEL — Guidelines (≈52%) | Codes/Reasons (≈21%) | Summary (≈27%)
+   Template fonts: guidelines 6pt, codes 5pt, summary labels 5-6pt,
+   summary values 7pt, certify/attested 8pt, sig names 6pt bold, roles 6pt,
+   "Generated thru LIS" 7pt.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.sf2-bottom {
+    display: flex;
+    gap: 0;
+    margin-top: 4px;
+    align-items: stretch;
+    page-break-inside: avoid;
+}
+
+.sf2-guidelines { flex: 51.1; }
+.sf2-codes-panel { flex: 21.2; }
+.sf2-summary-panel { flex: 27.7; }
+
+.sf2-guidelines,
+.sf2-codes-panel,
+.sf2-summary-panel {
+    border: 1px solid #000;
+    padding: 3px 5px;
+    background: #fff;
+}
+
+.sf2-bottom-title {
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 1px;
+}
+
+.sf2-guidelines .sf2-bottom-title { font-size: 6pt; }
+.sf2-codes-panel .sf2-bottom-title { font-size: 5pt; }
+
+.sf2-guidelines-list {
+    margin: 0;
+    padding-left: 12px;
+    font-size: 6pt;
+}
+
+.sf2-guidelines-list > li {
+    margin-bottom: 2px;
+    line-height: 1.3;
+}
+
+.sf2-formulas {
+    margin: 1px 0 0;
+    padding-left: 14px;
+    list-style: none;
+    font-size: 6pt;
+}
+
+.sf2-formulas li {
+    line-height: 1.3;
+    margin-bottom: 2px;
+}
+
+.sf2-formulas .frac {
+    display: block;
+    border-bottom: 1px solid #000;
+    line-height: 1.15;
+    padding: 0 2px;
+}
+
+.sf2-formulas .frac-denom {
+    display: block;
+    line-height: 1.15;
+    padding: 0 2px;
+}
+
+.sf2-cutoff {
+    font-size: 6pt;
+    margin-top: 2px;
+    border-top: 1px solid #000;
+    padding-top: 2px;
+}
+
+.sf2-codes-text {
+    font-size: 5pt;
+    text-align: center;
+    line-height: 1.25;
+    margin-bottom: 4px;
+}
+
+.sf2-reason-cat {
+    font-weight: 700;
+    margin-top: 2px;
+    font-size: 5pt;
+}
+
+.sf2-reason-items {
+    line-height: 1.25;
+    font-size: 5pt;
+}
+
+/* Summary table */
+.sf2-summary {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 5pt;
+    margin-bottom: 3px;
+}
+
+.sf2-summary td {
+    border: 1px solid #000;
+    padding: 1px 2px;
+    vertical-align: middle;
+}
+
+.sf2-summary .sf2-sum-head {
+    font-weight: 700;
+    text-align: center;
+    font-size: 5pt;
+}
+
+.sf2-summary .sf2-sum-label {
+    font-weight: 400;
+    font-size: 5pt;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.sf2-summary .sf2-sum-label-bold {
+    font-weight: 700;
+}
+
+.sf2-summary .sf2-sum-value {
+    text-align: center;
+    font-weight: 400;
+    font-size: 7pt;
+}
+
+.sf2-summary .sf2-sum-month {
+    font-size: 6pt;
+    font-weight: 700;
+}
+
+.sf2-summary .sf2-sum-days {
+    font-size: 6pt;
+    font-weight: 700;
+}
+
+/* Signatures */
+.sf2-certify {
+    text-align: left;
+    font-weight: 400;
+    font-size: 8pt;
+    margin-top: 4px;
+}
+
+.sf2-sig-line {
+    border-top: 1px solid #000;
+    width: 74%;
+    margin: 5px auto 1px auto;
+}
+
+.sf2-sig-name {
+    text-align: center;
+    font-weight: 700;
+    font-size: 6pt;
+    text-transform: uppercase;
+}
+
+.sf2-sig-role {
+    text-align: center;
+    font-size: 6pt;
+    font-style: italic;
+}
+
+.sf2-attested {
+    font-weight: 400;
+    font-size: 8pt;
+    margin-top: 5px;
+}
+
+.sf2-generated {
+    text-align: center;
+    font-size: 7pt;
+    margin-top: 4px;
+    border-top: 1px solid #000;
+    padding-top: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCREEN / PRINT BEHAVIOUR
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media screen {
+    .sf2-screen-actions {
+        text-align: center;
+        padding: 14px;
+        background: #f0f1f4;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        margin-bottom: 14px;
+    }
+}
+
+@media print {
+    .sf2-no-print,
+    .sf2-screen-actions,
+    .top-navbar,
+    .sidebar,
+    .navbar,
+    .nav-bar,
+    .main-header,
+    .system-header,
+    .print-modal-overlay,
+    .print-modal-container,
+    .btn,
+    button,
+    .btn-primary,
+    .btn-outline-primary,
+    .btn-outline-secondary,
+    .btn-secondary,
+    .nav-icon-btn,
+    .filter-bar,
+    .pagination,
+    .chart-wrap,
+    .navbar-brand,
+    .mobile-title,
+    .desktop-title,
+    .date-display,
+    .navbar-actions,
+    .navbar-left,
+    .content-area .btn,
+    .report-table-wrapper,
+    .stat-card,
+    .card {
+        display: none !important;
+    }
+
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        font-size: 7pt;
+    }
+
+    .sf2-sheet {
+        margin: 0;
+        padding: 0;
+    }
+
+    .sf2-meta,
+    .sf2-bottom {
+        page-break-inside: avoid;
+    }
+
+    .sf2-matrix thead {
+        display: table-header-group;
+    }
+}

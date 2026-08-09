@@ -19,16 +19,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax_action'] ?? '') === 'ge
     if (!$role) {
         jsonResponse(['success' => false, 'message' => 'Unauthorized'], 401);
     }
-    $sql = "SELECT * FROM calendar_events WHERE event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND is_completed = 0";
-    $params = [];
-    if ($role === 'teacher') {
-        $sql .= " AND created_by = ?";
-        $params[] = $userId ?: 0;
-    }
-    $sql .= " ORDER BY event_date ASC, event_time IS NULL, event_time ASC LIMIT 20";
+    $sql = "SELECT * FROM calendar_events WHERE created_by = ? AND event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND is_completed = 0 ORDER BY event_date ASC, event_time IS NULL, event_time ASC LIMIT 20";
+    $params = [$userId ?: 0];
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     jsonResponse(['success' => true, 'events' => $stmt->fetchAll()]);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax_action'] ?? '') === 'get_feed') {
+    $role = getCurrentUserRole();
+    $userId = getCurrentUserId();
+    if (!$role) {
+        jsonResponse(['success' => false, 'message' => 'Unauthorized'], 401);
+    }
+    try { processDueCalendarNotifications($db); } catch (Exception $e) {}
+
+    $stmt = $db->prepare(
+        "SELECT * FROM user_notifications
+         WHERE (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?)
+         ORDER BY created_at DESC, id DESC LIMIT 20"
+    );
+    $stmt->execute([$role, $userId]);
+    $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    $unreadStmt = $db->prepare(
+        "SELECT COUNT(*) FROM user_notifications
+         WHERE (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?) AND is_read = 0"
+    );
+    $unreadStmt->execute([$role, $userId]);
+
+    jsonResponse([
+        'success'       => true,
+        'unread'        => (int)$unreadStmt->fetchColumn(),
+        'notifications' => $notifications,
+    ]);
     exit;
 }
 
@@ -37,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $role = getCurrentUserRole();
+$userId = getCurrentUserId();
 
 csrfMiddleware(true);
 
@@ -57,9 +83,9 @@ switch ($action) {
         }
         $stmt = $db->prepare(
             "UPDATE user_notifications SET delivery_status = 'sent', is_read = 1, updated_at = NOW()
-             WHERE id = ? AND (user_role = ? OR user_role = 'all')"
+             WHERE id = ? AND (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?)"
         );
-        $stmt->execute([$id, $role]);
+        $stmt->execute([$id, $role, $userId]);
         jsonResponse(['success' => true, 'message' => 'Request approved successfully.']);
         break;
 
@@ -71,9 +97,9 @@ switch ($action) {
         }
         $stmt = $db->prepare(
             "UPDATE user_notifications SET delivery_status = 'failed', is_read = 1, updated_at = NOW()
-             WHERE id = ? AND (user_role = ? OR user_role = 'all')"
+             WHERE id = ? AND (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?)"
         );
-        $stmt->execute([$id, $role]);
+        $stmt->execute([$id, $role, $userId]);
         jsonResponse(['success' => true, 'message' => 'Request declined successfully.']);
         break;
 
@@ -83,13 +109,13 @@ switch ($action) {
         if ($id <= 0) {
             jsonResponse(['success' => false, 'message' => 'Invalid notification ID'], 400);
         }
-        $db->prepare("UPDATE user_notifications SET is_read = 1 WHERE id = ? AND (user_role = ? OR user_role = 'all')")->execute([$id, $role]);
+        $db->prepare("UPDATE user_notifications SET is_read = 1 WHERE id = ? AND (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?)")->execute([$id, $role, $userId]);
         jsonResponse(['success' => true]);
         break;
 
     /* ── Mark all visible notifications as read ── */
     case 'mark_all_read':
-        $db->prepare("UPDATE user_notifications SET is_read = 1 WHERE (user_role = ? OR user_role = 'all') AND is_read = 0")->execute([$role]);
+        $db->prepare("UPDATE user_notifications SET is_read = 1 WHERE (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?) AND is_read = 0")->execute([$role, $userId]);
         jsonResponse(['success' => true, 'message' => 'All notifications marked as read']);
         break;
 
@@ -99,8 +125,8 @@ switch ($action) {
         if ($id <= 0) {
             jsonResponse(['success' => false, 'message' => 'Invalid notification ID'], 400);
         }
-        $stmt = $db->prepare("SELECT * FROM user_notifications WHERE id = ? AND (user_role = ? OR user_role = 'all')");
-        $stmt->execute([$id, $role]);
+        $stmt = $db->prepare("SELECT * FROM user_notifications WHERE id = ? AND (user_role = ? OR user_role = 'all') AND (user_id IS NULL OR user_id = ?)");
+        $stmt->execute([$id, $role, $userId]);
         $notification = $stmt->fetch();
         if (!$notification) {
             jsonResponse(['success' => false, 'message' => 'Notification not found'], 404);
@@ -113,8 +139,12 @@ switch ($action) {
             $ok = resendAnnouncement($db, $notification);
         }
 
-        $db->prepare("UPDATE user_notifications SET delivery_status = ?, retry_count = retry_count + 1, updated_at = NOW() WHERE id = ?")
-           ->execute([$ok ? 'sent' : 'failed', $id]);
+        if ($ok && ($notification['category'] ?? '') === 'announcement') {
+            $db->prepare("DELETE FROM user_notifications WHERE id = ?")->execute([$id]);
+        } else {
+            $db->prepare("UPDATE user_notifications SET delivery_status = ?, retry_count = retry_count + 1, updated_at = NOW() WHERE id = ?")
+               ->execute([$ok ? 'sent' : 'failed', $id]);
+        }
         jsonResponse([
             'success' => $ok,
             'message' => $ok ? 'Notification resent successfully.' : 'Resend failed. Please try again.'

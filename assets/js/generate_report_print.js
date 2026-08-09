@@ -44,6 +44,15 @@ function getSelectedSection() {
         return params.get('date_to') || '';
     }
 
+    function getReportMonthYear() {
+        var dateFrom = getDateFrom();
+        var dateTo = getDateTo();
+        var base = dateFrom || dateTo;
+        var d = base ? new Date(base + 'T00:00:00') : new Date();
+        if (isNaN(d.getTime())) d = new Date();
+        return { month: d.getMonth() + 1, year: d.getFullYear() };
+    }
+
     window.openPrintModal = function () {
         var m = getModal();
         if (!m) return;
@@ -110,16 +119,73 @@ function getSelectedSection() {
             if (!pw) {
                 window.location.href = url;
             }
+            return;
+        }
+
+        if (selectedOption === 'sf2_format') {
+            closePrintModal();
+            var gradeLevel = getSelectedGradeLevel();
+            var section = getSelectedSection();
+            var subjectId = getSelectedSubjectId();
+            var dateFrom = getDateFrom();
+            var dateTo = getDateTo();
+
+            if (!gradeLevel || !section) {
+                showAlertModal('Please select Grade and Section filters before printing the School Form 2.', { title: 'Notice', type: 'warning' });
+                return;
+            }
+
+            var my = getReportMonthYear();
+            var classId = gradeLevel + '-' + section;
+
+            var url = window.BASE_URL + '/print_sf2_template.php?class_id=' + encodeURIComponent(classId)
+                + '&grade_level=' + encodeURIComponent(gradeLevel)
+                + '&section=' + encodeURIComponent(section)
+                + '&month=' + my.month + '&year=' + my.year;
+            if (subjectId) url += '&subject_id=' + encodeURIComponent(subjectId);
+            if (dateFrom) url += '&date_from=' + encodeURIComponent(dateFrom);
+            if (dateTo) url += '&date_to=' + encodeURIComponent(dateTo);
+
+            var pw = window.open(url, '_blank', 'width=1400,height=900');
+            if (!pw) {
+                window.location.href = url;
+            }
+            return;
+        }
+
+        if (typeof showAlertModal === 'function') {
+            showAlertModal('Unknown print option selected. Please close and reopen the print dialog.', { title: 'Notice', type: 'warning' });
         }
     };
 
     window.exportReportOption = function () {
-        var format = selectedOption === 'matrix' ? 'matrix' : 'standard';
         var gradeLevel = getSelectedGradeLevel();
         var section = getSelectedSection();
         var subjectId = getSelectedSubjectId();
         var dateFrom = getDateFrom();
         var dateTo = getDateTo();
+
+        if (selectedOption === 'sf2_format') {
+            if (!gradeLevel || !section) {
+                showAlertModal('Please select Grade and Section filters before exporting the School Form 2.', { title: 'Notice', type: 'warning' });
+                return;
+            }
+
+            var my = getReportMonthYear();
+            var classId = gradeLevel + '-' + section;
+
+            var exportUrl = window.BASE_URL + '/export_sf2_excel.php'
+                + '?class_id=' + encodeURIComponent(classId)
+                + '&subject_id=' + encodeURIComponent(subjectId || 0)
+                + '&month=' + my.month
+                + '&year=' + my.year;
+
+            closePrintModal();
+            window.location.href = exportUrl;
+            return;
+        }
+
+        var format = selectedOption === 'matrix' ? 'matrix' : 'standard';
 
         if (format === 'matrix') {
             if (!gradeLevel || !section || !subjectId) {

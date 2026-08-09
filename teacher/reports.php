@@ -713,6 +713,18 @@ foreach ($allRecords as $r) {
                              <i class="bi bi-check-circle"></i>
                          </div>
                      </div>
+                     <div class="print-option-card" data-option="sf2_format" onclick="selectPrintOption('sf2_format')">
+                         <div class="print-option-icon">
+                             <i class="bi bi-mortarboard-fill"></i>
+                         </div>
+                         <div class="print-option-content">
+                             <h6 class="print-option-title">🇵🇭 Official DepEd School Form 2 (SF2)</h6>
+                             <p class="print-option-desc">Generates the official Department of Education Daily Attendance Report with strict Male/Female segregation, attendance codes, and summary computations.</p>
+                         </div>
+                         <div class="print-option-check">
+                             <i class="bi bi-check-circle"></i>
+                         </div>
+                     </div>
                  </div>
                  <div class="print-modal-footer">
                      <button type="button" class="btn btn-outline-secondary" onclick="closePrintModal()">Cancel</button>
@@ -789,7 +801,7 @@ foreach ($allRecords as $r) {
 </div>
 
 <!-- CHARTS -->
-<script src="<?= BASE_URL ?>/assets/js/generate_report_print.js"></script>
+<script src="<?= BASE_URL ?>/assets/js/generate_report_print.js?v=<?= @filemtime(ROOT_PATH . '/assets/js/generate_report_print.js') ?: time() ?>"></script>
 
 <script>
 function printReport() {

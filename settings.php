@@ -689,19 +689,25 @@ $baseUrl = BASE_URL;
                                 <input type="text" class="set-input" name="setting_school_address" value="<?= htmlspecialchars($settings['school_address'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Baleno, Masbate, Philippines">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <div class="field-group">
+                                <label class="set-label">School ID</label>
+                                <input type="text" class="set-input" name="setting_school_id" value="<?= htmlspecialchars($settings['school_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="403756">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="field-group">
                                 <label class="set-label">School Year</label>
                                 <input type="text" class="set-input" name="setting_school_year" value="<?= htmlspecialchars($settings['school_year'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="2025-2026">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="field-group">
                                 <label class="set-label">Principal Name</label>
                                 <input type="text" class="set-input" name="setting_principal_name" value="<?= htmlspecialchars($settings['principal_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Dr. Juan Dela Cruz">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="field-group">
                                 <label class="set-label">Contact Number</label>
                                 <input type="text" class="set-input" name="setting_school_phone" value="<?= htmlspecialchars($settings['school_phone'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="09XX-XXX-XXXX">

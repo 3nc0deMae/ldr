@@ -1460,19 +1460,86 @@ function createNotification($db, $data) {
  * @return int|false
  */
 function createUserNotification($db, $data) {
-    $sql = "INSERT INTO user_notifications
-            (user_role, category, title, message, delivery_status, reference_id, destination_url, is_read)
-            VALUES (:user_role, :category, :title, :message, :delivery_status, :reference_id, :destination_url, 0)";
-    $stmt = $db->prepare($sql);
-    return $stmt->execute([
-        ':user_role'       => $data['user_role'] ?? 'all',
-        ':category'        => $data['category'] ?? 'system',
-        ':title'           => $data['title'] ?? 'Notification',
-        ':message'         => $data['message'] ?? '',
-        ':delivery_status' => $data['delivery_status'] ?? 'sent',
-        ':reference_id'    => $data['reference_id'] ?? null,
-        ':destination_url' => $data['destination_url'] ?? null,
-    ]) ? $db->lastInsertId() : false;
+    try {
+        $sql = "INSERT INTO user_notifications
+                (user_role, category, title, message, delivery_status, reference_id, destination_url, is_read, user_id)
+                VALUES (:user_role, :category, :title, :message, :delivery_status, :reference_id, :destination_url, 0, :user_id)";
+        $stmt = $db->prepare($sql);
+        return $stmt->execute([
+            ':user_role'       => $data['user_role'] ?? 'all',
+            ':category'        => $data['category'] ?? 'system',
+            ':title'           => $data['title'] ?? 'Notification',
+            ':message'         => $data['message'] ?? '',
+            ':delivery_status' => $data['delivery_status'] ?? 'sent',
+            ':reference_id'    => $data['reference_id'] ?? null,
+            ':destination_url' => $data['destination_url'] ?? null,
+            ':user_id'         => $data['user_id'] ?? null,
+        ]) ? $db->lastInsertId() : false;
+    } catch (Exception $e) {
+        error_log('createUserNotification: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Materialize in-app notifications for the current user's calendar events
+ * that have reached their set date/time (today's events; timed events once
+ * the event time has arrived). Runs on every authenticated request so the
+ * notification appears as soon as the event is due, on any page.
+ * @param PDO $db
+ * @return int number of notifications created
+ */
+function processDueCalendarNotifications($db) {
+    $userId = getCurrentUserId();
+    $role   = getCurrentUserRole();
+    if (!$userId || !$role) return 0;
+    try {
+        $dest = '/admin/MyCalendar.php';
+        if ($role === 'teacher') { $dest = '/teacher/MyCalendar.php'; }
+        elseif ($role === 'gate') { $dest = '/gate/notifications.php'; }
+
+        $stmt = $db->prepare(
+            "SELECT * FROM calendar_events
+             WHERE created_by = ? AND is_completed = 0
+               AND event_date = CURDATE()
+               AND (event_time IS NULL OR CONCAT(event_date, ' ', event_time) <= NOW())"
+        );
+        $stmt->execute([$userId]);
+        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!$events) return 0;
+
+        $checkStmt = $db->prepare(
+            "SELECT id FROM user_notifications
+             WHERE calendar_event_id = ? AND user_id = ? AND category = 'calendar' LIMIT 1"
+        );
+        $insStmt = $db->prepare(
+            "INSERT INTO user_notifications
+                (user_role, user_id, category, title, message, delivery_status, calendar_event_id, destination_url, is_read)
+             VALUES (?, ?, 'calendar', ?, ?, 'sent', ?, ?, 0)"
+        );
+
+        $count = 0;
+        foreach ($events as $ev) {
+            $checkStmt->execute([(int)$ev['id'], $userId]);
+            if ($checkStmt->fetchColumn()) continue;
+
+            $timeLabel = 'all day';
+            if (!empty($ev['event_time'])) {
+                $timeLabel = date('g:i A', strtotime($ev['event_date'] . ' ' . $ev['event_time']));
+            }
+            $evType = ucfirst($ev['event_type'] ?? 'event');
+            $title  = 'Event: ' . ($ev['title'] ?? 'Scheduled event');
+            $message = 'Your ' . $evType . ' is scheduled today'
+                     . ($timeLabel === 'all day' ? ' (all day)' : ' at ' . $timeLabel) . '.';
+
+            $insStmt->execute([$role, $userId, $title, $message, (int)$ev['id'], $dest]);
+            $count++;
+        }
+        return $count;
+    } catch (Exception $e) {
+        error_log('processDueCalendarNotifications: ' . $e->getMessage());
+        return 0;
+    }
 }
 
 /**
