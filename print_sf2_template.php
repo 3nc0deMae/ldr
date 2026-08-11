@@ -21,9 +21,9 @@ $maleCount   = count($males);
 $femaleCount = count($females);
 $dayWidth    = 52.99 / max(1, $totalDays);
 
-$malePresent    = ($maleCount * $schoolDaysCount) - $maleBlock['absent'] - $maleBlock['tardy'];
-$femalePresent  = ($femaleCount * $schoolDaysCount) - $femaleBlock['absent'] - $femaleBlock['tardy'];
-$combinedPresent = ($registeredLearners * $schoolDaysCount) - $combinedAbsent - $combinedTardy;
+$malePresent    = ($maleCount * $schoolDaysCount) - $maleBlock['absent'];
+$femalePresent  = ($femaleCount * $schoolDaysCount) - $femaleBlock['absent'];
+$combinedPresent = ($registeredLearners * $schoolDaysCount) - $combinedAbsent;
 
 $fiveConsec = 0; $droppedOutM = 0; $droppedOutF = 0; $transferredOutM = 0; $transferredOutF = 0; $transferredIn = 0;
 foreach (array_merge($maleBlock['rows'], $femaleBlock['rows']) as $r) {
@@ -135,7 +135,7 @@ $dowShort = ['1' => 'M', '2' => 'T', '3' => 'W', '4' => 'TH', '5' => 'F'];
                         <?php endif; ?>
                     <?php endforeach; endforeach; ?>
                     <td class="sf2-td-count"><?= (int)$row['absent'] ?></td>
-                    <td class="sf2-td-count"><?= max(0, $schoolDaysCount - (int)$row['absent'] - (int)$row['tardy']) ?></td>
+                    <td class="sf2-td-count"><?= max(0, $schoolDaysCount - (int)$row['absent']) ?></td>
                     <td class="sf2-td-remarks"><?= sanitize($row['remarks']) ?></td>
                 </tr>
                 <?php endforeach; ?>
@@ -163,7 +163,7 @@ $dowShort = ['1' => 'M', '2' => 'T', '3' => 'W', '4' => 'TH', '5' => 'F'];
                         <?php endif; ?>
                     <?php endforeach; endforeach; ?>
                     <td class="sf2-td-count"><?= (int)$row['absent'] ?></td>
-                    <td class="sf2-td-count"><?= max(0, $schoolDaysCount - (int)$row['absent'] - (int)$row['tardy']) ?></td>
+                    <td class="sf2-td-count"><?= max(0, $schoolDaysCount - (int)$row['absent']) ?></td>
                     <td class="sf2-td-remarks"><?= sanitize($row['remarks']) ?></td>
                 </tr>
                 <?php endforeach; ?>

@@ -171,9 +171,9 @@ if ($format === 'matrix') {
     $remCol = $absCol + 4;                    // 1-based REMARKS column start
     $fullCols = $absCol + 8;                  // 1-based last column
 
-    $malePresent    = max(0, $maleCount * $schoolDaysCount - $maleBlock['absent'] - $maleBlock['tardy']);
-    $femalePresent  = max(0, $femaleCount * $schoolDaysCount - $femaleBlock['absent'] - $femaleBlock['tardy']);
-    $combinedPresent = max(0, $registeredLearners * $schoolDaysCount - $combinedAbsent - $combinedTardy);
+    $malePresent    = max(0, $maleCount * $schoolDaysCount - $maleBlock['absent']);
+    $femalePresent  = max(0, $femaleCount * $schoolDaysCount - $femaleBlock['absent']);
+    $combinedPresent = max(0, $registeredLearners * $schoolDaysCount - $combinedAbsent);
 
     $fiveConsec = 0; $droppedOutM = 0; $droppedOutF = 0; $transferredOutM = 0; $transferredOutF = 0;
     foreach (array_merge($maleBlock['rows'], $femaleBlock['rows']) as $r) {
@@ -370,7 +370,7 @@ if ($format === 'matrix') {
                 }
             }
             $cells[$absCol - 1] = $S((string)(int)$r['absent'], XLSX_ST_COUNT);
-            $cells[$preCol - 1] = $S((string)max(0, $schoolDaysCount - (int)$r['absent'] - (int)$r['tardy']), XLSX_ST_COUNT);
+            $cells[$preCol - 1] = $S((string)max(0, $schoolDaysCount - (int)$r['absent']), XLSX_ST_COUNT);
             $cells[$remCol - 1] = $S($r['remarks'], XLSX_ST_REMARKS);
             $out[] = $padRow($cells, $fullCols);
         }
@@ -385,7 +385,7 @@ if ($format === 'matrix') {
             }
         }
         $tot[$absCol - 1] = $S((string)$block['absent'], $totalRowStyle);
-        $tot[$preCol - 1] = $S((string)($presentOverride !== null ? $presentOverride : max(0, count($block['rows']) * $schoolDaysCount - $block['absent'] - $block['tardy'])), $totalRowStyle);
+        $tot[$preCol - 1] = $S((string)($presentOverride !== null ? $presentOverride : max(0, count($block['rows']) * $schoolDaysCount - $block['absent'])), $totalRowStyle);
         $tot[$remCol - 1] = $S('', $totalRowStyle);
         $out[] = $padRow($tot, $fullCols);
         return $out;

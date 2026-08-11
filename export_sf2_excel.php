@@ -58,9 +58,9 @@ $setVal = function ($col, $row, $val) use ($ws) {
 /* ── Derived analytics (mirrors teacher/export_report.php) ──────────────── */
 $maleCount   = count($males);
 $femaleCount = count($females);
-$malePresent   = max(0, $maleCount * $schoolDaysCount - $maleBlock['absent'] - $maleBlock['tardy']);
-$femalePresent = max(0, $femaleCount * $schoolDaysCount - $femaleBlock['absent'] - $femaleBlock['tardy']);
-$combinedPresent = max(0, $registeredLearners * $schoolDaysCount - $combinedAbsent - $combinedTardy);
+$malePresent   = max(0, $maleCount * $schoolDaysCount - $maleBlock['absent']);
+$femalePresent = max(0, $femaleCount * $schoolDaysCount - $femaleBlock['absent']);
+$combinedPresent = max(0, $registeredLearners * $schoolDaysCount - $combinedAbsent);
 
 $fiveConsec = 0; $droppedOutM = 0; $droppedOutF = 0; $transferredOutM = 0; $transferredOutF = 0;
 foreach (array_merge($maleBlock['rows'], $femaleBlock['rows']) as $r) {
@@ -139,7 +139,7 @@ $writeBlock = function (array $rows, array $attended, $absentTotal, $tardyTotal,
             $setVal($dayCols[$di], $row, $cell['display']);
         }
         $setVal(39, $row, (int)$r['absent']);
-        $setVal(41, $row, max(0, $schoolDaysCount - (int)$r['absent'] - (int)$r['tardy']));
+        $setVal(41, $row, max(0, $schoolDaysCount - (int)$r['absent']));
         $setVal(43, $row, $r['remarks']);
         $row++;
     }
@@ -151,7 +151,7 @@ $writeBlock = function (array $rows, array $attended, $absentTotal, $tardyTotal,
         $setVal($dayCols[$di], $row, (int)($attended[$day] ?? 0));
     }
     $setVal(39, $row, (int)$absentTotal);
-    $setVal(41, $row, (int)($presentOverride !== null ? $presentOverride : max(0, $count * $schoolDaysCount - $absentTotal - $tardyTotal)));
+    $setVal(41, $row, (int)($presentOverride !== null ? $presentOverride : max(0, $count * $schoolDaysCount - $absentTotal)));
     return $row + 1;
 };
 
