@@ -98,30 +98,6 @@ function getSelectedSection() {
             return;
         }
 
-        if (selectedOption === 'matrix') {
-            closePrintModal();
-            var gradeLevel = getSelectedGradeLevel();
-            var section = getSelectedSection();
-            var subjectId = getSelectedSubjectId();
-            var dateFrom = getDateFrom();
-            var dateTo = getDateTo();
-
-            if (!gradeLevel || !section || !subjectId) {
-                showAlertModal('Please select Grade, Section, and Subject filters before printing the Matrix Sheet.', { title: 'Notice', type: 'warning' });
-                return;
-            }
-
-            var url = window.BASE_URL + '/print_matrix_template.php?grade_level=' + encodeURIComponent(gradeLevel) + '&section=' + encodeURIComponent(section) + '&subject_id=' + encodeURIComponent(subjectId);
-            if (dateFrom) url += '&date_from=' + encodeURIComponent(dateFrom);
-            if (dateTo) url += '&date_to=' + encodeURIComponent(dateTo);
-
-            var pw = window.open(url, '_blank', 'width=1400,height=900');
-            if (!pw) {
-                window.location.href = url;
-            }
-            return;
-        }
-
         if (selectedOption === 'sf2_format') {
             closePrintModal();
             var gradeLevel = getSelectedGradeLevel();
@@ -185,14 +161,7 @@ function getSelectedSection() {
             return;
         }
 
-        var format = selectedOption === 'matrix' ? 'matrix' : 'standard';
-
-        if (format === 'matrix') {
-            if (!gradeLevel || !section || !subjectId) {
-                showAlertModal('Please select Grade, Section, and Subject filters before exporting the Matrix Sheet.', { title: 'Notice', type: 'warning' });
-                return;
-            }
-        }
+        var format = 'standard';
 
         closePrintModal();
 

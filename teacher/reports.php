@@ -701,18 +701,6 @@ foreach ($allRecords as $r) {
                              <i class="bi bi-check-circle"></i>
                          </div>
                      </div>
-                     <div class="print-option-card" data-option="matrix" onclick="selectPrintOption('matrix')">
-                         <div class="print-option-icon">
-                             <i class="bi bi-grid-3x3-gap"></i>
-                         </div>
-                         <div class="print-option-content">
-                             <h6 class="print-option-title">📊 7-Week Attendance Matrix Sheet</h6>
-                             <p class="print-option-desc">Generates the official landscape multi-week grid (Week 1–7 | M T W T F) matching the paper attendance sheet format.</p>
-                         </div>
-                         <div class="print-option-check">
-                             <i class="bi bi-check-circle"></i>
-                         </div>
-                     </div>
                      <div class="print-option-card" data-option="sf2_format" onclick="selectPrintOption('sf2_format')">
                          <div class="print-option-icon">
                              <i class="bi bi-mortarboard-fill"></i>
@@ -787,12 +775,12 @@ foreach ($allRecords as $r) {
             <div style="display:flex;justify-content:space-between;gap:30px;margin-top:12px;">
                 <div style="flex:1;text-align:center;">
                     <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">
-                    <strong><?= sanitize($teacherName ?? 'ANGELYN S. PARRABA') ?></strong>
+                    <strong><?= sanitize($teacherName ?? 'ANGELYN S. PARRABA') ?></strong><br>
                     <span><?= $isAdvisoryPrint ? 'Adviser' : 'Subject Teacher' ?></span>
                 </div>
                 <div style="flex:1;text-align:center;">
                     <hr style="border:none;border-top:1px solid #94a3b8;margin:0 auto 4px auto;width:70%;">
-                    <strong>ERWIN M. ESPENILLA</strong>
+                    <strong>ERWIN M. ESPENILLA</strong><br>
                     <span>OIC/Assistant Principal</span>
                 </div>
             </div>
