@@ -189,7 +189,7 @@ if ($format === 'matrix') {
     $droppedOut = $droppedOutM + $droppedOutF;
     $transferredOut = $transferredOutM + $transferredOutF;
     $pctEnrol = $registeredLearners > 0 ? round(($registeredLearners / max(1, $enrolFirstFriday)) * 100, 2) : 0;
-    $principalName = $settings['principal_name'] ?? 'ERWIN M. ESPENILLA';
+    $principalName = ($settings['principal_name'] ?? '') !== '' ? $settings['principal_name'] : 'ERWIN M. ESPENILLA';
 
     $S = function ($v, $st) { return ['v' => (string)$v, 's' => $st]; };
     $padRow = function (array $cells, $fullCols) {

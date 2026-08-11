@@ -175,8 +175,6 @@ if (!function_exists('sf2BuildBlock')) {
                         $absent[$d]++;
                         break;
                     case 'late':
-                        $display = 'L';
-                        $cls = 'cell-late';
                         $tardCount++;
                         $run = 0;
                         $tardy[$d]++;

@@ -39,7 +39,7 @@ foreach (array_merge($maleBlock['rows'], $femaleBlock['rows']) as $r) {
 $droppedOut = $droppedOutM + $droppedOutF;
 $transferredOut = $transferredOutM + $transferredOutF;
 $pctEnrol = $registeredLearners > 0 ? round(($registeredLearners / max(1, $enrolFirstFriday)) * 100, 2) : 0;
-$principalName = $settings['principal_name'] ?? 'MYRNA MINGOY BARRUN';
+$principalName = ($settings['principal_name'] ?? '') !== '' ? $settings['principal_name'] : 'ERWIN M. ESPENILLA';
 
 $dowShort = ['1' => 'M', '2' => 'T', '3' => 'W', '4' => 'TH', '5' => 'F'];
 ?>
