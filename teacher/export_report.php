@@ -1,4 +1,7 @@
 <?php
+// Never emit PHP warnings/notices into a binary download (breaks Excel).
+ini_set('display_errors', '0');
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/xlsx_template.php';
 requireRole(['admin', 'teacher']);
@@ -649,6 +652,13 @@ if ($format === 'matrix') {
     $rows[] = ['Attendance Report'];
     $rows[] = ['Period: ' . $dateFrom . ' to ' . $dateTo];
     $rows[] = ['Generated: ' . date('F d, Y g:i A')];
+    $setStmt = $db->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('school_name','school_id')");
+    $setRow = $setStmt ? $setStmt->fetchAll() : [];
+    $settingsMap = [];
+    foreach ($setRow as $r) { $settingsMap[$r['setting_key']] = $r['setting_value']; }
+    $schoolName = $settingsMap['school_name'] ?? '';
+    $schoolId   = $settingsMap['school_id'] ?? '';
+    $rows[] = ['School: ' . ($schoolName !== '' ? $schoolName : '—') . '  |  School ID: ' . ($schoolId !== '' ? $schoolId : '—')];
     $rows[] = [];
     $rows[] = ['Student ID', 'Name', 'Grade', 'Section', 'Subject', 'Present', 'Late', 'Absent', 'Total', 'Rate'];
     foreach ($reportData as $stats) {
@@ -675,6 +685,8 @@ if ($format === 'sf2') {
 } else {
     $xlsx = xlsx_build_package([['name' => 'Attendance Report', 'xml' => $sheet]]);
 }
+
+while (ob_get_level() > 0) { ob_end_clean(); }
 
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment; filename="' . $filename . '"');

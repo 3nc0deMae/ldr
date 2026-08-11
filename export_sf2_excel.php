@@ -1,4 +1,7 @@
 <?php
+// Never emit PHP warnings/notices into a binary download (breaks Excel).
+ini_set('display_errors', '0');
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);
 /**
  * export_sf2_excel.php — Official DepEd School Form 2 (SF2) Excel export.
  *
@@ -76,11 +79,20 @@ $pctEnrol         = $registeredLearners > 0 ? round(($registeredLearners / max(1
 $maleADA          = $schoolDaysCount > 0 ? round(array_sum($maleBlock['attended']) / $schoolDaysCount, 2) : 0;
 $femaleADA        = $schoolDaysCount > 0 ? round(array_sum($femaleBlock['attended']) / $schoolDaysCount, 2) : 0;
 
-/* ── 1. Dynamic header metadata ─────────────────────────────────────────── */
-$ws->setCellValue('F3', $schoolId);
-$ws->setCellValue('M3', sf2SchoolYearLabel($schoolYear));
+/* ── 1. Dynamic header metadata ───────────────────────────────────────────
+   Only overwrite template cells when the live value is non-empty; otherwise
+   keep the School ID / Name / Year already printed in the template file
+   (Railway's settings table may not be seeded). */
+if ($schoolId !== '') {
+    $ws->setCellValue('F3', $schoolId);
+}
+if (trim($schoolYear) !== '') {
+    $ws->setCellValue('M3', sf2SchoolYearLabel($schoolYear));
+}
 $ws->setCellValue('AA3', $monthLabel);                       // Report for the Month of ____
-$ws->setCellValue('F4', $schoolName);
+if (trim($schoolName) !== '') {
+    $ws->setCellValue('F4', $schoolName);
+}
 $ws->setCellValue('AA4', sf2GradeLabel($gradeLevel));
 $ws->setCellValue('AM4', sf2Upper($section));
 
@@ -185,6 +197,8 @@ $filename = 'SF2_Daily_Attendance_'
     . date('F_Y', strtotime($dateFrom)) . '.xlsx';
 
 $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+
+while (ob_get_level() > 0) { ob_end_clean(); }
 
 if (PHP_SAPI === 'cli') {
     $out = getenv('SF2_OUTPUT') ?: 'php://output';
