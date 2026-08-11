@@ -72,9 +72,9 @@ try {
         $settings[$s['setting_key']] = $s['setting_value'];
     }
 } catch (Exception $e) {}
-$schoolName = $settings['school_name'] ?? 'Liceo de Baleno';
-$schoolYear = $settings['school_year'] ?? (date('Y') . '-' . (date('Y') + 1));
-$schoolId   = $settings['school_id']   ?? '';
+$schoolName = ($settings['school_name'] ?? '') !== '' ? $settings['school_name'] : 'Liceo de Baleno';
+$schoolYear = ($settings['school_year'] ?? '') !== '' ? $settings['school_year'] : (date('Y') . '-' . (date('Y') + 1));
+$schoolId   = ($settings['school_id'] ?? '') !== '' ? $settings['school_id'] : '403756';
 
 /* ── Teacher (class adviser) ────────────────────────────────────────────── */
 $teacherStmt = $db->prepare("SELECT * FROM teachers WHERE user_id = ?");
