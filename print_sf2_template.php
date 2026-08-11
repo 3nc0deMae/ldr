@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /* ═══════════════════════════════════════════════════════════════════════════
    SCHOOL FORM 2 (SF2) — DAILY ATTENDANCE REPORT OF LEARNERS
    HTML replica matching the SF2_Template.xls layout & appearance.

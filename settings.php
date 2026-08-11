@@ -115,7 +115,7 @@ if ($role === 'admin') {
 
     $privacySettings = [];
     try {
-        $stmt = $db->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('privacy_dpo_contact','privacy_consent_label','privacy_kiosk_notice','privacy_master_terms','dpa_master_notice','dpa_version_tag','dpa_consent_label_student','dpa_consent_label_staff','system_terms_conditions')");
+        $stmt = $db->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('privacy_consent_label','privacy_kiosk_notice','privacy_master_terms','dpa_master_notice','dpa_consent_label_student','dpa_consent_label_staff','system_terms_conditions')");
         foreach ($stmt->fetchAll() as $ps) {
             $privacySettings[$ps['setting_key']] = $ps['setting_value'];
         }
@@ -175,8 +175,6 @@ if ($role === 'admin') {
         );
 
         $legalMap = [
-            'legal_privacy_dpo_contact'       => 'privacy_dpo_contact',
-            'legal_dpa_version_tag'           => 'dpa_version_tag',
             'legal_dpa_master_notice'         => 'dpa_master_notice',
             'legal_dpa_consent_label_student' => 'dpa_consent_label_student',
             'legal_dpa_consent_label_staff'   => 'dpa_consent_label_staff',
@@ -1120,23 +1118,6 @@ $baseUrl = BASE_URL;
                         <div class="row g-3">
                             <div class="col-12">
                                 <div class="field-group">
-                                    <label class="set-label">DPO Contact <span class="label-hint">(email / phone)</span></label>
-                                    <input type="text" class="set-input" name="legal_privacy_dpo_contact"
-                                           value="<?= htmlspecialchars($privacySettings['privacy_dpo_contact'] ?? 'dpo@liceodebaleno.edu.ph', ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="dpo@liceodebaleno.edu.ph">
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="field-group">
-                                    <label class="set-label">Effective Version / Date Tag</label>
-                                    <input type="text" class="set-input" name="legal_dpa_version_tag"
-                                           value="<?= htmlspecialchars($privacySettings['dpa_version_tag'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="July 2026 - v1.2">
-                                    <span class="set-hint">Shown on the public notice as the document revision stamp.</span>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="field-group">
                                     <label class="set-label d-flex justify-content-between align-items-center">
                                         <span>Master Data Privacy Notice</span>
                                         <button type="button" class="preview-link" data-preview="dpa">
@@ -1748,23 +1729,6 @@ $baseUrl = BASE_URL;
                     </div>
                     <div class="card-body">
                         <div class="row g-3">
-                            <div class="col-12">
-                                <div class="field-group">
-                                    <label class="set-label">Data Protection Officer Contact <span class="label-hint">(email / phone)</span></label>
-                                    <input type="text" class="set-input" name="legal_privacy_dpo_contact"
-                                           value="<?= htmlspecialchars($privacySettings['privacy_dpo_contact'] ?? 'dpo@liceodebaleno.edu.ph', ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="dpo@liceodebaleno.edu.ph">
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="field-group">
-                                    <label class="set-label">Effective Version / Date Tag</label>
-                                    <input type="text" class="set-input" name="legal_dpa_version_tag"
-                                           value="<?= htmlspecialchars($privacySettings['dpa_version_tag'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="July 2026 - v1.2">
-                                    <span class="set-hint">Shown on the public notice as the document revision stamp.</span>
-                                </div>
-                            </div>
                             <div class="col-12">
                                 <div class="field-group">
                                     <label class="set-label">Master Data Privacy Notice</label>

@@ -1607,7 +1607,7 @@ $roleColor = $roleColors[$role] ?? '#0066FE';
                     <li>Objects to processing or request the complete removal of biometric profiles (which will require returning to manual barcode/logbook attendance recording).</li>
                 </ul>
                 
-                <p><strong>9. Contact and Institutional Inquiries:</strong> For any concerns, clarifications, or requests regarding your personal information, biometric tokens, or system records, please contact the Liceo de Baleno Compliance Team directly. <strong>Data Protection Officer (DPO):</strong> dpo@liceodebaleno.edu.ph</p>
+                <p><strong>9. Contact and Institutional Inquiries:</strong> For any concerns, clarifications, or requests regarding your personal information, biometric tokens, or system records, please contact the Liceo de Baleno Compliance Team directly through the school administration office.</p>
             </div>
             <div class="event-modal-footer">
                 <button type="button" class="evt-btn evt-btn-primary" data-close-modal="privacyModal">I Understand</button>
