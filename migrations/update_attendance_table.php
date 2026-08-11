@@ -18,15 +18,15 @@ try {
         echo "updated_at column already exists.\n";
     }
 
-    // Update status enum to include 'pending'
+    // Update status enum to include 'pending' and 'excused'
     $stmt = $db->prepare("SHOW COLUMNS FROM attendance WHERE Field = 'status'");
     $stmt->execute();
     $row = $stmt->fetch();
-    if ($row && strpos($row['Type'], 'pending') === false) {
-        $db->exec("ALTER TABLE attendance MODIFY COLUMN status enum('present','absent','late','pending') NOT NULL DEFAULT 'present'");
-        echo "Updated status enum to include 'pending'.\n";
+    if ($row && (strpos($row['Type'], 'pending') === false || strpos($row['Type'], 'excused') === false)) {
+        $db->exec("ALTER TABLE attendance MODIFY COLUMN status enum('present','absent','late','pending','excused') NOT NULL DEFAULT 'present'");
+        echo "Updated status enum to include 'pending' and 'excused'.\n";
     } else {
-        echo "Status enum already includes 'pending'.\n";
+        echo "Status enum already includes 'pending' and 'excused'.\n";
     }
 
     echo "Migration completed successfully.\n";

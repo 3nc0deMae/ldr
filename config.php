@@ -63,6 +63,19 @@ try {
     if (empty($col)) $db->exec("ALTER TABLE user_notifications ADD COLUMN user_id INT NULL DEFAULT NULL");
 } catch (Exception $e) { error_log('mig user_notifications.user_id: ' . $e->getMessage()); }
 
+// Ensure attendance table supports status corrections (updated_at column + excused enum)
+try {
+    $col = $db->query("SHOW COLUMNS FROM attendance LIKE 'updated_at'")->fetchAll();
+    if (empty($col)) $db->exec("ALTER TABLE attendance ADD COLUMN updated_at datetime DEFAULT NULL ON UPDATE current_timestamp()");
+} catch (Exception $e) { error_log('mig attendance.updated_at: ' . $e->getMessage()); }
+
+try {
+    $row = $db->query("SHOW COLUMNS FROM attendance WHERE Field = 'status'")->fetch();
+    if ($row && (strpos($row['Type'], 'pending') === false || strpos($row['Type'], 'excused') === false)) {
+        $db->exec("ALTER TABLE attendance MODIFY COLUMN status enum('present','absent','late','pending','excused') NOT NULL DEFAULT 'present'");
+    }
+} catch (Exception $e) { error_log('mig attendance.status enum: ' . $e->getMessage()); }
+
 // Materialize notifications for calendar events that have reached their due
 // date/time, so the user is notified on whatever page they are on.
 try {
