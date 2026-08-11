@@ -5,11 +5,12 @@ FROM php:8.3-apache
 
 # PHP extensions needed by the app + Apache modules used by .htaccess
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libonig-dev libzip-dev \
-    && docker-php-ext-install pdo_mysql mysqli mbstring zip \
+    && apt-get install -y --no-install-recommends libonig-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mysqli mbstring zip gd \
     && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
-    
+
 RUN docker-php-ext-install pdo_mysql mysqli mbstring zip
 # Clean MPM state at build time
 RUN rm -f /etc/apache2/mods-enabled/mpm_*.load && a2enmod mpm_prefork
