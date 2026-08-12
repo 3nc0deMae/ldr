@@ -13,30 +13,5 @@
     <!-- LDB-FRAS Shared Scripts -->
     <script src="<?= BASE_URL ?>/assets/js/app.js?v=<?= @filemtime(ROOT_PATH . '/assets/js/app.js') ?: time() ?>"></script>
     <script src="<?= BASE_URL ?>/assets/js/liveness.js?v=<?= @filemtime(ROOT_PATH . '/assets/js/liveness.js') ?: time() ?>"></script>
-
-    <!-- Offline attendance stack (kiosk: timein.php / timeout.php / register.php) -->
-    <?php if (!empty($offlineKiosk)): ?>
-    <span id="offlineStatusPill"
-          style="position:fixed;bottom:16px;left:16px;z-index:99997;background:#28a745;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
-        🟢 Online
-    </span>
-    <style>
-        @keyframes ldbToastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
-    </style>
-    <script src="<?= BASE_URL ?>/assets/vendor/face-api/face-api.min.js"></script>
-    <script src="<?= BASE_URL ?>/assets/js/offline-db.js?v=<?= @filemtime(ROOT_PATH . '/assets/js/offline-db.js') ?: time() ?>"></script>
-    <script src="<?= BASE_URL ?>/assets/js/face-scan-offline.js?v=<?= @filemtime(ROOT_PATH . '/assets/js/face-scan-offline.js') ?: time() ?>"></script>
-    <script>
-        (function () {
-            if (window.FaceScanOffline && window.LDB_Offline_Attendance_DB) {
-                LDB_Offline_Attendance_DB.init().then(function () {
-                    FaceScanOffline.init();
-                }).catch(function (e) {
-                    console.warn('Offline DB unavailable:', e);
-                });
-            }
-        })();
-    </script>
-    <?php endif; ?>
 </body>
 </html>

@@ -4,7 +4,6 @@ require_once __DIR__ . '/../config.php';
 requireRole(['admin', 'gate']);
 
 $pageTitle = 'Gate Time-In';
-$offlineKiosk = true;
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 
@@ -348,18 +347,14 @@ try {
                 <div class="card mb-3">
                     <div class="card-body py-2">
                         <label class="form-label fw-600 mb-1" style="font-size:13px;">Scanning Target Session</label>
-                        <select class="form-control form-control-sm" id="scanSessionSelect" onchange="updateScanSession(this)">
+                        <select class="form-control form-control-sm" id="scanSessionSelect" onchange="document.getElementById('scanSessionId').value=this.value">
                             <?php foreach ($activeSessions as $s): ?>
-                            <option value="<?= $s['id'] ?>" <?= ($s['id'] == $targetSessionId) ? 'selected' : '' ?>
-                                data-start="<?= date('Y-m-d H:i:s', strtotime($s['start_time'])) ?>"
-                                data-late="<?= intval($s['late_threshold'] ?? 15) ?>">
+                            <option value="<?= $s['id'] ?>" <?= ($s['id'] == $targetSessionId) ? 'selected' : '' ?>>
                                 <?= ucfirst($s['session_period'] ?? 'General') ?> (<?= date('h:i A', strtotime($s['start_time'])) ?> - <?= date('h:i A', strtotime($s['end_time'])) ?>)
                             </option>
                             <?php endforeach; ?>
                         </select>
                         <input type="hidden" id="scanSessionId" value="<?= $targetSessionId ?? '' ?>">
-                        <input type="hidden" id="scanSessionStart" value="<?= $activeSession ? date('Y-m-d H:i:s', strtotime($activeSession['start_time'])) : '' ?>">
-                        <input type="hidden" id="scanSessionLate" value="<?= intval($activeSession['late_threshold'] ?? 15) ?>">
                     </div>
                 </div>
                 <?php endif; ?>
@@ -578,22 +573,6 @@ try {
     let voiceEnabled = true;
     let liveness = null;
 
-    function updateScanSession(select) {
-        const opt = select.selectedOptions && select.selectedOptions[0];
-        document.getElementById('scanSessionId').value = select.value;
-        document.getElementById('scanSessionStart').value = opt ? (opt.dataset.start || '') : '';
-        document.getElementById('scanSessionLate').value = opt ? (opt.dataset.late || 15) : 15;
-    }
-
-    function currentSessionInfo() {
-        return {
-            session_id: document.getElementById('scanSessionId')?.value || '',
-            session_type: 'time_in',
-            session_start: document.getElementById('scanSessionStart')?.value || '',
-            late_threshold: document.getElementById('scanSessionLate')?.value || 15
-        };
-    }
-
     function playConfirmationBeep() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -730,27 +709,13 @@ try {
         const imageBase64 = captureFrameInZone('gateVideo', 0.15);
         if (!imageBase64) return;
 
-        const sessionInfo = currentSessionInfo();
-
-        // OFFLINE: recognize locally from cached face descriptors and queue
-        // the scan for background sync when connectivity returns.
-        if (window.FaceScanOffline && FaceScanOffline.isOffline) {
-            try {
-                const data = await FaceScanOffline.localScan(imageBase64, sessionInfo);
-                showRecognitionResult(data);
-            } catch (e) {
-                console.error('Offline scan error:', e);
-            }
-            return;
-        }
-
         try {
             const formData = new FormData();
             formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
             formData.append('action', 'recognize_attendance');
             formData.append('image', imageBase64);
-            formData.append('session_id', sessionInfo.session_id);
-            formData.append('session_type', sessionInfo.session_type);
+            formData.append('session_id', document.getElementById('scanSessionId')?.value || '');
+            formData.append('session_type', 'time_in');
 
             const response = await fetch(window.BASE_URL + '/api/gate.php', {
                 method: 'POST',
@@ -759,39 +724,9 @@ try {
             });
             const data = await response.json();
 
-            // If the network actually failed, fall back to offline recognition.
-            if (!data || data.error === 'Network Error' || (data.success === undefined && data.error === undefined)) {
-                if (window.FaceScanOffline) {
-                    const offlineData = await FaceScanOffline.localScan(imageBase64, sessionInfo);
-                    showRecognitionResult(offlineData);
-                    return;
-                }
-            }
-
             showRecognitionResult(data);
-
-            // Enrich the offline roster: after a successful online match, cache
-            // the student's 128-d descriptor so they can be scanned offline later.
-            if (data && data.success && data.matched && window.FaceScanOffline && FaceScanOffline.modelsReady()) {
-                try {
-                    const descriptor = await FaceScanOffline.computeDescriptorFromImage(imageBase64);
-                    if (descriptor) {
-                        await FaceScanOffline.cacheDescriptorForStudent({
-                            student_id: data.student_id,
-                            first_name: data.student_name ? data.student_name.split(' ')[0] : '',
-                            last_name: data.student_name ? data.student_name.split(' ').slice(1).join(' ') : '',
-                            grade_level: data.grade_level,
-                            section: data.section || ''
-                        }, descriptor);
-                    }
-                } catch (e) { /* non-blocking enrichment */ }
-            }
         } catch (e) {
             console.error('Scan error:', e);
-            if (window.FaceScanOffline) {
-                const offlineData = await FaceScanOffline.localScan(imageBase64, sessionInfo);
-                showRecognitionResult(offlineData);
-            }
         }
     }
 
@@ -910,64 +845,6 @@ try {
         }
 
         msg.innerHTML = '<div class="alert alert-info"><span class="spinner-border spinner-border-sm"></span> Processing...</div>';
-
-        // OFFLINE: queue the manual scan locally (no network available).
-        if (window.FaceScanOffline && FaceScanOffline.isOffline) {
-            try {
-                const sessionInfo = currentSessionInfo();
-                sessionInfo.session_type = sessionType || 'time_in';
-                const cached = await LDB_Offline_Attendance_DB.getStudentByLrn(studentId);
-                if (!cached) {
-                    msg.innerHTML = '<div class="alert alert-danger">Student not found in offline roster. Sync online once to cache enrolled students.</div>';
-                    return;
-                }
-                let status = 'present';
-                if (sessionInfo.session_type === 'time_in' && sessionInfo.session_start && sessionInfo.late_threshold) {
-                    const minutesLate = Math.max(0, (Date.now() - new Date(sessionInfo.session_start).getTime()) / 60000);
-                    if (minutesLate > Number(sessionInfo.late_threshold)) status = 'late';
-                }
-                const now = new Date();
-                await LDB_Offline_Attendance_DB.saveOfflineScan({
-                    sync_guid: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('guid-' + Date.now().toString(36)),
-                    student_id: cached.lrn,
-                    full_name: cached.full_name,
-                    grade_level: cached.grade_level,
-                    section: cached.section || '',
-                    session_id: sessionInfo.session_id || null,
-                    session_type: sessionInfo.session_type,
-                    scan_time: now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') +
-                        ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0'),
-                    status: status,
-                    confidence: 100
-                });
-                msg.innerHTML = `
-                    <div class="alert alert-success">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-check-circle-fill me-2" style="font-size:20px;"></i>
-                            <strong>Time-In Saved Offline!</strong>
-                        </div>
-                        <div class="ps-4">
-                            <div class="fw-bold">${cached.full_name || 'Unknown Student'}</div>
-                            <small class="text-muted">
-                                LRN: ${cached.lrn || ''} | Grade ${cached.grade_level || ''}<br>
-                                Status: ${status === 'late' ? '⏰ Late' : '✅ Present'} (will sync automatically)
-                            </small>
-                        </div>
-                    </div>`;
-                addScanToLog({
-                    student_name: cached.full_name || 'Student',
-                    student_id: cached.lrn,
-                    grade_level: cached.grade_level || '',
-                    status: status
-                });
-                document.getElementById('manualLrn').value = '';
-                return;
-            } catch (e) {
-                console.error('Offline manual scan error:', e);
-                msg.innerHTML = '<div class="alert alert-danger">Offline scan failed. Please try again.</div>';
-                return;
-            }
-        }
 
         try {
             const formData = new FormData();

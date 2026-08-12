@@ -76,23 +76,6 @@ try {
     }
 } catch (Exception $e) { error_log('mig attendance.status enum: ' . $e->getMessage()); }
 
-// Offline support: store 128-d face-api.js descriptors (JSON array) for
-// on-device matching when the gate has no internet connection.
-try {
-    $col = $db->query("SHOW COLUMNS FROM student_faces LIKE 'face_descriptor'")->fetchAll();
-    if (empty($col)) {
-        $db->exec("ALTER TABLE student_faces ADD COLUMN face_descriptor LONGTEXT NULL DEFAULT NULL AFTER face_encoding");
-    }
-} catch (Exception $e) { error_log('mig student_faces.face_descriptor: ' . $e->getMessage()); }
-
-// Offline sync idempotency: unique GUID per device-generated attendance log.
-try {
-    $col = $db->query("SHOW COLUMNS FROM attendance_records LIKE 'sync_guid'")->fetchAll();
-    if (empty($col)) {
-        $db->exec("ALTER TABLE attendance_records ADD COLUMN sync_guid VARCHAR(64) NULL DEFAULT NULL, ADD UNIQUE INDEX uq_sync_guid (sync_guid)");
-    }
-} catch (Exception $e) { error_log('mig attendance_records.sync_guid: ' . $e->getMessage()); }
-
 // Materialize notifications for calendar events that have reached their due
 // date/time, so the user is notified on whatever page they are on.
 try {

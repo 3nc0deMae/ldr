@@ -10,45 +10,6 @@ require_once __DIR__ . '/../includes/xlsx_reader.php';
 
 header('Content-Type: application/json');
 
-// Offline roster sync for the kiosk (face-scan-offline.js).
-// Returns active students that already have a client-computed 128-d
-// face-api.js descriptor, so the gate can recognize faces with zero network.
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'offline_roster') {
-    requireRole(['admin', 'gate']);
-    $stmt = $db->query(
-        "SELECT s.id, s.student_id, s.first_name, s.last_name, s.grade_level, s.section,
-                f.face_descriptor
-         FROM students s
-         LEFT JOIN student_faces f ON f.student_id = s.id
-         WHERE s.status = 'active'
-           AND f.face_descriptor IS NOT NULL AND f.face_descriptor != ''
-         ORDER BY s.last_name ASC, s.first_name ASC"
-    );
-    $rows = $stmt->fetchAll();
-
-    $students = [];
-    foreach ($rows as $row) {
-        $desc = json_decode($row['face_descriptor'], true);
-        if (!is_array($desc) || count($desc) !== 128) continue;
-        $students[] = [
-            'id'              => intval($row['id']),
-            'student_id'      => $row['student_id'],
-            'first_name'      => $row['first_name'],
-            'last_name'       => $row['last_name'],
-            'grade_level'     => $row['grade_level'],
-            'section'         => $row['section'] ?? '',
-            'face_descriptor' => array_map('floatval', array_slice($desc, 0, 128))
-        ];
-    }
-
-    echo json_encode([
-        'success'  => true,
-        'count'    => count($students),
-        'students' => $students
-    ]);
-    exit;
-}
-
 // Handle GET requests for exports
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     requireRole(['admin']);
