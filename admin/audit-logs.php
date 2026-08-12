@@ -1248,7 +1248,7 @@ $roleColors = [
         </div>
 
         <!-- MOBILE ACTIONS (below title) -->
-        <div class="d-flex gap-2 align-items-center mb-3" style="flex-wrap:wrap;">
+        <div class="d-flex d-md-none gap-2 align-items-center mb-3" style="flex-wrap:wrap;">
             <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>" class="btn-export"><i class="bi bi-file-earmark-excel"></i> <span class="btn-text">Export CSV</span></a>
             <select id="auditPrintOrientationMobile" class="aud-select" style="width:auto;display:inline-block;" onchange="var q=new URLSearchParams(window.location.search);q.set('print_all','1');q.set('orientation',this.value);document.getElementById('auditPrintAllLinkMobile').href='?'+q.toString()">
                 <option value="portrait" <?= (!isset($_GET['orientation']) || $_GET['orientation'] !== 'landscape') ? 'selected' : '' ?>>Portrait</option>
