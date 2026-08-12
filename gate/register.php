@@ -1080,6 +1080,10 @@ try {
     <script>window.FACE_MESH_BASE = '<?= BASE_URL ?>/assets/vendor/face_mesh';</script>
     <script src="<?= BASE_URL ?>/assets/vendor/face_mesh/face_mesh.js"></script>
     <script src="<?= BASE_URL ?>/assets/js/liveness.js?v=<?= @filemtime(__DIR__ . '/../assets/js/liveness.js') ?: time() ?>"></script>
+    <!-- Offline face recognition: face-api.js models + IndexedDB descriptor store -->
+    <script src="<?= BASE_URL ?>/assets/vendor/face-api/face-api.min.js"></script>
+    <script src="<?= BASE_URL ?>/assets/js/offline-db.js?v=<?= @filemtime(__DIR__ . '/../assets/js/offline-db.js') ?: time() ?>"></script>
+    <script src="<?= BASE_URL ?>/assets/js/face-scan-offline.js?v=<?= @filemtime(__DIR__ . '/../assets/js/face-scan-offline.js') ?: time() ?>"></script>
     <script>
         const BASE_URL = '<?= BASE_URL ?>';
         const CSRF_TOKEN = '<?= generateCSRFToken() ?>';
@@ -1486,6 +1490,21 @@ try {
             isProcessing = true;
 
             try {
+                // Compute a 128-d face descriptor on-device (face-api.js) so the
+                // student can be recognized by the OFFLINE gate later.
+                let descriptorPayload = '';
+                if (window.FaceScanOffline && window.faceapi) {
+                    try {
+                        await FaceScanOffline.ensureModels();
+                        const descriptor = await FaceScanOffline.computeDescriptorFromImage(capturedImageBase64);
+                        if (descriptor) {
+                            descriptorPayload = JSON.stringify(Array.from(descriptor));
+                        }
+                    } catch (e) {
+                        console.warn('Offline descriptor computation skipped:', e);
+                    }
+                }
+
                 const formData = new FormData();
                 formData.append('csrf_token', CSRF_TOKEN);
                 formData.append('action', 'register_face');
@@ -1493,6 +1512,9 @@ try {
                 formData.append('front_face', capturedImageBase64);
                 formData.append('left_face', '');
                 formData.append('right_face', '');
+                if (descriptorPayload) {
+                    formData.append('face_descriptor', descriptorPayload);
+                }
 
                 const response = await fetch(`${BASE_URL}/api/gate.php`, {
                     method: 'POST',

@@ -7,6 +7,13 @@
     <meta name="csrf-token" content="<?= generateCSRFToken() ?>">
     <title><?= $pageTitle ?? APP_NAME ?> - <?= APP_FULL_NAME ?></title>
     <link rel="icon" type="image/png" href="<?= BASE_URL ?>/assets/images/icon.png">
+    <!-- PWA: enables install + offline-first kiosk -->
+    <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
+    <meta name="theme-color" content="#0A224C">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="<?= BASE_URL ?>/assets/images/icon-192.png">
 
     <!-- Bootstrap 5 CSS -->
     <link href="<?= BASE_URL ?>/assets/vendor/css/bootstrap.min.css" rel="stylesheet">
@@ -43,6 +50,23 @@
     <!-- Dynamic Base URL for JavaScript -->
     <script>
         window.BASE_URL = '<?= BASE_URL ?>';
+    </script>
+    <!-- Service Worker registration (offline-first kiosk). Requires secure context. -->
+    <script>
+    (function () {
+        var isSecure = location.protocol === 'https:' ||
+                       location.hostname === 'localhost' ||
+                       location.hostname === '127.0.0.1';
+        if ('serviceWorker' in navigator && isSecure) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register(window.BASE_URL + '/service-worker.js', {
+                    scope: window.BASE_URL + '/'
+                }).catch(function (err) {
+                    console.warn('Service worker registration failed:', err);
+                });
+            });
+        }
+    })();
     </script>
     <!-- Global Search Term Highlighter -->
     <script>

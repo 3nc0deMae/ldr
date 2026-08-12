@@ -762,6 +762,9 @@ try {
             $frontFace = $_POST['front_face'] ?? '';
             $leftFace  = $_POST['left_face'] ?? '';
             $rightFace = $_POST['right_face'] ?? '';
+            // Optional client-computed 128-d descriptor (face-api.js) used for
+            // OFFLINE gate recognition. Format: JSON array of 128 floats.
+            $faceDescriptor = $_POST['face_descriptor'] ?? '';
 
             if (!$studentId) {
                 echo json_encode(['success' => false, 'error' => 'Student ID is required.']);
@@ -783,6 +786,16 @@ try {
             if (!$student) {
                 echo json_encode(['success' => false, 'error' => 'Student not found.']);
                 exit;
+            }
+
+            // Validate + normalize the optional client-computed 128-d descriptor
+            // (face-api.js) that powers OFFLINE gate recognition.
+            $faceDescriptorJson = null;
+            if (!empty($faceDescriptor)) {
+                $desc = json_decode($faceDescriptor, true);
+                if (is_array($desc) && count($desc) === 128) {
+                    $faceDescriptorJson = json_encode(array_map('floatval', array_slice($desc, 0, 128)));
+                }
             }
 
             // Call Python face recognition API for encoding
@@ -831,7 +844,8 @@ try {
                     // Update existing record
                     $stmt = $db->prepare(
                         "UPDATE student_faces 
-                         SET front_face = ?, left_face = ?, right_face = ?, face_encoding = ?, updated_at = NOW()
+                         SET front_face = ?, left_face = ?, right_face = ?, face_encoding = ?,
+                             face_descriptor = COALESCE(?, face_descriptor), updated_at = NOW()
                          WHERE student_id = ?"
                     );
                     $stmt->execute([
@@ -839,20 +853,22 @@ try {
                         $leftFace ? 'saved' : null,
                         $rightFace ? 'saved' : null,
                         json_encode($result['encoding']),
+                        $faceDescriptorJson,
                         $studentId
                     ]);
                 } else {
                     // Insert new record
                     $stmt = $db->prepare(
-                        "INSERT INTO student_faces (student_id, front_face, left_face, right_face, face_encoding, created_at, updated_at)
-                         VALUES (?, ?, ?, ?, ?, NOW(), NOW())"
+                        "INSERT INTO student_faces (student_id, front_face, left_face, right_face, face_encoding, face_descriptor, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())"
                     );
                     $stmt->execute([
                         $studentId,
                         $frontFace ? 'saved' : null,
                         $leftFace ? 'saved' : null,
                         $rightFace ? 'saved' : null,
-                        json_encode($result['encoding'])
+                        json_encode($result['encoding']),
+                        $faceDescriptorJson
                     ]);
                 }
 
@@ -885,6 +901,49 @@ try {
                     'error'   => $errorMsg
                 ]);
             }
+            break;
+
+        // ============================================
+        // SAVE OFFLINE DESCRIPTOR (enrichment)
+        // Persists a client-computed 128-d face-api.js descriptor after a
+        // successful ONLINE scan so the gate recognizes that student offline.
+        // ============================================
+        case 'save_offline_descriptor':
+            requireRole(['admin', 'gate']);
+
+            $studentId = intval($_POST['student_id'] ?? 0);
+            $descriptor = $_POST['descriptor'] ?? '';
+
+            if (!$studentId || empty($descriptor)) {
+                echo json_encode(['success' => false, 'error' => 'Missing student or descriptor.']);
+                exit;
+            }
+
+            $desc = json_decode($descriptor, true);
+            if (!is_array($desc) || count($desc) !== 128) {
+                echo json_encode(['success' => false, 'error' => 'Descriptor must be 128 floats.']);
+                exit;
+            }
+            $descriptorJson = json_encode(array_map('floatval', array_slice($desc, 0, 128)));
+
+            $stmt = $db->prepare("SELECT id FROM student_faces WHERE student_id = ?");
+            $stmt->execute([$studentId]);
+            $existing = $stmt->fetch();
+
+            if ($existing) {
+                $stmt = $db->prepare(
+                    "UPDATE student_faces SET face_descriptor = ?, updated_at = NOW() WHERE student_id = ?"
+                );
+                $stmt->execute([$descriptorJson, $studentId]);
+            } else {
+                $stmt = $db->prepare(
+                    "INSERT INTO student_faces (student_id, front_face, face_descriptor, encoding_status, created_at, updated_at)
+                     VALUES (?, NULL, ?, 'processed', NOW(), NOW())"
+                );
+                $stmt->execute([$studentId, $descriptorJson]);
+            }
+
+            echo json_encode(['success' => true, 'message' => 'Offline descriptor saved.']);
             break;
 
         // ============================================
