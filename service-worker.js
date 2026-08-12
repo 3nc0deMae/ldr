@@ -1,14 +1,24 @@
 /* LDB-FRAS Service Worker - offline-first attendance kiosk.
- * Cache version: ldb-fras-v1
+ * Cache version: ldb-fras-v2
  * Strategy:
  *   - Install: pre-cache core CSS/JS, face-api.js, TF.js, model weights, icons.
  *   - Fetch: cache-first + stale-while-revalidate for GET static assets;
  *            network-first for navigations (pages);
  *            never cache API requests (POST sync + GET roster bypass cache).
  */
-const CACHE_NAME = 'ldb-fras-v1';
+const CACHE_NAME = 'ldb-fras-v2';
 const MODEL_PREFIX = 'assets/models/';
 const PRECACHE_ASSETS = [
+    // App shell (HTML) - WITHOUT these the site has nothing to show when the
+    // network dies on a fresh device. Runtime navigation caching only kicks in
+    // AFTER the SW controls a page, so precaching here is what makes the very
+    // first offline load work. Pages that redirect (e.g. logged-out kiosk URLs)
+    // are safely skipped during install via redirect:'manual'.
+    'login.php',
+    'index.php',
+    'gate/index.php',
+    'gate/timein.php',
+    'gate/timeout.php',
     'manifest.json',
     'assets/vendor/css/bootstrap.min.css',
     'assets/vendor/bootstrap-icons/bootstrap-icons.css',
@@ -62,8 +72,12 @@ self.addEventListener('install', (event) => {
         caches.open(CACHE_NAME).then((cache) =>
             Promise.all(
                 PRECACHE_ASSETS.map((rel) =>
-                    fetch(scopeURL(rel), { cache: 'no-store' })
+                    fetch(scopeURL(rel), { cache: 'no-store', redirect: 'manual' })
                         .then((res) => {
+                            // redirect:'manual' means redirects resolve to
+                            // opaque-redirect responses (status 0, res.ok=false)
+                            // so pages like logged-out kiosk URLs are SKIPPED
+                            // instead of caching the login page under their URL.
                             if (res && res.ok) cache.put(scopeURL(rel), res);
                             return;
                         })
@@ -111,11 +125,16 @@ self.addEventListener('fetch', (event) => {
                     return res;
                 })
                 .catch(() =>
-                    caches.match(req, { ignoreSearch: true }).then((cached) => {
-                        if (cached) return cached;
-                        // Last resort: a cached page in the same app root.
-                        return caches.match('./', { ignoreSearch: true });
-                    })
+                    caches.match(req, { ignoreSearch: true })
+                        .then((cached) => {
+                            if (cached) return cached;
+                            // Last resort: any cached page in the same app root.
+                            // '/foo' matches cached '/foo', cached 'index.php',
+                            // or the root URL - whichever exists.
+                            const index = new URL('./index.php', self.location.href).href;
+                            return caches.match(index, { ignoreSearch: true })
+                                .then((c) => c || caches.match('./', { ignoreSearch: true }));
+                        })
                 )
         );
         return;
