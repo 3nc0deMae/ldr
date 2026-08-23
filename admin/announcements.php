@@ -43,27 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if ($action === 'save_custom_template') {
-        $tplName    = sanitize($_POST['template_name'] ?? '');
-        $tplSubject = sanitize($_POST['template_subject'] ?? '');
-        $tplBody    = trim($_POST['template_body'] ?? '');
-        if ($tplName && $tplSubject && $tplBody) {
-            try {
-                $stmt = $db->prepare(
-                    "INSERT INTO announcement_templates (name, icon, color, subject, body, created_by, created_at)
-                     VALUES (:name, 'bi-bookmark', 'dark', :subject, :body, :created_by, NOW())"
-                );
-                $stmt->execute([':name' => $tplName, ':subject' => $tplSubject, ':body' => $tplBody, ':created_by' => $_SESSION['user_id']]);
-                $_SESSION['flash_message'] = ['type' => 'success', 'message' => "Custom template \"{$tplName}\" created."];
-            } catch (Exception $e) {
-                $_SESSION['flash_message'] = ['type' => 'danger', 'message' => 'Failed to save template.'];
-            }
-        }
-        if (ob_get_length()) { ob_end_clean(); }
-        header('Location: ' . BASE_URL . '/admin/announcements.php');
-        exit;
-    }
-
     if ($action === 'delete') {
         $id = intval($_POST['announcement_id'] ?? 0);
         if ($id > 0) {
@@ -102,6 +81,9 @@ try {
 
 $customTemplates = [];
 try { $customTemplates = $db->query("SELECT * FROM announcement_templates ORDER BY created_at DESC")->fetchAll(); } catch (Exception $e) {}
+
+$hiddenPresetKeys = [];
+try { $hiddenPresetKeys = $db->query("SELECT preset_key FROM announcement_templates_hidden")->fetchAll(PDO::FETCH_COLUMN); } catch (Exception $e) {}
 
 $templates = [
     'class_suspension' => [
@@ -370,6 +352,30 @@ if (isset($_GET['resend'])) {
     font-size: 11px; font-weight: 700; color: var(--ann-text);
     margin-top: 8px; letter-spacing: 0.02em; text-transform: uppercase;
 }
+
+/* ─── Custom Template Delete Button ──────────────────────────────────── */
+.tpl-delete-btn {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    border: none;
+    background: var(--ann-danger-soft);
+    color: var(--ann-danger);
+    font-size: 11px;
+    padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.15s ease;
+    z-index: 2;
+}
+.template-card:hover .tpl-delete-btn { opacity: 1; }
+.tpl-delete-btn:hover {
+    background: var(--ann-danger); color: #fff;
+    transform: scale(1.1);
+}
+@media (hover: none) { .tpl-delete-btn { opacity: 0.7; } }
 
 /* ─── Subject Input ───────────────────────────────────────────────────── */
 .subject-input {
@@ -1378,7 +1384,7 @@ if (isset($_GET['resend'])) {
                 </button>
             </div>
             <div class="card-body" style="padding:16px 20px;">
-                <div class="row g-3">
+                <div class="row g-3" id="templateGrid">
                     <?php
                     $tplColors = [
                         'class_suspension'     => ['bg'=>'var(--ann-danger-soft)',  'fg'=>'var(--ann-danger)'],
@@ -1390,10 +1396,12 @@ if (isset($_GET['resend'])) {
                         'parent_meeting'       => ['bg'=>'var(--ann-info-soft)',    'fg'=>'var(--ann-info)'],
                     ];
                     foreach ($templates as $key => $tpl):
+                        if (in_array($key, $hiddenPresetKeys, true)) continue;
                         $c = $tplColors[$key] ?? $tplColors['general'];
                     ?>
                     <div class="col-4 col-md-4 col-lg-2">
                         <div class="card h-100 text-center template-card" data-template-key="<?= $key ?>">
+                            <button type="button" class="tpl-delete-btn" data-preset-key="<?= $key ?>" title="Remove template"><i class="bi bi-trash"></i></button>
                             <div class="card-body">
                                 <div style="width:44px;height:44px;border-radius:12px;background:<?= $c['bg'] ?>;display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px;transition:transform 0.25s ease;">
                                     <i class="bi <?= $tpl['icon'] ?>" style="font-size:20px;color:<?= $c['fg'] ?>;"></i>
@@ -1410,6 +1418,7 @@ if (isset($_GET['resend'])) {
                              data-template-key="custom_<?= $ctpl['id'] ?>"
                              data-custom-subject="<?= htmlspecialchars($ctpl['subject']) ?>"
                              data-custom-body="<?= htmlspecialchars($ctpl['body']) ?>">
+                            <button type="button" class="tpl-delete-btn" data-tpl-id="<?= (int)$ctpl['id'] ?>" title="Delete template"><i class="bi bi-trash"></i></button>
                             <div class="card-body">
                                 <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.06);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px;">
                                     <i class="bi bi-bookmark-fill" style="font-size:20px;color:var(--ann-text-secondary);"></i>
@@ -1556,6 +1565,23 @@ if (isset($_GET['resend'])) {
                                 </button>
                                 <input type="file" name="attachment_image" id="attachmentInput"
                                        accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;">
+                            </div>
+
+                            <!-- Link Attachment -->
+                            <div class="attachment-strip" id="linkStrip">
+                                <div class="strip-icon"><i class="bi bi-link-45deg"></i></div>
+                                <span class="strip-text" id="linkText">No link attached — click to add one</span>
+                                <button type="button" class="strip-remove" id="btnRemoveLink">
+                                    <i class="bi bi-x"></i> Remove
+                                </button>
+                            </div>
+                            <div id="linkFields" style="display:none;padding:12px 20px;border-top:1px solid var(--ann-border);background:var(--ann-surface-card);">
+                                <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ann-text-muted);margin-bottom:5px;display:block;">Link URL <span style="color:#ef4444;">*</span></label>
+                                <input type="url" name="attachment_link" id="attachLinkUrl" class="schedule-input"
+                                       placeholder="https://drive.google.com/file/..." style="margin-bottom:10px;">
+                                <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ann-text-muted);margin-bottom:5px;display:block;">Button Label <small style="text-transform:none;letter-spacing:0;opacity:.6;">(optional)</small></label>
+                                <input type="text" name="attachment_link_label" id="attachLinkLabel" class="schedule-input"
+                                       maxlength="150" placeholder="e.g. View Full Memo">
                             </div>
                         </div>
                     </div>
@@ -1779,11 +1805,13 @@ if (isset($_GET['resend'])) {
                                             <i class="bi bi-arrow-clockwise"></i>
                                         </button>
                                         <?php endif; ?>
-                                        <form method="POST" action="<?= BASE_URL ?>/admin/announcements.php" class="d-inline" onsubmit="return confirm('Delete this announcement?');">
+                                        <form method="POST" action="<?= BASE_URL ?>/admin/announcements.php" class="d-inline ann-delete-form">
                                             <?= csrfField() ?>
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="announcement_id" value="<?= $ann['id'] ?>">
-                                            <button type="submit" class="tbl-action danger-hover" title="Delete">
+                                            <button type="button" class="tbl-action danger-hover delete-ann-btn"
+                                                    data-subject="<?= sanitize($ann['subject'] ?? $ann['title'] ?? '') ?>"
+                                                    title="Delete">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -1838,6 +1866,50 @@ if (isset($_GET['resend'])) {
     </div>
 </div>
 
+<!-- ═══ DELETE CONFIRMATION MODAL ═══ -->
+<div class="event-modal-overlay" id="deleteAnnOverlay">
+    <div class="event-modal delete-modal">
+        <div class="event-modal-header">
+            <div class="event-modal-title"><i class="bi bi-trash3" style="color:#ef4444;"></i><span>Delete Announcement</span></div>
+            <button type="button" class="event-modal-close" id="deleteModalClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="event-modal-body" style="display:flex;align-items:center;justify-content:center;">
+            <div class="delete-modal-text" style="width:100%;padding-top:10px;">
+                <div class="delete-modal-icon" style="background:var(--ann-danger-soft);color:#ef4444;"><i class="bi bi-trash3-fill"></i></div>
+                <h6 style="color:var(--ann-text);">Delete this announcement?</h6>
+                <p style="color:var(--ann-text-secondary);" id="deleteAnnSubject">This will permanently remove the announcement for all recipients.</p>
+                <p style="color:var(--ann-danger);font-size:12px;font-weight:600;margin-top:10px;"><i class="bi bi-exclamation-triangle-fill"></i> This action cannot be undone.</p>
+            </div>
+        </div>
+        <div class="event-modal-footer">
+            <button type="button" class="evt-btn evt-btn-cancel" id="deleteModalCancel">Cancel</button>
+            <button type="button" class="evt-btn evt-btn-danger" id="btnConfirmDelete"><i class="bi bi-trash-fill"></i> Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ DELETE CUSTOM TEMPLATE MODAL ═══ -->
+<div class="event-modal-overlay" id="deleteTemplateOverlay">
+    <div class="event-modal delete-modal">
+        <div class="event-modal-header">
+            <div class="event-modal-title"><i class="bi bi-trash3" style="color:#ef4444;"></i><span>Delete Template</span></div>
+            <button type="button" class="event-modal-close" id="deleteTemplateClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="event-modal-body" style="display:flex;align-items:center;justify-content:center;">
+            <div class="delete-modal-text" style="width:100%;padding-top:10px;">
+                <div class="delete-modal-icon" style="background:var(--ann-danger-soft);color:#ef4444;"><i class="bi bi-bookmark-x-fill"></i></div>
+                <h6 style="color:var(--ann-text);">Delete this custom template?</h6>
+                <p style="color:var(--ann-text-secondary);" id="deleteTplSubject">This template will be permanently removed from your Template Library.</p>
+                <p style="color:var(--ann-danger);font-size:12px;font-weight:600;margin-top:10px;"><i class="bi bi-exclamation-triangle-fill"></i> This action cannot be undone.</p>
+            </div>
+        </div>
+        <div class="event-modal-footer">
+            <button type="button" class="evt-btn evt-btn-cancel" id="deleteTemplateCancel">Cancel</button>
+            <button type="button" class="evt-btn evt-btn-danger" id="btnConfirmDeleteTemplate"><i class="bi bi-trash-fill"></i> Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
 <!-- ═══ PREVIEW MODAL ═══ -->
 <div class="event-modal-overlay" id="previewOverlay">
     <div class="event-modal">
@@ -1872,6 +1944,15 @@ if (isset($_GET['resend'])) {
                 <label>Attachment</label>
                 <img id="preview-attachment-img" src="" alt="Attachment" style="max-height:120px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);">
             </div>
+            <div id="preview-link" style="display:none;margin-top:16px;">
+                <label>Attached Link</label>
+                <a id="preview-link-anchor" href="#" target="_blank" rel="noopener"
+                   style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--ann-accent);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;transition:all var(--ann-transition);"
+                   onmouseover="this.style.background='var(--ann-accent-hover)'" onmouseout="this.style.background='var(--ann-accent)'">
+                    <i class="bi bi-box-arrow-up-right"></i> <span id="preview-link-label"></span>
+                </a>
+                <div id="preview-link-url" style="font-size:11px;color:var(--ann-text-muted);word-break:break-all;font-family:var(--ann-mono);margin-top:6px;"></div>
+            </div>
             <div class="alert-preview" style="margin-top:16px;">
                 <i class="bi bi-exclamation-triangle-fill" style="font-size:16px;flex-shrink:0;margin-top:1px;"></i>
                 <span>Please review the content above before confirming. This action <strong>cannot be undone</strong>.</span>
@@ -1891,25 +1972,39 @@ if (isset($_GET['resend'])) {
 <!-- ═══ CUSTOM TEMPLATE MODAL ═══ -->
 <div class="event-modal-overlay" id="customTemplateOverlay">
     <div class="event-modal">
-        <form method="POST" action="<?= BASE_URL ?>/admin/announcements.php">
+        <form id="customTemplateForm">
             <?= csrfField() ?>
-            <input type="hidden" name="action" value="save_custom_template">
             <div class="event-modal-header">
                 <div class="event-modal-title"><i class="bi bi-bookmark-plus" style="color:#4f46e5;"></i><span>Create Custom Template</span></div>
-                <button class="event-modal-close" id="customTemplateClose"><i class="bi bi-x-lg"></i></button>
+                <button type="button" class="event-modal-close" id="customTemplateClose"><i class="bi bi-x-lg"></i></button>
             </div>
             <div class="event-modal-body">
                 <div class="evt-field">
                     <label>Template Name <span class="required">*</span></label>
-                    <input type="text" class="subject-input" name="template_name" placeholder="e.g. Exam Schedule, Holiday Notice" required style="width:100%;padding:9px 12px;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;font-size:13px;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:rgba(255,255,255,0.05);color:inherit;">
+                    <input type="text" class="subject-input" name="title" maxlength="150" placeholder="e.g. Exam Schedule, Holiday Notice" required style="width:100%;padding:9px 12px;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;font-size:13px;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:rgba(255,255,255,0.05);color:inherit;">
+                </div>
+                <div class="evt-field">
+                    <label>Icon</label>
+                    <select name="icon" style="width:100%;padding:9px 12px;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;font-size:13px;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:rgba(255,255,255,0.05);color:inherit;">
+                        <option value="bi-bookmark">Bookmark (default)</option>
+                        <option value="bi-file-text">Document / Form</option>
+                        <option value="bi-calendar-event">Calendar / Event</option>
+                        <option value="bi-megaphone">Announcement</option>
+                        <option value="bi-bell">Reminder</option>
+                        <option value="bi-star">Achievement</option>
+                        <option value="bi-envelope-paper">Letter / Notice</option>
+                        <option value="bi-clipboard-check">Approval / Consent</option>
+                        <option value="bi-exclamation-triangle">Warning</option>
+                        <option value="bi-people">Meeting</option>
+                    </select>
                 </div>
                 <div class="evt-field">
                     <label>Default Subject <span class="required">*</span></label>
-                    <input type="text" class="subject-input" name="template_subject" placeholder="Default subject line" required style="width:100%;padding:9px 12px;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;font-size:13px;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:rgba(255,255,255,0.05);color:inherit;">
+                    <input type="text" class="subject-input" name="subject" maxlength="255" placeholder="Default subject line" required style="width:100%;padding:9px 12px;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;font-size:13px;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:rgba(255,255,255,0.05);color:inherit;">
                 </div>
                 <div class="evt-field">
                     <label>Default Body <span class="required">*</span></label>
-                    <textarea class="subject-input" name="template_body" rows="8" placeholder="Template body with [PLACEHOLDERS]..." required style="border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;resize:vertical;background:rgba(255,255,255,0.05);color:inherit;"></textarea>
+                    <textarea class="subject-input" name="body_content" rows="8" placeholder="Template body with [PLACEHOLDERS]..." required style="border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;resize:vertical;background:rgba(255,255,255,0.05);color:inherit;"></textarea>
                 </div>
             </div>
             <div class="event-modal-footer">
@@ -2141,11 +2236,16 @@ function showToast(type, message) {
     var tplTypeInput = document.getElementById('ann-template_type');
     var activeCard   = null;
 
-    document.querySelectorAll('.template-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-            var key = this.dataset.templateKey;
+    // Delegated — also covers custom template cards inserted via AJAX
+    var templateGrid = document.getElementById('templateGrid');
+    if (templateGrid) {
+        templateGrid.addEventListener('click', function(e) {
+            if (e.target.closest('.tpl-delete-btn')) return; // handled by announcement_templates.js
+            var card = e.target.closest('.template-card');
+            if (!card) return;
+            var key = card.dataset.templateKey;
             var subject = '', body = '', typeKey = 'general';
-            if (key.startsWith('custom_')) { subject = this.dataset.customSubject || ''; body = this.dataset.customBody || ''; }
+            if (key.startsWith('custom_')) { subject = card.dataset.customSubject || ''; body = card.dataset.customBody || ''; }
             else if (TEMPLATES[key]) { subject = TEMPLATES[key].subject || ''; body = TEMPLATES[key].body || ''; typeKey = key; }
             subjectInput.value = subject;
             tplTypeInput.value = typeKey;
@@ -2153,10 +2253,10 @@ function showToast(type, message) {
             bodyHidden.value = quill.root.innerHTML;
             quill.focus();
             if (activeCard) activeCard.classList.remove('active-template');
-            this.classList.add('active-template');
-            activeCard = this;
+            card.classList.add('active-template');
+            activeCard = card;
         });
-    });
+    }
 
     // ─── Placeholder Chips ──────────────────────────────────────────────
     document.querySelectorAll('.placeholder-chip').forEach(function(el) {
@@ -2196,6 +2296,46 @@ function showToast(type, message) {
     });
     btnRemove.addEventListener('click', function(e) { e.stopPropagation(); attachInput.value = ''; resetStrip(); });
     function resetStrip() { attachText.style.display = 'inline'; attachFile.style.display = 'none'; strip.classList.remove('has-file'); }
+
+    // ─── Link Attachment ──────────────────────────────────────────────────
+    var linkStrip    = document.getElementById('linkStrip');
+    var linkFields   = document.getElementById('linkFields');
+    var linkUrl      = document.getElementById('attachLinkUrl');
+    var linkLabelInp = document.getElementById('attachLinkLabel');
+    var linkTextEl   = document.getElementById('linkText');
+    var btnRemoveLnk = document.getElementById('btnRemoveLink');
+
+    function updLinkStrip() {
+        var url = (linkUrl.value || '').trim();
+        var has = url !== '';
+        linkStrip.classList.toggle('has-file', has);
+        if (has) {
+            var lbl = (linkLabelInp.value || '').trim() || url;
+            linkTextEl.innerHTML = '';
+            var nameSpan = document.createElement('span');
+            nameSpan.className = 'file-name';
+            nameSpan.style.display = 'inline';
+            nameSpan.textContent = lbl;
+            linkTextEl.appendChild(nameSpan);
+        } else {
+            linkTextEl.textContent = 'No link attached \u2014 click to add one';
+        }
+    }
+    if (linkStrip && linkUrl) {
+        linkStrip.addEventListener('click', function(e) {
+            if (e.target === btnRemoveLnk || btnRemoveLnk.contains(e.target)) return;
+            var open = linkFields.style.display === 'none';
+            linkFields.style.display = open ? 'block' : 'none';
+            if (open) setTimeout(function() { linkUrl.focus(); }, 60);
+        });
+        [linkUrl, linkLabelInp].forEach(function(inp) { inp.addEventListener('input', updLinkStrip); });
+        btnRemoveLnk.addEventListener('click', function(e) {
+            e.stopPropagation();
+            linkUrl.value = ''; linkLabelInp.value = '';
+            updLinkStrip();
+            linkFields.style.display = 'none';
+        });
+    }
 
     // ─── Recipients (multi-select scoping) ───────────────────────────────
     var recAllParents  = document.getElementById('recAllParents');
@@ -2306,6 +2446,14 @@ document.getElementById('btnPreviewSend').addEventListener('click', function() {
     document.getElementById('preview-timing').textContent = schedLater.checked ? 'Scheduled: '+(document.querySelector('[name="schedule_date"]').value||'?')+' at '+(document.querySelector('[name="schedule_time"]').value||'?') : 'Send immediately';
     var pa = document.getElementById('preview-attachment'), pi = document.getElementById('preview-attachment-img');
     if (attachInput.files.length) { pa.style.display='block'; pi.src=URL.createObjectURL(attachInput.files[0]); } else { pa.style.display='none'; }
+    var plk = document.getElementById('preview-link');
+    var linkVal = ((typeof linkUrl !== 'undefined' && linkUrl) ? linkUrl.value : '').trim();
+    if (linkVal) {
+        plk.style.display = 'block';
+        document.getElementById('preview-link-anchor').href = linkVal;
+        document.getElementById('preview-link-label').textContent = ((typeof linkLabelInp !== 'undefined' && linkLabelInp ? linkLabelInp.value : '').trim()) || linkVal;
+        document.getElementById('preview-link-url').textContent = linkVal;
+    } else { plk.style.display = 'none'; }
     openModal(previewOverlay);
 });
 document.getElementById('btnConfirmSend').addEventListener('click', function(e) {
@@ -2347,10 +2495,37 @@ document.getElementById('btnSaveDraft').addEventListener('click', function() { i
 // Modal close handlers
 document.getElementById('previewModalClose').addEventListener('click', function(){closeModal(previewOverlay);});
 document.getElementById('previewModalCancel').addEventListener('click', function(){closeModal(previewOverlay);});
-document.getElementById('customTemplateClose').addEventListener('click', function(){closeModal(document.getElementById('customTemplateOverlay'));});
-document.getElementById('customTemplateCancel').addEventListener('click', function(){closeModal(document.getElementById('customTemplateOverlay'));});
 document.getElementById('viewModalClose').addEventListener('click', function(){closeModal(document.getElementById('viewAnnouncementOverlay'));});
 document.getElementById('viewModalCancel').addEventListener('click', function(){closeModal(document.getElementById('viewAnnouncementOverlay'));});
+
+// ─── Delete Announcement Confirmation Modal ─────────────────────────
+var deleteAnnOverlay = document.getElementById('deleteAnnOverlay');
+var pendingDeleteForm = null;
+var btnConfirmDelete = document.getElementById('btnConfirmDelete');
+
+document.querySelectorAll('.delete-ann-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        pendingDeleteForm = this.closest('form');
+        var subjectEl = document.getElementById('deleteAnnSubject');
+        var subj = this.dataset.subject;
+        if (subjectEl) {
+            subjectEl.textContent = subj ? '"' + subj + '" will be permanently deleted and removed from all recipients.' : 'This announcement will be permanently deleted and removed from all recipients.';
+        }
+        openModal(deleteAnnOverlay);
+    });
+});
+if (deleteAnnOverlay) {
+    document.getElementById('deleteModalClose').addEventListener('click', function(){ closeModal(deleteAnnOverlay); });
+    document.getElementById('deleteModalCancel').addEventListener('click', function(){ closeModal(deleteAnnOverlay); });
+    btnConfirmDelete.addEventListener('click', function() {
+        if (!pendingDeleteForm) { closeModal(deleteAnnOverlay); return; }
+        this.classList.add('btn-loading');
+        this.disabled = true;
+        pendingDeleteForm.submit();
+    });
+}
 
 // ─── View Announcement ──────────────────────────────────────────────
 function describeRecipients(ann) {
@@ -2458,6 +2633,13 @@ function loadDraftIntoCompose(ann) {
 
         document.getElementById('announcement_id').value = ann.id || 0;
         document.getElementById('existing_attachment_path').value = ann.attachment_path || '';
+        // Prefill link attachment
+        var annLink = ann.attachment_link || '';
+        var annLinkLabel = ann.attachment_link_label || '';
+        if (linkUrl) linkUrl.value = annLink;
+        if (linkLabelInp) linkLabelInp.value = annLinkLabel;
+        if (typeof updLinkStrip === 'function') updLinkStrip();
+        if (linkFields) linkFields.style.display = annLink ? 'block' : 'none';
         if (document.getElementById('formAction')) {
             document.getElementById('formAction').value = 'create';
         }
@@ -2487,7 +2669,15 @@ document.querySelectorAll('.view-announcement-trigger').forEach(function(btn) {
             '<div style="display:flex;gap:16px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,0.55);"><span><i class="bi bi-clock" style="margin-right:4px;"></i>'+esc(ann.created_at||'N/A')+'</span><span><i class="bi bi-person" style="margin-right:4px;"></i>'+esc(ann.created_by_email||'System')+'</span></div>' +
             '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;"><span style="background:rgba(255,255,255,0.06);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.55);">'+esc(recH)+'</span>'+chH+'</div>' +
             '<div style="border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:20px;line-height:1.85;font-size:14px;background:rgba(255,255,255,0.04);">'+body+'</div>' +
-            (ann.attachment_path ? '<div style="margin-top:16px;"><img src="<?= BASE_URL ?>/'+ann.attachment_path+'" style="max-height:200px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);" alt="Attachment"></div>' : '');
+            (ann.attachment_path ? '<div style="margin-top:16px;"><img src="<?= BASE_URL ?>/'+ann.attachment_path+'" style="max-height:200px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);" alt="Attachment"></div>' : '') +
+            (ann.attachment_link
+                ? '<div style="margin-top:16px;">'
+                  + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.55);margin-bottom:8px;">Attached Link</div>'
+                  + '<a href="'+esc(ann.attachment_link)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">'
+                  + '<i class="bi bi-box-arrow-up-right"></i> '+esc(ann.attachment_link_label || ann.attachment_link)+'</a>'
+                  + '<div style="font-size:11px;color:rgba(255,255,255,0.4);word-break:break-all;font-family:\'JetBrains Mono\',monospace;margin-top:6px;">'+esc(ann.attachment_link)+'</div>'
+                  + '</div>'
+                : '');
         openModal(viewOverlay);
     });
 });
@@ -2500,10 +2690,7 @@ if (editDraftBtn) {
     });
 }
 
-// ─── Custom Template Modal trigger ────────────────────────────────────
-document.getElementById('openCustomTemplateModal').addEventListener('click', function() {
-    openModal(document.getElementById('customTemplateOverlay'));
-});
+// ─── Custom Template Modal trigger is handled in announcement_templates.js ─
 
 // ─── Escape key closes modals + resets sidebar on resize ───────────────
 document.addEventListener('keydown', function(e) {
@@ -2689,5 +2876,7 @@ document.querySelectorAll('.resend-ann-btn').forEach(function(btn) {
 
 })();
 </script>
+
+<script src="<?= BASE_URL ?>/assets/js/announcement_templates.js?v=<?= @filemtime(ROOT_PATH . '/assets/js/announcement_templates.js') ?: time() ?>"></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -30,13 +30,23 @@ try {
 // Get active sessions
 $activeSessions = [];
 try {
-    $stmt = $db->query("SELECT 'gate' AS type, gs.*, null AS subject_name FROM gate_sessions gs WHERE gs.status = 'active'
-                         UNION ALL
-                         SELECT 'class' AS type, att_ses.*, sub.subject_name FROM attendance_sessions att_ses
-                         LEFT JOIN subjects sub ON att_ses.subject_id = sub.id WHERE att_ses.status = 'active'
-                         ORDER BY start_time DESC");
+    // Explicit column projection: UNION ALL requires both branches to
+    // return identical column counts (gate_sessions and attendance_sessions
+    // have different schemas, so gs.* / att_ses.* breaks with ERROR 1222).
+    $stmt = $db->query("SELECT 'gate' AS type, gs.session_type,
+                               NULL AS subject_name, NULL AS grade_level, NULL AS section,
+                               gs.start_time, gs.end_time
+                        FROM gate_sessions gs WHERE gs.status = 'active'
+                        UNION ALL
+                        SELECT 'class' AS type, att_ses.session_type,
+                               sub.subject_name, att_ses.grade_level, att_ses.section,
+                               att_ses.start_time, att_ses.end_time
+                        FROM attendance_sessions att_ses
+                        LEFT JOIN subjects sub ON att_ses.subject_id = sub.id
+                        WHERE att_ses.status = 'active'
+                        ORDER BY start_time DESC");
     $activeSessions = $stmt->fetchAll();
-} catch (Exception $e) {}
+} catch (Exception $e) { error_log('active sessions query: ' . $e->getMessage()); }
 
 // Get class attendance records
 $records = [];
@@ -420,7 +430,9 @@ for ($i = 6; $i >= 0; $i--) {
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                     <div>
                                         <span class="session-badge badge bg-<?= $session['type']==='gate'?'primary':'success' ?>"><?= strtoupper($session['type']) ?></span>
-                                        <span class="session-name ms-1"><?= $session['subject_name'] ?? ucfirst(str_replace('_','-',$session['session_type'])) ?></span>
+                                        <span class="session-name ms-1"><?= $session['type']==='gate'
+                                            ? ucfirst(str_replace('_','-', $session['session_type']))
+                                            : (($session['subject_name'] ?: 'Class Session')) ?></span>
                                         <?php if(!empty($session['grade_level'])): ?>
                                             <span class="session-meta ms-1">Grade <?= $session['grade_level'] ?><?= !empty($session['section'])?'-'.$session['section']:'' ?></span>
                                         <?php endif; ?>

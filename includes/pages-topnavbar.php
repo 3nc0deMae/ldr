@@ -183,7 +183,7 @@ $__userInitial = $__userName ? strtoupper(substr($__userName, 0, 1)) : strtouppe
             <div class="notification-dropdown" id="notificationDropdown" style="max-height:none;background:#ffffff;color:#111827;border:1px solid #e5e7eb;box-shadow:0 10px 40px rgba(0,0,0,.15);">
                 <div class="p-4 pb-2">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-base font-bold text-gray-900">Notifications</h3>
+                        <h3 class="text-base font-bold text-gray-900" style="color:#ffffff;">Notifications</h3>
                         <div class="flex items-center gap-2">
                             <button id="notifSoundToggle" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition" title="Toggle notification sound" aria-label="Toggle notification sound">
                                 <i class="bi bi-volume-up-fill text-sm"></i>
@@ -285,11 +285,7 @@ $__userInitial = $__userName ? strtoupper(substr($__userName, 0, 1)) : strtouppe
         <div class="navbar-profile-dropdown" id="navbarProfileDropdown">
             <a href="<?= BASE_URL ?>/<?= $_SESSION['user_role'] ?? 'admin' ?>/profile.php" class="navbar-profile-menu-item"><i class="bi bi-person"></i>My Profile</a>
             <?php $role = $_SESSION['user_role'] ?? 'admin'; ?>
-            <?php if ($role === 'admin'): ?>
-            <a href="javascript:void(0)" class="navbar-profile-menu-item" id="navbarChangeAvatar"><i class="bi bi-camera"></i>Change Profile Picture</a>
-            <?php else: ?>
-            <a href="<?= BASE_URL ?>/settings.php" class="navbar-profile-menu-item"><i class="bi bi-gear"></i>Settings</a>
-            <?php endif; ?>
+
             <?php if (file_exists(__DIR__ . '/../' . $role . '/settings.php')): ?>
             <a href="<?= BASE_URL ?>/<?= $role ?>/settings.php" class="navbar-profile-menu-item"><i class="bi bi-gear"></i>Settings</a>
             <?php endif; ?>

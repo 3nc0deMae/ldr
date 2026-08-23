@@ -307,17 +307,13 @@ select.filter-input option{
 /* ═══════════════════════════════════════════════════════════════════
    MODALS
    ═══════════════════════════════════════════════════════════════════ */
-.confirm-overlay{position:fixed;inset:0;background:rgba(11,11,20,0.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:10000;display:none;align-items:center;justify-content:center;padding:20px}
-.confirm-overlay.show{display:flex}
-.confirm-dialog{border-radius:20px;width:400px;max-width:100%;overflow:hidden;display:flex;flex-direction:column;text-align:center;background:rgba(22,22,40,0.98);border:1px solid rgba(255,255,255,0.10);box-shadow:0 24px 60px rgba(0,0,0,0.5);animation:pgModalSlideIn 0.35s cubic-bezier(0.34,1.56,0.64,1)}
-.confirm-body{padding:32px 28px 24px}
-.confirm-icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:28px}
-.confirm-body h5{font-weight:800;font-size:18px;letter-spacing:-0.02em;margin-bottom:8px;color:#fff}
-.confirm-body p{font-size:13px;line-height:1.6;margin:0;color:rgba(255,255,255,0.6)}
-.student-name-highlight{font-weight:700;color:#fff}
-.confirm-footer{display:flex;gap:10px;padding:0 28px 28px;justify-content:center}
-.confirm-btn{padding:11px 28px;border:none;border-radius:var(--pg-radius-sm);font-size:13px;font-weight:700;cursor:pointer;transition:all var(--pg-transition);flex:1;max-width:160px;font-family:var(--pg-font);color:#fff}
-.confirm-btn:hover{transform:translateY(-1px)}
+/* Delete Confirmation Modal (matches MyCalendar.php) */
+.delete-modal{width:400px}
+.delete-modal-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px}
+.delete-modal-text{text-align:center}
+.delete-modal-text h6{font-weight:700;font-size:16px;letter-spacing:-0.02em;margin-bottom:6px;color:#fff}
+.delete-modal-text p{font-size:13px;max-width:280px;margin:0 auto;line-height:1.5}
+.evt-btn-danger{background:#ef4444;color:#fff}.evt-btn-danger:hover{background:#dc2626;box-shadow:0 4px 14px rgba(239,68,68,0.3)}
 
 .import-modal-overlay{position:fixed;inset:0;background:rgba(11,11,20,0.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px}
 .import-modal-overlay.show{display:flex}
@@ -393,15 +389,8 @@ select.filter-input option{
     .empty-state h6{font-size:14px}
     .empty-state p{font-size:12px}
 
-    .confirm-overlay{align-items:flex-end;padding:0}
-    .confirm-dialog{width:100%;max-width:100vw;border-radius:16px 16px 0 0;animation:pgModalSheetUp 0.3s ease-out}
-    .confirm-dialog::before{content:'';display:block;width:36px;height:4px;border-radius:4px;background:rgba(255,255,255,0.2);margin:10px auto 0;flex-shrink:0}
-    .confirm-body{padding:22px 20px 18px}
-    .confirm-icon{width:52px;height:52px;font-size:24px;margin-bottom:14px}
-    .confirm-body h5{font-size:16px}
-    .confirm-body p{font-size:12px}
-    .confirm-footer{padding:0 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px))}
-    .confirm-btn{padding:10px 22px;font-size:12px}
+    .delete-modal{width:100%;max-width:100vw;height:auto;max-height:92vh}
+    .delete-modal-text p{font-size:12px}
 
     .event-modal-overlay{position:fixed;inset:0;background:rgba(26,29,46,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px}
     .event-modal-overlay.show{display:flex}
@@ -729,17 +718,24 @@ select.filter-input option{
     </div>
 </div>
 
-<!-- DELETE CONFIRMATION -->
-<div class="confirm-overlay" id="deleteConfirmOverlay">
-    <div class="confirm-dialog">
-        <div class="confirm-body">
-            <div class="confirm-icon" style="background:var(--pg-danger-light);color:var(--pg-danger);"><i class="bi bi-exclamation-triangle-fill"></i></div>
-            <h5>Delete Student?</h5>
-            <p>This will permanently remove <span class="student-name-highlight" id="deleteStudentName"></span> and all associated records including attendance history and face data.</p>
+<!-- ═══ DELETE STUDENT CONFIRMATION MODAL ═══ -->
+<div class="event-modal-overlay" id="deleteConfirmOverlay">
+    <div class="event-modal delete-modal">
+        <div class="event-modal-header">
+            <div class="event-modal-title"><i class="bi bi-trash3" style="color:#ef4444;"></i><span>Delete Student</span></div>
+            <button type="button" class="event-modal-close" id="deleteModalClose"><i class="bi bi-x-lg"></i></button>
         </div>
-        <div class="confirm-footer">
-            <button class="confirm-btn" id="deleteCancelBtn" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.10);">Cancel</button>
-            <a class="confirm-btn" id="deleteConfirmBtn" href="#" style="background:var(--pg-danger);text-decoration:none;">Delete</a>
+        <div class="event-modal-body" style="display:flex;align-items:center;justify-content:center;">
+            <div class="delete-modal-text" style="width:100%;padding-top:10px;">
+                <div class="delete-modal-icon" style="background:rgba(239,68,68,0.15);color:#ef4444;"><i class="bi bi-trash3-fill"></i></div>
+                <h6>Delete this student?</h6>
+                <p id="deleteStudentName">This student will be permanently removed along with all associated records including attendance history and face data.</p>
+                <p style="color:#ef4444;font-size:12px;font-weight:600;margin-top:10px;"><i class="bi bi-exclamation-triangle-fill"></i> This action cannot be undone.</p>
+            </div>
+        </div>
+        <div class="event-modal-footer">
+            <button type="button" class="evt-btn evt-btn-cancel" id="deleteCancelBtn">Cancel</button>
+            <a href="#" class="evt-btn evt-btn-danger" id="deleteConfirmBtn"><i class="bi bi-trash-fill"></i> Yes, Delete</a>
         </div>
     </div>
 </div>
@@ -800,7 +796,7 @@ select.filter-input option{
 <script>
 (function(){'use strict';
 // Delete
-var dO=document.getElementById('deleteConfirmOverlay'),dN=document.getElementById('deleteStudentName'),dB=document.getElementById('deleteConfirmBtn'),dC=document.getElementById('deleteCancelBtn'),BU=window.BASE_URL||'';window.openDeleteConfirm=function(id,name){dN.textContent=name;dB.href=BU+'/admin/students.php?delete='+id;dO.classList.add('show');document.body.style.overflow='hidden'};function cD(){dO.classList.remove('show');document.body.style.overflow=''}dC.addEventListener('click',cD);dO.addEventListener('click',function(e){if(e.target===dO)cD()});
+var dO=document.getElementById('deleteConfirmOverlay'),dN=document.getElementById('deleteStudentName'),dB=document.getElementById('deleteConfirmBtn'),dC=document.getElementById('deleteCancelBtn'),dX=document.getElementById('deleteModalClose'),BU=window.BASE_URL||'';window.openDeleteConfirm=function(id,name){dN.textContent='"'+name+'" will be permanently removed along with all associated records including attendance history and face data.';dB.href=BU+'/admin/students.php?delete='+id;dO.classList.add('show');document.body.style.overflow='hidden'};function cD(){dO.classList.remove('show');document.body.style.overflow=''}dC.addEventListener('click',cD);if(dX)dX.addEventListener('click',cD);dO.addEventListener('click',function(e){if(e.target===dO)cD()});
 // Import
 var iO=document.getElementById('importModalOverlay'),iCl=document.getElementById('importModalClose'),iCa=document.getElementById('importCancelBtn');function oI(){iO.classList.add('show');document.body.style.overflow='hidden'}function cI(){iO.classList.remove('show');document.body.style.overflow=''}var iB1=document.getElementById('openImportBtn'),iB2=document.getElementById('openImportBtnMobile');if(iB1)iB1.addEventListener('click',oI);if(iB2)iB2.addEventListener('click',oI);iCl.addEventListener('click',cI);iCa.addEventListener('click',cI);iO.addEventListener('click',function(e){if(e.target===iO)cI()});iO.addEventListener('transitionend',function(){if(!iO.classList.contains('show')){document.getElementById('csvFile').value='';document.getElementById('importPreview').classList.add('d-none');document.getElementById('importResults').classList.add('d-none');csvData=null;excelFile=null}});
 // Escape

@@ -86,6 +86,14 @@ if ($action === 'send_draft') {
     try {
         require_once __DIR__ . '/includes/notifications.php';
 
+        // Append image + link attachment blocks to the outgoing notification
+        $attBlocks = buildAnnouncementAttachmentBlocks(
+            $draft['attachment_path'] ?? null,
+            $draft['attachment_link'] ?? null,
+            $draft['attachment_link_label'] ?? null
+        );
+        $bodyHTML .= $attBlocks['html'];
+
         if ($role === 'teacher') {
             $sectionRow = null;
             try {
@@ -112,16 +120,7 @@ if ($action === 'send_draft') {
                 foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
             }
         } else {
-            $studentConditions = ["s.status = 'active'"];
-            $studentParams     = [];
-            if (!empty($recipients['grades'])) {
-                $studentConditions[] = "s.grade_level IN (" . implode(',', array_fill(0, count($recipients['grades']), '?')) . ")";
-                $studentParams = array_merge($studentParams, array_map('intval', (array)$recipients['grades']));
-            } elseif (!empty($recipients['student_ids'])) {
-                $studentConditions[] = "s.id IN (" . implode(',', array_fill(0, count($recipients['student_ids']), '?')) . ")";
-                $studentParams = array_merge($studentParams, array_map('intval', (array)$recipients['student_ids']));
-            }
-
+            // ── Admin: union of every scope saved on the draft ────────────
             $hasEmail = in_array('email', $channels, true);
             $hasSMS   = in_array('sms', $channels, true);
             $contactFilters = [];
@@ -129,18 +128,59 @@ if ($action === 'send_draft') {
             if ($hasSMS)   $contactFilters[] = "(g.phone IS NOT NULL AND g.phone != '')";
             $contactClause = !empty($contactFilters) ? 'AND (' . implode(' OR ', $contactFilters) . ')' : '';
 
-            $sql = "SELECT g.guardian_name, g.email, g.phone
-                    FROM students s
-                    LEFT JOIN guardians g ON s.id = g.student_id
-                    WHERE " . implode(' AND ', $studentConditions) . " {$contactClause}";
-            $stmt = $db->prepare($sql);
-            $stmt->execute($studentParams);
-            foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
+            $scopeQueries = [];
+            $selectedScopes = array_map('trim', explode(',', (string)($recipients['recipient_type'] ?? '')));
+
+            if (in_array('all_parents', $selectedScopes, true) || empty($selectedScopes)) {
+                $scopeQueries[] = [
+                    "SELECT g.guardian_name, g.email, g.phone
+                     FROM students s
+                     LEFT JOIN guardians g ON s.id = g.student_id
+                     WHERE s.status = 'active' {$contactClause}",
+                    []
+                ];
+            }
+
+            if (in_array('grade', $selectedScopes, true) && !empty($recipients['grades'])) {
+                $grades = array_values(array_filter(array_map('intval', (array)$recipients['grades'])));
+                if ($grades) {
+                    $scopeQueries[] = [
+                        "SELECT g.guardian_name, g.email, g.phone
+                         FROM students s
+                         LEFT JOIN guardians g ON s.id = g.student_id
+                         WHERE s.status = 'active'
+                           AND s.grade_level IN (" . implode(',', array_fill(0, count($grades), '?')) . ") {$contactClause}",
+                        $grades
+                    ];
+                }
+            }
+
+            if (in_array('individual', $selectedScopes, true) && !empty($recipients['student_ids'])) {
+                $draftStudentIds = array_values(array_filter(array_map('intval', (array)$recipients['student_ids'])));
+                if ($draftStudentIds) {
+                    $scopeQueries[] = [
+                        "SELECT g.guardian_name, g.email, g.phone
+                         FROM students s
+                         LEFT JOIN guardians g ON s.id = g.student_id
+                         WHERE s.status = 'active'
+                           AND s.id IN (" . implode(',', array_fill(0, count($draftStudentIds), '?')) . ") {$contactClause}",
+                        $draftStudentIds
+                    ];
+                }
+            }
+
+            foreach ($scopeQueries as $sq) {
+                $stmt = $db->prepare($sq[0]);
+                $stmt->execute($sq[1]);
+                foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
+            }
         }
 
         if (!empty($recipientList)) {
-            $bulkResult = sendBulkNotification($db, array_values($recipientList), $subject, $bodyHTML, $channels);
-            $notifDeliveryStatus = (($bulkResult['failed'] ?? 0) > 0) ? 'failed' : 'sent';
+            $bulkResult = sendBulkNotification($db, array_values($recipientList), $subject, $bodyHTML, $channels, $attBlocks['embed']);
+            $verdict = summarizeBulkResult($bulkResult, $channels);
+            $notifDeliveryStatus = $verdict['status'];
+            $draftErr = $verdict['error'];
             if ($notifDeliveryStatus === 'failed') {
                 $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([$announcementId]);
             } else {
@@ -148,6 +188,7 @@ if ($action === 'send_draft') {
             }
         } else {
             $notifDeliveryStatus = 'failed';
+            $draftErr = 'No recipients with valid contact details were found for this announcement.';
             $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([$announcementId]);
         }
 
@@ -167,7 +208,7 @@ if ($action === 'send_draft') {
         respondJson(false, 'Failed to send draft announcement.');
     }
 
-    respondJson(true, 'Draft announcement sent successfully.');
+    respondJson(true, 'Draft announcement sent successfully.', $draftErr !== '');
 }
 
 // ─── Capture common fields ───────────────────────────────────────────────────
@@ -308,6 +349,15 @@ if ($scheduleType === 'scheduled' && $scheduleDate && $scheduleTime) {
 
 $existingAttachmentPath = trim($_POST['existing_attachment_path'] ?? '');
 
+// ─── Link attachment ─────────────────────────────────────────────────────────
+$attachmentLink = trim($_POST['attachment_link'] ?? '');
+if ($attachmentLink !== '' && !filter_var($attachmentLink, FILTER_VALIDATE_URL)) {
+    $attachmentLink = '';
+}
+if (strlen($attachmentLink) > 500) { $attachmentLink = ''; }
+$attachmentLinkLabel = sanitize(trim($_POST['attachment_link_label'] ?? ''));
+if (mb_strlen($attachmentLinkLabel) > 150) { $attachmentLinkLabel = mb_substr($attachmentLinkLabel, 0, 150); }
+
 $existingAnnouncement = null;
 if ($announcementId > 0) {
     try {
@@ -358,6 +408,8 @@ if ($announcementId > 0) {
              recipients = :recipients,
              channels = :channels,
              attachment_path = :attachment_path,
+             attachment_link = :attachment_link,
+             attachment_link_label = :attachment_link_label,
              status = :status,
              scheduled_at = :scheduled_at,
              updated_at = NOW()
@@ -374,6 +426,8 @@ if ($announcementId > 0) {
             ':recipients'        => json_encode($recipients),
             ':channels'          => json_encode($channels),
             ':attachment_path'   => $imagePath,
+            ':attachment_link'   => $attachmentLink !== '' ? $attachmentLink : null,
+            ':attachment_link_label' => $attachmentLinkLabel !== '' ? $attachmentLinkLabel : null,
             ':status'            => $status,
             ':scheduled_at'      => $scheduledAt,
             ':id'                => $announcementId,
@@ -388,9 +442,9 @@ if ($announcementId > 0) {
         $stmt = $db->prepare(
             "INSERT INTO announcements
              (template_type, recipient_type, target_section_id, scope, subject, body, body_html,
-              recipients, channels, attachment_path, status, scheduled_at, created_by, created_at)
+              recipients, channels, attachment_path, attachment_link, attachment_link_label, status, scheduled_at, created_by, created_at)
              VALUES (:template_type, :recipient_type, :target_section_id, :scope, :subject, :body,
-                     :body_html, :recipients, :channels, :attachment_path, :status, :scheduled_at, :created_by, NOW())"
+                     :body_html, :recipients, :channels, :attachment_path, :attachment_link, :attachment_link_label, :status, :scheduled_at, :created_by, NOW())"
         );
         $stmt->execute([
             ':template_type'     => $templateType,
@@ -403,6 +457,8 @@ if ($announcementId > 0) {
             ':recipients'        => json_encode($recipients),
             ':channels'          => json_encode($channels),
             ':attachment_path'   => $imagePath,
+            ':attachment_link'   => $attachmentLink !== '' ? $attachmentLink : null,
+            ':attachment_link_label' => $attachmentLinkLabel !== '' ? $attachmentLinkLabel : null,
             ':status'            => $status,
             ':scheduled_at'      => $scheduledAt,
             ':created_by'        => (int)$_SESSION['user_id']
@@ -424,6 +480,7 @@ if (!$announcementSaved) {
 
 // ─── Dispatch notifications (only for immediately-sent announcements) ────────
 $notifErr = '';
+$notifDeliveryStatus = '';
 if (!empty($channels) && $status === 'sent') {
     try {
         require_once __DIR__ . '/includes/notifications.php';
@@ -463,28 +520,59 @@ if (!empty($channels) && $status === 'sent') {
             }
         } else {
             // ── Admin: gather guardians + staff per selected scope ────────
-            $guardianConditions = ["s.status = 'active'"];
-            $guardianParams     = [];
+            // Each selected scope contributes its own group of guardians and
+            // the results are merged; contactFilter() removes duplicates so
+            // multi-select (e.g. All Parents + Individual Students) is a UNION.
+            $hasEmail = in_array('email', $channels, true);
+            $hasSMS   = in_array('sms', $channels, true);
+            $contactFilters = [];
+            if ($hasEmail) $contactFilters[] = "(g.email IS NOT NULL AND g.email != '')";
+            if ($hasSMS)   $contactFilters[] = "(g.phone IS NOT NULL AND g.phone != '')";
+            $contactClause = !empty($contactFilters) ? 'AND (' . implode(' OR ', $contactFilters) . ')' : '';
 
-            if (in_array('grade', $selected, true) && !empty($recipients['grades'])) {
-                $guardianConditions[] = "s.grade_level IN (" . implode(',', array_fill(0, count($recipients['grades']), '?')) . ")";
-                $guardianParams       = array_merge($guardianParams, $recipients['grades']);
-            } elseif (in_array('individual', $selected, true) && !empty($recipients['student_ids'])) {
-                $guardianConditions[] = "s.id IN (" . implode(',', array_fill(0, count($recipients['student_ids']), '?')) . ")";
-                $guardianParams       = array_merge($guardianParams, $recipients['student_ids']);
+            $scopeQueries = [];
+
+            if (in_array('all_parents', $selected, true)) {
+                $scopeQueries[] = [
+                    "SELECT g.guardian_name, g.email, g.phone
+                     FROM students s
+                     INNER JOIN guardians g ON s.id = g.student_id
+                     WHERE s.status = 'active' {$contactClause}",
+                    []
+                ];
             }
 
-            $needsGuardians = in_array('all_parents', $selected, true)
-                || (in_array('grade', $selected, true) && !empty($recipients['grades']))
-                || (in_array('individual', $selected, true) && !empty($recipients['student_ids']));
+            if (in_array('grade', $selected, true)) {
+                $grades = array_values(array_filter(array_map('intval', (array)($recipients['grades'] ?? []))));
+                if ($grades) {
+                    $scopeQueries[] = [
+                        "SELECT g.guardian_name, g.email, g.phone
+                         FROM students s
+                         INNER JOIN guardians g ON s.id = g.student_id
+                         WHERE s.status = 'active'
+                           AND s.grade_level IN (" . implode(',', array_fill(0, count($grades), '?')) . ") {$contactClause}",
+                        $grades
+                    ];
+                }
+            }
 
-            if ($needsGuardians) {
-                $sql = "SELECT g.guardian_name, g.email, g.phone
-                        FROM students s
-                        INNER JOIN guardians g ON s.id = g.student_id
-                        WHERE " . implode(' AND ', $guardianConditions);
-                $stmt = $db->prepare($sql);
-                $stmt->execute($guardianParams);
+            if (in_array('individual', $selected, true)) {
+                $studentIds = array_values(array_filter(array_map('intval', (array)($recipients['student_ids'] ?? []))));
+                if ($studentIds) {
+                    $scopeQueries[] = [
+                        "SELECT g.guardian_name, g.email, g.phone
+                         FROM students s
+                         INNER JOIN guardians g ON s.id = g.student_id
+                         WHERE s.status = 'active'
+                           AND s.id IN (" . implode(',', array_fill(0, count($studentIds), '?')) . ") {$contactClause}",
+                        $studentIds
+                    ];
+                }
+            }
+
+            foreach ($scopeQueries as $sq) {
+                $stmt = $db->prepare($sq[0]);
+                $stmt->execute($sq[1]);
                 foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
             }
 
@@ -505,15 +593,19 @@ if (!empty($channels) && $status === 'sent') {
 
         $notifDeliveryStatus = 'sent';
         if (!empty($recipientList)) {
-            $bulkResult = sendBulkNotification($db, array_values($recipientList), $subject, $bodyHTML, $channels);
-            if (($bulkResult['failed'] ?? 0) > 0) {
-                $notifDeliveryStatus = 'failed';
-                $notifErr = ($bulkResult['failed'] ?? 0) . ' recipient(s) failed to receive the notification.';
-                $lastErr = getLastEmailError();
-                if (!empty($lastErr)) {
-                    $notifErr .= ' Reason: ' . $lastErr;
-                }
+            // Append image + link attachment blocks to the outgoing notification
+            $attBlocks = buildAnnouncementAttachmentBlocks($imagePath, $attachmentLink, $attachmentLinkLabel);
+            $emailBodyHTML = $bodyHTML . $attBlocks['html'];
+
+            $bulkResult = sendBulkNotification($db, array_values($recipientList), $subject, $emailBodyHTML, $channels, $attBlocks['embed']);
+            $verdict = summarizeBulkResult($bulkResult, $channels);
+            $notifDeliveryStatus = $verdict['status'];
+            if ($notifDeliveryStatus === 'failed') {
+                $notifErr = $verdict['error'];
                 $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")->execute([$announcementId]);
+            } elseif ($verdict['error'] !== '') {
+                // Partial delivery failure: announcement still counts as sent.
+                $notifErr = 'Partial delivery: ' . $verdict['error'];
             }
         } else {
             $notifDeliveryStatus = 'failed';
@@ -541,17 +633,20 @@ if (!empty($channels) && $status === 'sent') {
 }
 
 // ─── Response ────────────────────────────────────────────────────────────────
+$allFailed = ($notifDeliveryStatus === 'failed');
 $message = ($action === 'save_draft')
     ? 'Announcement saved as draft.'
-    : (($status === 'scheduled') ? 'Announcement scheduled successfully.' : 'Announcement sent successfully.');
-if ($notifErr) $message .= ' (Notification warning: ' . $notifErr . ')';
+    : (($status === 'scheduled')
+        ? 'Announcement scheduled successfully.'
+        : ($allFailed ? 'Announcement delivery failed.' : 'Announcement sent successfully.'));
+if ($notifErr) $message .= $allFailed ? ' (' . $notifErr . ')' : ' (Notification warning: ' . $notifErr . ')';
 
 if (!empty($_POST['ajax'])) {
-    respondJson(true, $message, $notifErr !== '');
+    respondJson(true, $message, true);
 }
 
 $_SESSION['flash_message'] = [
-    'type'    => ($notifErr !== '') ? 'warning' : 'success',
+    'type'    => $allFailed ? 'danger' : (($notifErr !== '') ? 'warning' : 'success'),
     'message' => $message,
 ];
 redirectToOrigin($role);

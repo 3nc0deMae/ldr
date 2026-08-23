@@ -112,8 +112,9 @@ switch ($action) {
                     $notifDeliveryStatus = 'sent';
                     if (!empty($guardians)) {
                         $bulkResult = sendBulkNotification($db, $guardians, $data['subject'], $data['body'], $channels);
-                        if (($bulkResult['failed'] ?? 0) > 0) {
-                            $notifDeliveryStatus = 'failed';
+                        $verdict = summarizeBulkResult($bulkResult, $channels);
+                        $notifDeliveryStatus = $verdict['status'];
+                        if ($notifDeliveryStatus === 'failed') {
                             $db->prepare("UPDATE announcements SET status = 'failed', updated_at = NOW() WHERE id = ?")
                                ->execute([$annId]);
                         }
@@ -151,7 +152,7 @@ switch ($action) {
             jsonResponse(['error' => 'Announcement ID required'], 400);
         }
 
-        $stmt = $db->prepare("SELECT subject, body_html, body, recipients, channels, status FROM announcements WHERE id = ?");
+        $stmt = $db->prepare("SELECT subject, body_html, body, recipients, channels, status, attachment_path, attachment_link, attachment_link_label FROM announcements WHERE id = ?");
         $stmt->execute([$id]);
         $ann = $stmt->fetch();
         if (!$ann) {
@@ -204,19 +205,30 @@ switch ($action) {
         }
 
         require_once __DIR__ . '/../includes/notifications.php';
-        $result = sendBulkNotification($db, $guardians, $subject, $bodyHTML, $channels);
+        $attBlocks = buildAnnouncementAttachmentBlocks(
+            $ann['attachment_path'] ?? null,
+            $ann['attachment_link'] ?? null,
+            $ann['attachment_link_label'] ?? null
+        );
+        $result = sendBulkNotification($db, $guardians, $subject, $bodyHTML . $attBlocks['html'], $channels, $attBlocks['embed']);
+        $verdict = summarizeBulkResult($result, $channels);
 
-        if (($result['failed'] ?? 0) === 0 && ($result['sent'] ?? 0) > 0) {
+        if ($verdict['status'] === 'sent' && ($result['sent'] ?? 0) > 0) {
             $db->prepare("UPDATE announcements SET status = 'sent', updated_at = NOW() WHERE id = ?")->execute([$id]);
 
             $db->prepare("DELETE FROM user_notifications WHERE reference_id = ? AND category = 'announcement' AND delivery_status = 'failed'")
               ->execute([$id]);
 
-            jsonResponse(['success' => true, 'message' => 'Announcement resent successfully.']);
+            jsonResponse([
+                'success' => true,
+                'message' => ($verdict['error'] !== '')
+                    ? 'Announcement resent, but with warnings: ' . $verdict['error']
+                    : 'Announcement resent successfully.',
+            ]);
         } elseif (($result['sent'] ?? 0) > 0) {
-            jsonResponse(['error' => 'Partial delivery failure. ' . $result['failed'] . ' recipient(s) still failed. Please try again later.'], 500);
+            jsonResponse(['error' => 'Partial delivery failure. ' . $verdict['error']], 500);
         } else {
-            jsonResponse(['error' => 'All delivery attempts failed. Please try again later.'], 500);
+            jsonResponse(['error' => 'All delivery attempts failed. ' . $verdict['error']], 500);
         }
         break;
 

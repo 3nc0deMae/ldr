@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($data['last_name']))   $errors[] = 'Last name is required.';
     if (empty($data['gender']))      $errors[] = 'Gender is required.';
     if (empty($data['grade_level'])) $errors[] = 'Grade level is required.';
-    if ($data['age'] < 5 || $data['age'] > 25) $errors[] = 'Age must be between 5 and 25.';
+    if ($data['age'] < 5 || $data['age'] > 80) $errors[] = 'Age must be between 5 and 80.';
     if (!empty($data['email']) && !isValidEmail($data['email'])) $errors[] = 'Invalid email address.';
     $guardianPhone = trim($_POST['guardian_phone'] ?? '');
     if (!empty($guardianPhone) && !isValidPhilippinePhone($guardianPhone)) {
@@ -526,7 +526,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
                         <div class="col-6 col-md-2">
                             <label class="form-field-label">Age <span class="req">*</span></label>
-                            <input type="number" class="form-input" name="age" min="5" max="25"
+                            <input type="number" class="form-input" name="age" min="5" max="80"
                                    value="<?= sanitize($old['age'] ?? '') ?>"
                                    placeholder="16" required>
                         </div>

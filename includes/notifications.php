@@ -89,7 +89,12 @@ function sendEmailNotification($to, $subject, $body, $options = []) {
         $headers .= "Reply-To: {$fromEmail}\r\n";
         $headers .= "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $result = @mail($to, $subject, wrapEmailTemplate($subject, $body, defined('APP_LOGO_URL') ? APP_LOGO_URL : ''), $headers);
+        // PHP's mail() does not RFC 2047-encode the subject — multi-byte
+        // characters like "—" would render as "â€”" without this.
+        $encodedSubject = function_exists('mb_encode_mimeheader')
+            ? mb_encode_mimeheader($subject, 'UTF-8', 'B')
+            : $subject;
+        $result = @mail($to, $encodedSubject, wrapEmailTemplate($subject, $body, defined('APP_LOGO_URL') ? APP_LOGO_URL : ''), $headers);
         if (!$result) {
             $mailErr = error_get_last();
             _emailLastError('SMTP credentials are not configured, the PHP mail() fallback also failed'
@@ -99,7 +104,14 @@ function sendEmailNotification($to, $subject, $body, $options = []) {
     } else {
         $logoUrl = defined('APP_LOGO_URL') ? APP_LOGO_URL : '';
         $embedImages = [];
-        if ($logoUrl && defined('APP_LOGO_PATH') && file_exists(APP_LOGO_PATH)) {
+        // Caller-provided embeds (e.g. announcement attachments) take priority;
+        // the school logo is appended unless the caller already mapped its URL.
+        if (!empty($options['embed_images']) && is_array($options['embed_images'])) {
+            foreach ($options['embed_images'] as $u => $p) {
+                if (!empty($u) && !empty($p)) { $embedImages[$u] = $p; }
+            }
+        }
+        if ($logoUrl && defined('APP_LOGO_PATH') && file_exists(APP_LOGO_PATH) && !isset($embedImages[$logoUrl])) {
             $embedImages[$logoUrl] = APP_LOGO_PATH;
         }
         $result = sendViaPHPMailer($smtpHost, $smtpPort, $smtpUsername, $smtpPassword, $smtpEncrypt,
@@ -143,6 +155,19 @@ function sendEmailNotification($to, $subject, $body, $options = []) {
 }
 
 /**
+ * Store/retrieve the last SMS send error message.
+ * @param string|null $msg When provided, stores the message; otherwise reads it.
+ * @return string
+ */
+function _smsLastError($msg = null) {
+    static $last = '';
+    if ($msg !== null) {
+        $last = (string)$msg;
+    }
+    return $last;
+}
+
+/**
  * Send SMS notification via provider API (TextBee / Semaphore)
  * @param string $to      Phone number
  * @param string $message SMS message
@@ -151,6 +176,7 @@ function sendEmailNotification($to, $subject, $body, $options = []) {
  */
 function sendSMSNotification($to, $message, $force = false) {
     $db = getDB();
+    _smsLastError('');
 
     $apiKey   = getSetting($db, 'sms_api_key', '');
     $apiUrl   = getSetting($db, 'sms_api_url', 'https://api.textbee.dev/api/v1/gateway/send-sms');
@@ -159,10 +185,12 @@ function sendSMSNotification($to, $message, $force = false) {
     $provider = getSetting($db, 'sms_provider', 'textbee');
 
     if (!$force && ($enabled !== '1' || empty($apiKey))) {
+        _smsLastError('SMS is disabled or no API key is configured.');
         return false;
     }
 
     if (empty($apiKey)) {
+        _smsLastError('SMS API key is not configured.');
         return false;
     }
 
@@ -172,6 +200,7 @@ function sendSMSNotification($to, $message, $force = false) {
     if ($provider === 'textbee') {
         $deviceId = getSetting($db, 'sms_device_id', '');
         if (empty($deviceId)) {
+            _smsLastError('TextBee Device ID is not configured.');
             logNotification($db, $to, 'sms', '', $message, 'failed', 'TextBee Device ID not configured');
             return false;
         }
@@ -212,13 +241,24 @@ function sendSMSNotification($to, $message, $force = false) {
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($ch);
     curl_close($ch);
 
     $success = ($httpCode >= 200 && $httpCode < 300);
+    if (!$success) {
+        if ($httpCode === 401 || $httpCode === 403) {
+            // Rejected credentials — point the admin at the exact remedy
+            _smsLastError('SMS gateway rejected the API key (HTTP ' . $httpCode . ' AUTH_INVALID). '
+                . 'Generate a new API key at app.textbee.dev/dashboard and save it under '
+                . 'Admin → System Settings → Email & SMS.');
+        } else {
+            _smsLastError($curlErr !== '' ? "SMS gateway connection error: {$curlErr}" : "HTTP $httpCode: $response");
+        }
+    }
 
     // Log notification
     logNotification($db, $to, 'sms', '', $message, $success ? 'sent' : 'failed',
-                    $success ? null : "HTTP $httpCode: $response");
+                    $success ? null : _smsLastError());
 
     if ($success) {
         $today = date('Y-m-d');
@@ -328,36 +368,134 @@ function sendAttendanceNotification($db, $studentId, $status, $time = '', $type 
 }
 
 /**
+ * Build the HTML blocks for an announcement's attachments (image + link)
+ * and the CID embed map used by PHPMailer.
+ * @param string|null $imagePath  Relative path e.g. "uploads/announcements/x.jpg"
+ * @param string|null $link       Absolute URL
+ * @param string|null $linkLabel  Optional display label
+ * @return array ['html' => string, 'embed' => [publicUrl => serverPath]]
+ */
+function buildAnnouncementAttachmentBlocks($imagePath, $link = null, $linkLabel = null) {
+    $html = '';
+    $embed = [];
+
+    if (!empty($imagePath)) {
+        $serverPath = ROOT_PATH . '/' . ltrim($imagePath, '/');
+        if (file_exists($serverPath)) {
+            $imageUrl = BASE_URL . '/' . ltrim($imagePath, '/');
+            $html .= '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;">'
+                . '<p style="margin:0 0 8px;font-size:12px;font-weight:bold;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Attached Image</p>'
+                . '<img src="' . htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8') . '" alt="Attachment" '
+                . 'style="max-width:100%;height:auto;border-radius:8px;border:1px solid #e5e7eb;display:block;"></div>';
+            $embed[$imageUrl] = $serverPath;
+        }
+    }
+
+    if (!empty($link) && filter_var($link, FILTER_VALIDATE_URL)) {
+        $label = ($linkLabel !== null && trim($linkLabel) !== '') ? trim($linkLabel) : $link;
+        $html .= '<div style="margin-top:16px;">'
+            . '<p style="margin:0 0 8px;font-size:12px;font-weight:bold;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Attached Link</p>'
+            . '<a href="' . htmlspecialchars($link, ENT_QUOTES, 'UTF-8') . '" '
+            . 'style="display:inline-block;padding:10px 18px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">'
+            . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>'
+            . '<br><span style="font-size:12px;color:#9ca3af;word-break:break-all;">' . htmlspecialchars($link, ENT_QUOTES, 'UTF-8') . '</span></div>';
+    }
+
+    return ['html' => $html, 'embed' => $embed];
+}
+
+/**
  * Send bulk notification (for announcements)
  * @param PDO    $db
  * @param array  $recipients  Array of guardian records
  * @param string $subject
  * @param string $body
  * @param array  $channels    ['email', 'sms']
+ * @param array  $embedImages Optional map of publicUrl => serverPath embedded into emails
  */
-function sendBulkNotification($db, $recipients, $subject, $body, $channels = ['email']) {
+function sendBulkNotification($db, $recipients, $subject, $body, $channels = ['email'], $embedImages = []) {
     $sent = 0;
     $failed = 0;
+    $tally = ['email' => ['sent' => 0, 'failed' => 0], 'sms' => ['sent' => 0, 'failed' => 0]];
+
+    // SMS strips tags, which would drop <a href> targets — recover bare URLs.
+    $smsUrls = '';
+    if (preg_match_all('/<a[^>]+href=(?:"|\')([^"\']+)["\']/i', $body, $m)) {
+        foreach (array_unique($m[1]) as $u) {
+            $smsUrls .= "\n" . $u;
+        }
+    }
 
     foreach ($recipients as $recipient) {
         if (in_array('email', $channels) && !empty($recipient['email'])) {
-            if (sendEmailNotification($recipient['email'], $subject, $body)) {
+            if (sendEmailNotification($recipient['email'], $subject, $body, ['embed_images' => $embedImages])) {
                 $sent++;
+                $tally['email']['sent']++;
             } else {
                 $failed++;
+                $tally['email']['failed']++;
             }
         }
         if (in_array('sms', $channels) && !empty($recipient['phone'])) {
-            $smsMsg = strip_tags($body);
+            $smsMsg = strip_tags(preg_replace('/<br\s*\/?>|<\/p>/i', "\n", $body)) . $smsUrls;
             if (sendSMSNotification($recipient['phone'], $smsMsg)) {
                 $sent++;
+                $tally['sms']['sent']++;
             } else {
                 $failed++;
+                $tally['sms']['failed']++;
             }
         }
     }
 
-    return ['sent' => $sent, 'failed' => $failed];
+    return [
+        'sent'      => $sent,
+        'failed'    => $failed,
+        'email'     => $tally['email'],
+        'sms'       => $tally['sms'],
+        'sms_error' => _smsLastError(),
+    ];
+}
+
+/**
+ * Interpret a sendBulkNotification() result.
+ * An announcement only counts as FAILED when every attempted delivery failed;
+ * partial failures keep the announcement as sent but surface a warning.
+ * @param array $bulkResult Result of sendBulkNotification()
+ * @param array $channels   Channels that were attempted
+ * @return array ['status'=>'sent'|'failed', 'error'=>string]
+ */
+function summarizeBulkResult($bulkResult, $channels = ['email']) {
+    $sent   = (int)($bulkResult['sent'] ?? 0);
+    $failed = (int)($bulkResult['failed'] ?? 0);
+
+    if ($failed === 0) {
+        return ['status' => 'sent', 'error' => ''];
+    }
+
+    $parts = [];
+    if (($bulkResult['sms']['failed'] ?? 0) > 0) {
+        $parts[] = (int)$bulkResult['sms']['failed'] . ' SMS message(s) could not be delivered';
+        if (!empty($bulkResult['sms_error'])) {
+            $firstLine = trim((string)strtok((string)$bulkResult['sms_error'], "\n"));
+            if ($firstLine !== '') {
+                $parts[] = 'SMS gateway said: ' . substr($firstLine, 0, 140);
+            }
+        }
+    }
+    if (in_array('email', (array)$channels, true) && ($bulkResult['email']['failed'] ?? 0) > 0) {
+        $parts[] = (int)$bulkResult['email']['failed'] . ' email(s) could not be delivered';
+        $lastErr = getLastEmailError();
+        if (!empty($lastErr)) {
+            $parts[] = 'Email error: ' . substr($lastErr, 0, 140);
+        }
+    }
+
+    $msg = implode('; ', array_unique($parts));
+    if ($sent === 0) {
+        return ['status' => 'failed', 'error' => 'All deliveries failed. ' . $msg];
+    }
+    return ['status' => 'sent', 'error' => $msg];
 }
 
 /**
@@ -494,6 +632,11 @@ function sendViaPHPMailer($host, $port, $username, $password, $encryption, $from
         try {
             $mail = new PHPMailer(true);
 
+            // PHPMailer defaults to ISO-8859-1, which mangles multi-byte
+            // characters (e.g. "—" → "â€”") in the subject and body.
+            $mail->CharSet  = 'UTF-8';
+            $mail->Encoding = PHPMailer::ENCODING_BASE64;
+
             $mail->isSMTP();
             $mail->Host       = $profile['host'];
             $mail->SMTPAuth   = true;
@@ -545,6 +688,191 @@ function logNotification($db, $recipient, $channel, $subject, $message, $status,
         $stmt->execute([$recipient, $channel, $message, $subject, $status, $error]);
     } catch (Exception $e) {
         error_log("Notification log error: " . $e->getMessage());
+    }
+}
+
+/**
+ * Dispatch announcements whose schedule time has arrived.
+ * Called opportunistically from config.php (no cron required); the status
+ * claim UPDATE prevents double-sending when several requests race.
+ * @param PDO $db
+ * @return int Number of announcements dispatched
+ */
+function processDueScheduledAnnouncements($db) {
+    try {
+        $due = $db->query(
+            "SELECT * FROM announcements
+             WHERE (status = 'scheduled' OR (status = 'sending' AND updated_at < NOW() - INTERVAL 10 MINUTE))
+               AND scheduled_at IS NOT NULL AND scheduled_at <= NOW()
+             ORDER BY scheduled_at ASC LIMIT 10"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        if (!$due) return 0;
+
+        require_once __DIR__ . '/functions.php';
+
+        $claim = $db->prepare(
+            "UPDATE announcements SET status = 'sending', updated_at = NOW()
+             WHERE id = ? AND (status = 'scheduled' OR (status = 'sending' AND updated_at < NOW() - INTERVAL 10 MINUTE))"
+        );
+        $done  = $db->prepare("UPDATE announcements SET status = ?, updated_at = NOW() WHERE id = ?");
+
+        foreach ($due as $ann) {
+            $claim->execute([(int)$ann['id']]);
+            if ($claim->rowCount() === 0) continue; // another request claimed it
+
+            $subject   = $ann['subject'] ?? 'Announcement';
+            $bodyHTML  = $ann['body_html'] ?? ($ann['body'] ?? '');
+            $channels  = json_decode($ann['channels'] ?? '[]', true) ?: [];
+            $recipientsJson = json_decode($ann['recipients'] ?? '{}', true) ?: [];
+            $scope     = $ann['scope'] ?? 'school';
+
+            if (empty($channels)) { $done->execute(['failed', (int)$ann['id']]); continue; }
+
+            $recipientList = [];
+            $contactFilter = function ($row) use (&$recipientList, $channels) {
+                $hasEmail = in_array('email', $channels, true) && !empty($row['email']);
+                $hasPhone = in_array('sms', $channels, true) && !empty($row['phone']);
+                if (!$hasEmail && !$hasPhone) return;
+                $key = !empty($row['email']) ? 'email:' . $row['email'] : 'sms:' . $row['phone'];
+                if (!isset($recipientList[$key])) $recipientList[$key] = $row;
+            };
+
+            try {
+                if ($scope === 'advisory') {
+                    // Adviser announcement → guardians of the locked section
+                    $sectionRow = null;
+                    $st2 = $db->prepare("SELECT grade_level, section_name FROM sections WHERE id = ?");
+                    $st2->execute([(int)($ann['target_section_id'] ?? 0)]);
+                    $sectionRow = $st2->fetch();
+                    if ($sectionRow) {
+                        $sql = "SELECT g.guardian_name, g.email, g.phone
+                                FROM students s
+                                INNER JOIN guardians g ON s.id = g.student_id
+                                WHERE s.status = 'active' AND s.grade_level = ? AND s.section = ?";
+                        $params = [$sectionRow['grade_level'], $sectionRow['section_name']];
+                        $rt = ($recipientsJson['recipient_type'] ?? '');
+                        if ($rt === 'individual' && !empty($recipientsJson['student_ids'])) {
+                            $ids = array_values(array_filter(array_map('intval', (array)$recipientsJson['student_ids'])));
+                            if ($ids) {
+                                $sql .= " AND s.id IN (" . implode(',', array_fill(0, count($ids), '?')) . ")";
+                                $params = array_merge($params, $ids);
+                            }
+                        }
+                        $stmt = $db->prepare($sql);
+                        $stmt->execute($params);
+                        foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
+                    }
+                } else {
+                    // School-wide → union of every saved scope
+                    $scopes = array_map('trim', explode(',', (string)($recipientsJson['recipient_type'] ?? '')));
+
+                    if (in_array('all_parents', $scopes, true)) {
+                        $stmt = $db->query(
+                            "SELECT g.guardian_name, g.email, g.phone
+                             FROM students s
+                             INNER JOIN guardians g ON s.id = g.student_id
+                             WHERE s.status = 'active'"
+                        );
+                        foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
+                    }
+
+                    if (in_array('grade', $scopes, true) && !empty($recipientsJson['grades'])) {
+                        $grades = array_values(array_filter(array_map('intval', (array)$recipientsJson['grades'])));
+                        if ($grades) {
+                            $stmt = $db->prepare(
+                                "SELECT g.guardian_name, g.email, g.phone
+                                 FROM students s
+                                 INNER JOIN guardians g ON s.id = g.student_id
+                                 WHERE s.status = 'active'
+                                   AND s.grade_level IN (" . implode(',', array_fill(0, count($grades), '?')) . ")"
+                            );
+                            $stmt->execute($grades);
+                            foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
+                        }
+                    }
+
+                    if (in_array('individual', $scopes, true) && !empty($recipientsJson['student_ids'])) {
+                        $ids = array_values(array_filter(array_map('intval', (array)$recipientsJson['student_ids'])));
+                        if ($ids) {
+                            $stmt = $db->prepare(
+                                "SELECT g.guardian_name, g.email, g.phone
+                                 FROM students s
+                                 INNER JOIN guardians g ON s.id = g.student_id
+                                 WHERE s.status = 'active'
+                                   AND s.id IN (" . implode(',', array_fill(0, count($ids), '?')) . ")"
+                            );
+                            $stmt->execute($ids);
+                            foreach ($stmt->fetchAll() as $g) { $contactFilter($g); }
+                        }
+                    }
+
+                    if (in_array('all_teachers', $scopes, true) || in_array('advisers_only', $scopes, true)) {
+                        $sql = "SELECT CONCAT(t.first_name, ' ', t.last_name) AS guardian_name, t.email, t.phone
+                                FROM teachers t
+                                INNER JOIN users u ON t.user_id = u.id
+                                WHERE u.role = 'teacher' AND t.status = 'active'";
+                        if (in_array('advisers_only', $scopes, true)) {
+                            $sql .= " AND t.advisory_class IS NOT NULL AND t.advisory_class != ''";
+                        }
+                        foreach ($db->query($sql)->fetchAll() as $t) { $contactFilter($t); }
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log('processDueScheduledAnnouncements recipients: ' . $e->getMessage());
+            }
+
+            if (empty($recipientList)) {
+                $done->execute(['failed', (int)$ann['id']]);
+                try {
+                    createUserNotification($db, [
+                        'user_role'       => 'admin',
+                        'category'        => 'announcement',
+                        'title'           => $subject,
+                        'message'         => 'Scheduled announcement failed: no recipients with valid contact details were found.',
+                        'delivery_status' => 'failed',
+                        'reference_id'    => (int)$ann['id'],
+                        'destination_url' => '/admin/announcements.php',
+                    ]);
+                } catch (Exception $e) {}
+                continue;
+            }
+
+            // Append image + link attachment blocks to the outgoing notification
+            $attBlocks = buildAnnouncementAttachmentBlocks(
+                $ann['attachment_path'] ?? null,
+                $ann['attachment_link'] ?? null,
+                $ann['attachment_link_label'] ?? null
+            );
+            $bulkResult = sendBulkNotification(
+                $db,
+                array_values($recipientList),
+                $subject,
+                $bodyHTML . $attBlocks['html'],
+                $channels,
+                $attBlocks['embed']
+            );
+            $verdict = summarizeBulkResult($bulkResult, $channels);
+            $done->execute([$verdict['status'], (int)$ann['id']]);
+            if ($verdict['status'] === 'failed' || $verdict['error'] !== '') {
+                try {
+                    createUserNotification($db, [
+                        'user_role'       => 'admin',
+                        'category'        => 'announcement',
+                        'title'           => $subject,
+                        'message'         => ($verdict['status'] === 'failed')
+                            ? 'Scheduled announcement failed: ' . $verdict['error']
+                            : 'Scheduled announcement delivered with warnings: ' . $verdict['error'],
+                        'delivery_status' => ($verdict['status'] === 'failed') ? 'failed' : 'sent',
+                        'reference_id'    => (int)$ann['id'],
+                        'destination_url' => '/admin/announcements.php',
+                    ]);
+                } catch (Exception $e) {}
+            }
+        }
+        return count($due);
+    } catch (Throwable $e) {
+        error_log('processDueScheduledAnnouncements: ' . $e->getMessage());
+        return 0;
     }
 }
 ?>

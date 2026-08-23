@@ -134,10 +134,11 @@ switch ($action) {
         }
 
         $success = sendSMSNotification($to, '[LDB-FRAS] This is a test SMS notification.', true);
+        $smsErr = _smsLastError();
 
         jsonResponse([
             'success' => $success,
-            'message' => $success ? 'Test SMS sent successfully' : 'Failed to send SMS. Check API settings.'
+            'message' => $success ? 'Test SMS sent successfully' : ('Failed to send SMS.' . ($smsErr !== '' ? ' Reason: ' . $smsErr : ' Check API settings.'))
         ]);
         break;
 

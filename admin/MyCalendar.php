@@ -93,7 +93,19 @@ try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by=? AND
 <!-- Stylesheets — pages-theme.css first (sidebar lives there), pages-navbar.css second (everything else) -->
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-navbar.css">
-<style>@media(max-width:767px){.mobile-title{display:block!important}}</style>
+<style>
+@media(max-width:767px){.mobile-title{display:block!important}}
+/* ─── Delete Confirmation Modal (matches announcements.php) ─── */
+.delete-modal{width:400px}
+.delete-modal-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px}
+.delete-modal-text{text-align:center}
+.delete-modal-text h6{font-weight:700;font-size:16px;letter-spacing:-0.02em;margin-bottom:6px;color:#fff}
+.delete-modal-text p{font-size:13px;max-width:280px;margin:0 auto;line-height:1.5}
+.evt-btn-danger{background:#ef4444;color:#fff}
+.evt-btn-danger:hover{background:#dc2626;box-shadow:0 4px 14px rgba(239,68,68,0.3)}
+.evt-btn-danger.loading{opacity:.7;pointer-events:none}
+@media(max-width:767px){.delete-modal{width:100%;max-width:100vw}}
+</style>
 
 <!-- ═══ CONTENT ═══ -->
 <?php require_once __DIR__ . '/../includes/pages-topnavbar.php'; ?>
@@ -213,6 +225,28 @@ try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by=? AND
                 <button type="submit" class="evt-btn evt-btn-save" id="evtSave"><i class="bi bi-check-lg me-1"></i> Save Event</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ═══ DELETE EVENT CONFIRMATION MODAL ═══ -->
+<div class="event-modal-overlay" id="deleteEventOverlay">
+    <div class="event-modal delete-modal">
+        <div class="event-modal-header">
+            <div class="event-modal-title"><i class="bi bi-trash3" style="color:#ef4444;"></i><span>Delete Event</span></div>
+            <button type="button" class="event-modal-close" id="delEventClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="event-modal-body" style="display:flex;align-items:center;justify-content:center;">
+            <div class="delete-modal-text" style="width:100%;padding-top:10px;">
+                <div class="delete-modal-icon" style="background:rgba(239,68,68,0.15);color:#ef4444;"><i class="bi bi-trash3-fill"></i></div>
+                <h6>Delete this event?</h6>
+                <p id="delEventSubject">This event will be permanently removed from your calendar.</p>
+                <p style="color:#ef4444;font-size:12px;font-weight:600;margin-top:10px;"><i class="bi bi-exclamation-triangle-fill"></i> This action cannot be undone.</p>
+            </div>
+        </div>
+        <div class="event-modal-footer">
+            <button type="button" class="evt-btn evt-btn-cancel" id="delEventCancel">Cancel</button>
+            <button type="button" class="evt-btn evt-btn-danger" id="btnConfirmDelEvent"><i class="bi bi-trash-fill"></i> Yes, Delete</button>
+        </div>
     </div>
 </div>
 
@@ -363,8 +397,28 @@ eF.addEventListener('submit',function(e){
         if(d.success){showT('Event created: '+d.event.title,'success');var dt=d.event.event_date;if(!admEv[dt])admEv[dt]=[];admEv[dt].push(d.event);render();if(selD===dt)renderEv(dt);closeM();refNotif();}else showT(d.message||'Failed.','error');
     }).catch(function(){showT('Something went wrong.','error');}).finally(function(){sb.classList.remove('loading');sb.innerHTML='<i class="bi bi-check-lg me-1"></i> Save Event';});
 });
+// ─── Delete Event Confirmation Modal ───
+var delO=document.getElementById('deleteEventOverlay'),delId=null;
+function openDel(){delO.classList.add('show');document.body.style.overflow='hidden';}
+function closeDel(){delO.classList.remove('show');document.body.style.overflow='';}
+function findEvent(id){for(var dt in admEv){var f=admEv[dt].filter(function(e){return e.id===id;});if(f.length)return f[0];}return null;}
 function delE(id){
-    if(!confirm('Delete this event?'))return;
+    delId=id;
+    var ev=findEvent(id),s=document.getElementById('delEventSubject');
+    if(s)s.textContent=(ev&&ev.title)?('"'+ev.title+'" will be permanently removed from your calendar.'):'This event will be permanently removed from your calendar.';
+    openDel();
+}
+document.getElementById('btnConfirmDelEvent').addEventListener('click',function(){
+    if(delId===null){closeDel();return;}
+    var id=delId;delId=null;
+    closeDel();
+    doDelete(id);
+});
+document.getElementById('delEventClose').addEventListener('click',closeDel);
+document.getElementById('delEventCancel').addEventListener('click',closeDel);
+delO.addEventListener('click',function(e){if(e.target===delO)closeDel();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&delO.classList.contains('show'))closeDel();});
+function doDelete(id){
     var fd=new FormData();fd.append('ajax_action','delete_event');fd.append('event_id',id);
     fetch(AJ,{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
         if(d.success){showT('Event deleted.','info');for(var dt in admEv){admEv[dt]=admEv[dt].filter(function(e){return e.id!==id;});if(!admEv[dt].length)delete admEv[dt];}render();if(selD)renderEv(selD);refNotif();}else showT(d.message||'Failed.','error');

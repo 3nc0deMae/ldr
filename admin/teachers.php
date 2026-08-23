@@ -66,11 +66,15 @@ try {
     $electives = $db->query("SELECT id, track_id, elective_name FROM electives ORDER BY elective_name ASC")->fetchAll();
 } catch (Exception $e) {}
 try {
-    $electiveSubjects = $db->query("SELECT es.id, es.elective_id, s.id as subject_id, s.subject_name FROM elective_subjects es LEFT JOIN subjects s ON es.subject_id = s.id ORDER BY s.subject_name ASC")->fetchAll();
-    $electiveSubjectIds = array_column($electiveSubjects, 'subject_id');
+    $electiveSubjects = $db->query("SELECT es.id, es.elective_id, s.id as subject_id, s.subject_name FROM elective_subjects es INNER JOIN subjects s ON es.subject_id = s.id ORDER BY s.subject_name ASC")->fetchAll();
+    $electiveSubjectIds = array_map('intval', array_column($electiveSubjects, 'subject_id'));
 } catch (Exception $e) {}
+// Core subject choices = only SHS subjects added via the Subjects page:
+// no strand assignment, not attached to any track/elective, senior-high grade range.
 $coreSubjectOptions = array_values(array_filter($teacherSubjects, function($s) use ($electiveSubjectIds) {
-    return !in_array($s['id'], $electiveSubjectIds, true);
+    $gl = (int)($s['grade_level'] ?? 0);
+    $ge = (int)($s['grade_level_end'] ?? $gl);
+    return empty($s['strand_id']) && !in_array((int)$s['id'], $electiveSubjectIds, true) && ($gl >= 11 || $ge >= 11);
 }));
 
 function buildTeacherSubjectOptions($subjects, $selectedValues = []) {

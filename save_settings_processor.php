@@ -101,13 +101,14 @@ try {
             $updEmail = $db->prepare("UPDATE users SET email = ?, updated_at = NOW() WHERE id = ?");
             $updEmail->execute([$newEmail, $loggedInUserId]);
 
-            if ($loggedInRole !== 'admin') {
+            if ($loggedInRole === 'teacher') {
                 try {
-                    $table = ($loggedInRole === 'teacher') ? 'teachers' : 'users';
-                    $col   = ($loggedInRole === 'teacher') ? 'email' : 'email';
-                    $updTbl = $db->prepare("UPDATE $table SET $col = ?, updated_at = NOW() WHERE user_id = ?");
-                    $updTbl->execute([$newEmail, $loggedInUserId]);
-                } catch (Exception $e) {}
+                    $oldEmail = $_SESSION['user_email'] ?? '';
+                    $updTbl = $db->prepare("UPDATE teachers SET email = ?, updated_at = NOW() WHERE user_id = ? OR email = ?");
+                    $updTbl->execute([$newEmail, $loggedInUserId, $oldEmail]);
+                } catch (Exception $e) {
+                    error_log('Teacher email sync failed: ' . $e->getMessage());
+                }
             }
 
             $_SESSION['user_email'] = $newEmail;

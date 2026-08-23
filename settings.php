@@ -429,15 +429,15 @@ $baseUrl = BASE_URL;
 .legal-card-title { font-size: 15px; font-weight: 800; color: var(--set-text); margin: 0; letter-spacing: -0.02em; }
 .legal-card-sub { font-size: 12px; font-weight: 500; color: var(--set-text-secondary); }
 
-/* Scroll-optimized legal text viewports */
+/* Scroll-optimized legal text viewports (auto-expanded to full content via JS) */
 .legal-scroll {
-    max-height: 15rem;
-    overflow-y: auto;
-    resize: vertical;
+    min-height: 6rem;
     line-height: 1.55;
     font-family: var(--set-mono);
     font-size: 12.5px;
     white-space: pre-wrap;
+    overflow: hidden;
+    resize: none;
 }
 .legal-scroll::-webkit-scrollbar { width: 6px; }
 .legal-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -1077,7 +1077,7 @@ $baseUrl = BASE_URL;
                             <div class="field-group">
                                 <label class="set-label">Current Password</label>
                                 <div class="input-password-wrap">
-                                    <input type="password" class="set-input" name="current_password" id="admCurrentPassword" placeholder="Enter current password" required>
+                                    <input type="password" class="set-input" name="current_password" id="admCurrentPassword" placeholder="Enter current password">
                                     <button type="button" class="input-password-toggle" onclick="togglePassword('admCurrentPassword', this)"><i class="bi bi-eye"></i></button>
                                 </div>
                             </div>
@@ -1086,7 +1086,7 @@ $baseUrl = BASE_URL;
                             <div class="field-group">
                                 <label class="set-label">New Password</label>
                                 <div class="input-password-wrap">
-                                    <input type="password" class="set-input" name="new_password" id="admNewPassword" placeholder="Min 8 chars" required minlength="8">
+                                    <input type="password" class="set-input" name="new_password" id="admNewPassword" placeholder="Min 8 chars" minlength="8">
                                     <button type="button" class="input-password-toggle" onclick="togglePassword('admNewPassword', this)"><i class="bi bi-eye"></i></button>
                                 </div>
                             </div>
@@ -1095,7 +1095,7 @@ $baseUrl = BASE_URL;
                             <div class="field-group">
                                 <label class="set-label">Confirm Password</label>
                                 <div class="input-password-wrap">
-                                    <input type="password" class="set-input" name="confirm_password" id="admConfirmPassword" placeholder="Re-type new password" required minlength="8">
+                                    <input type="password" class="set-input" name="confirm_password" id="admConfirmPassword" placeholder="Re-type new password" minlength="8">
                                     <button type="button" class="input-password-toggle" onclick="togglePassword('admConfirmPassword', this)"><i class="bi bi-eye"></i></button>
                                 </div>
                             </div>
@@ -1125,21 +1125,7 @@ $baseUrl = BASE_URL;
                                         </button>
                                     </label>
                                     <textarea class="set-textarea legal-scroll" name="legal_dpa_master_notice" id="dpaMasterNotice"
-                                              placeholder="Paste the full Data Privacy Notice (RA 10173)..."><?= htmlspecialchars($privacySettings['dpa_master_notice'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="field-group">
-                                    <label class="set-label">Student Enrolment Consent Text</label>
-                                    <textarea class="set-textarea" name="legal_dpa_consent_label_student" rows="3"
-                                              placeholder="Consent checkbox label for student registration..."><?= htmlspecialchars($privacySettings['dpa_consent_label_student'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="field-group">
-                                    <label class="set-label">Staff Onboarding Consent Text</label>
-                                    <textarea class="set-textarea" name="legal_dpa_consent_label_staff" rows="3"
-                                              placeholder="Consent checkbox label for staff portal onboarding..."><?= htmlspecialchars($privacySettings['dpa_consent_label_staff'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                                              placeholder="Paste the full Data Privacy Notice (RA 10173)..."><?= htmlspecialchars($privacySettings['dpa_master_notice'] ?? DEFAULT_DPA_MASTER_NOTICE, ENT_QUOTES, 'UTF-8') ?></textarea>
                                 </div>
                             </div>
                             <div class="col-12">
@@ -1151,7 +1137,7 @@ $baseUrl = BASE_URL;
                                         </button>
                                     </label>
                                     <textarea class="set-textarea legal-scroll" name="legal_system_terms_conditions" id="tcConditions"
-                                              placeholder="Paste the full Terms & Conditions user agreement..."><?= htmlspecialchars($privacySettings['system_terms_conditions'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                                              placeholder="Paste the full Terms & Conditions user agreement..."><?= htmlspecialchars($privacySettings['system_terms_conditions'] ?? DEFAULT_SYSTEM_TERMS_CONDITIONS, ENT_QUOTES, 'UTF-8') ?></textarea>
                                 </div>
                             </div>
                         </div>
@@ -1262,6 +1248,25 @@ $baseUrl = BASE_URL;
 <script>
 (function() {
     'use strict';
+
+    // Auto-expand legal textareas so the full Master Data Privacy Notice and
+    // Terms & Conditions are readable without resizing the container.
+    function autoGrow(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }
+    function initLegalScroll() {
+        var els = document.querySelectorAll('.legal-scroll');
+        for (var i = 0; i < els.length; i++) {
+            autoGrow(els[i]);
+            els[i].addEventListener('input', function () { autoGrow(this); });
+        }
+    }
+    if (document.readyState !== 'loading') {
+        initLegalScroll();
+    } else {
+        document.addEventListener('DOMContentLoaded', initLegalScroll);
+    }
 
     function showToast(type, message) {
         var c = document.getElementById('toastContainer');
@@ -1733,7 +1738,7 @@ $baseUrl = BASE_URL;
                                 <div class="field-group">
                                     <label class="set-label">Master Data Privacy Notice</label>
                                     <textarea class="set-textarea legal-scroll" name="legal_dpa_master_notice" rows="8"
-                                              placeholder="Paste the full Data Privacy Notice (RA 10173)..."><?= htmlspecialchars($privacySettings['dpa_master_notice'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                                              placeholder="Paste the full Data Privacy Notice (RA 10173)..."><?= htmlspecialchars($privacySettings['dpa_master_notice'] ?? DEFAULT_DPA_MASTER_NOTICE, ENT_QUOTES, 'UTF-8') ?></textarea>
                                 </div>
                             </div>
                         </div>

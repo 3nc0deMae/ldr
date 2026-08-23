@@ -303,6 +303,26 @@ switch ($action) {
         $stmt = $db->prepare("DELETE FROM elective_subjects WHERE elective_id = ? AND subject_id = ?");
         $res = $stmt->execute([$electiveId, $subjectId]);
         if ($res) {
+            // Remove the underlying subject as well once it is no longer linked to
+            // any elective and not referenced by teachers or attendance records,
+            // so deleted subjects never resurface in other forms.
+            try {
+                $linked = $db->prepare("SELECT COUNT(*) FROM elective_subjects WHERE subject_id = ?");
+                $linked->execute([$subjectId]);
+                if ((int)$linked->fetchColumn() === 0) {
+                    $used = 0;
+                    foreach (['teacher_subjects', 'attendance', 'attendance_sessions'] as $refTable) {
+                        $chk = $db->prepare("SELECT COUNT(*) FROM `{$refTable}` WHERE subject_id = ?");
+                        $chk->execute([$subjectId]);
+                        $used += (int)$chk->fetchColumn();
+                    }
+                    if ($used === 0) {
+                        $db->prepare("DELETE FROM subjects WHERE id = ?")->execute([$subjectId]);
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('elective subject cleanup: ' . $e->getMessage());
+            }
             jsonResponse(['success' => true, 'message' => 'Subject removed']);
         } else {
             jsonResponse(['error' => 'Failed to remove subject'], 500);

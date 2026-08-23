@@ -869,19 +869,21 @@ try {
 
     var delSubjO=document.getElementById('deleteSubjectOverlay'),delSubjN=document.getElementById('deleteSubjectNameDisplay'),delSubjB=document.getElementById('confirmDeleteSubjectBtn');
     var currentDeleteSubjectData = { electiveId: null, subjectId: null };
-    document.querySelectorAll('.delete-subject-trigger').forEach(function(btn){
-        btn.addEventListener('click',function(){
-            try {
-                var row = btn.closest('tr');
-                var subjectId = btn.getAttribute('data-subject-id');
-                var electiveId = btn.getAttribute('data-elective-id');
-                var subjectName = row ? row.querySelector('td:nth-child(2)')?.textContent?.trim() || 'this subject' : 'this subject';
-                if (!electiveId || !subjectId) { showToast('Missing IDs.', 'error'); return; }
-                currentDeleteSubjectData = { electiveId: electiveId, subjectId: subjectId };
-                if (delSubjN) delSubjN.textContent = subjectName;
-                openModal(delSubjO);
-            } catch (err) { showToast('Failed to open delete dialog.', 'error'); }
-        });
+    /* Delegated: survives tbody innerHTML rebuilds from refreshElectiveTable() */
+    document.addEventListener('click',function(e){
+        var btn = e.target.closest ? e.target.closest('.delete-subject-trigger') : null;
+        if (!btn) return;
+        try {
+            var row = btn.closest('tr');
+            var subjectId = btn.getAttribute('data-subject-id');
+            var electiveId = btn.getAttribute('data-elective-id');
+            var nameCell = row ? row.querySelector('td:first-child') : null;
+            var subjectName = (nameCell && nameCell.textContent.trim()) ? nameCell.textContent.trim() : 'this subject';
+            if (!electiveId || !subjectId) { showToast('Missing IDs.', 'error'); return; }
+            currentDeleteSubjectData = { electiveId: electiveId, subjectId: subjectId };
+            if (delSubjN) delSubjN.textContent = subjectName;
+            openModal(delSubjO);
+        } catch (err) { showToast('Failed to open delete dialog.', 'error'); }
     });
     document.getElementById('deleteSubjectClose').addEventListener('click',function(){closeModal(delSubjO);});
     document.getElementById('deleteSubjectCancel').addEventListener('click',function(){closeModal(delSubjO);});
@@ -1001,30 +1003,31 @@ try {
 
     var currentEditElectiveId = '';
     var editSubjO=document.getElementById('editSubjectOverlay'),editSubjF=document.getElementById('editSubjectForm');
-    document.querySelectorAll('.subjects-row .action-icon[title="Edit"]').forEach(function(btn){
-        btn.addEventListener('click',function(){
-            var cell=btn.closest('td');
-            if(!cell)return;
-            var delBtn=cell.querySelector('.delete-subject-trigger');
-            if(!delBtn)return;
-            var sid=delBtn.getAttribute('data-subject-id');
-            var eid=delBtn.getAttribute('data-elective-id');
-            if(!sid||!eid){showToast('Missing subject or elective ID.','error');return;}
-            currentEditElectiveId=eid;
-            var fd=new FormData();fd.append('action','get');fd.append('id',sid);fd.append('csrf_token',getCsrf());
-            fetch(apiUrl('/api/subjects.php'),{method:'POST',credentials:'same-origin',body:fd}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(d){
-                if(d && d.data){
-                    document.getElementById('edit-subject-id').value=d.data.id||sid;
-                    document.getElementById('edit-subject-name').value=d.data.subject_name||'';
-                    document.getElementById('edit-subject-grade-from').value=d.data.grade_level||'';
-                    document.getElementById('edit-subject-grade-to').value=d.data.grade_level_end||'';
-                    document.getElementById('edit-subject-description').value=d.data.description||'';
-                    openModal(editSubjO);
-                }else{
-                    showToast('Subject not found.','error');
-                }
-            }).catch(function(err){showToast('Failed to load subject.','error');});
-        });
+    /* Delegated: survives tbody innerHTML rebuilds from refreshElectiveTable() */
+    document.addEventListener('click',function(e){
+        var btn = e.target.closest ? e.target.closest('.subjects-row .action-icon[title="Edit"]') : null;
+        if (!btn) return;
+        var cell=btn.closest('td');
+        if(!cell)return;
+        var delBtn=cell.querySelector('.delete-subject-trigger');
+        if(!delBtn)return;
+        var sid=delBtn.getAttribute('data-subject-id');
+        var eid=delBtn.getAttribute('data-elective-id');
+        if(!sid||!eid){showToast('Missing subject or elective ID.','error');return;}
+        currentEditElectiveId=eid;
+        var fd=new FormData();fd.append('action','get');fd.append('id',sid);fd.append('csrf_token',getCsrf());
+        fetch(apiUrl('/api/subjects.php'),{method:'POST',credentials:'same-origin',body:fd}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(d){
+            if(d && d.data){
+                document.getElementById('edit-subject-id').value=d.data.id||sid;
+                document.getElementById('edit-subject-name').value=d.data.subject_name||'';
+                document.getElementById('edit-subject-grade-from').value=d.data.grade_level||'';
+                document.getElementById('edit-subject-grade-to').value=d.data.grade_level_end||'';
+                document.getElementById('edit-subject-description').value=d.data.description||'';
+                openModal(editSubjO);
+            }else{
+                showToast('Subject not found.','error');
+            }
+        }).catch(function(err){showToast('Failed to load subject.','error');});
     });
     document.getElementById('editSubjectClose').addEventListener('click',function(){closeModal(editSubjO);});
     document.getElementById('editSubjectCancel').addEventListener('click',function(){closeModal(editSubjO);});

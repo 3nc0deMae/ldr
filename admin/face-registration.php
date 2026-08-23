@@ -329,25 +329,6 @@ try {
     text-decoration: none;
     transform: translateY(-1px);
 }
-.btn-send-reminders {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 14px;
-    border: none;
-    border-radius: 8px;
-    font-size: 12px; font-weight: 700;
-    color: #fff;
-    background: linear-gradient(135deg, #059669, #10b981);
-    box-shadow: 0 2px 8px rgba(16,185,129,0.2);
-    cursor: pointer;
-    transition: all var(--frd-spring);
-}
-.btn-send-reminders:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(16,185,129,0.3);
-    color: #fff;
-}
 
 /* ─── Table (light bg) ────────────────────────────────────────────────── */
 .table-scroll-wrapper {
@@ -675,7 +656,7 @@ try {
 @media print {
     .sidebar, .sidebar-overlay, .top-navbar, .mobile-title,
     .navbar-brand, .toast-container, .btn-kiosk, .btn-export-top,
-    .btn-refresh, .btn-register, .btn-send-reminders,
+    .btn-refresh, .btn-register,
     .search-box { display: none !important; }
     .main-content { margin: 0 !important; width: 100% !important; background: #fff !important; }
     .content-area { padding: 0 !important; }
@@ -853,9 +834,6 @@ try {
                                 <i class="bi bi-search search-icon"></i>
                                 <input type="text" class="search-input" id="searchPending" placeholder="Search students...">
                             </div>
-                            <button class="btn-send-reminders" onclick="sendReminders()">
-                                <i class="bi bi-envelope"></i> <span class="d-none d-md-inline">Reminders</span>
-                            </button>
                         </div>
                     </div>
                     <div class="card-body" style="padding:0;">
@@ -1047,16 +1025,6 @@ try {
         input.dispatchEvent(new Event('input'));
         var target = document.getElementById('unregisteredTable');
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-
-    // ─── Send Reminders ─────────────────────────────────────────────────
-    window.sendReminders = function() {
-        var selected = document.querySelectorAll('.student-checkbox:checked');
-        if (selected.length === 0) {
-            showToast('warning', 'Please select students first.');
-            return;
-        }
-        showToast('info', 'Reminder feature coming soon! (' + selected.length + ' selected)');
     };
 
     // ─── Refresh Stats ──────────────────────────────────────────────────
