@@ -1716,6 +1716,14 @@ function getAllSubjects($db) {
  * @return array
  */
 function getDashboardStats($db) {
+    $cacheFile = sys_get_temp_dir() . '/ldb_dashboard_stats_' . date('Y-m-d-H-i') . '.json';
+    $cacheTTL = 60; // seconds
+
+    if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTTL) {
+        $cached = @json_decode(file_get_contents($cacheFile), true);
+        if (is_array($cached)) return $cached;
+    }
+
     $stats = [];
 
     $row = $db->query(
@@ -1731,6 +1739,8 @@ function getDashboardStats($db) {
     $stats['present_today'] = $attendanceStats['present_today'] ?? 0;
     $stats['absent_today']  = $attendanceStats['absent_today'] ?? 0;
     $stats['late_today']    = $attendanceStats['late_today'] ?? 0;
+
+    @file_put_contents($cacheFile, json_encode($stats));
 
     return $stats;
 }

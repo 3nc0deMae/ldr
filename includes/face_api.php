@@ -9,7 +9,7 @@ class FaceRecognitionAPI {
     private $apiKey;
     private $timeout;
 
-    public function __construct($apiUrl = PYTHON_API_URL, $apiKey = PYTHON_API_KEY, $timeout = 30) {
+    public function __construct($apiUrl = PYTHON_API_URL, $apiKey = PYTHON_API_KEY, $timeout = 10) {
         $this->apiUrl  = rtrim($apiUrl, '/');
         $this->apiKey  = $apiKey;
         $this->timeout = $timeout;
@@ -30,6 +30,7 @@ class FaceRecognitionAPI {
             CURLOPT_POST           => !empty($data),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => $this->timeout,
+            CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_HTTPHEADER     => [
                 'Content-Type: application/json',
                 'X-API-Key: ' . $this->apiKey

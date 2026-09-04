@@ -1028,6 +1028,8 @@ if ($activeSession) {
                 }
                 failedDesc.textContent = fullMsg;
             }
+            // Speak the recognition failure alert so students are aware
+            announce('Face not recognized, ' + errorMsg);
         }
         setTimeout(() => resultDiv.classList.add('d-none'), 3000);
     }
@@ -1129,6 +1131,7 @@ if ($activeSession) {
                                 </small>
                             </div>
                         </div>`;
+                    announce((data.student_name || 'Student') + ' already marked today');
                 } else {
                     msg.innerHTML = `
                         <div class="alert alert-success">
@@ -1161,9 +1164,11 @@ if ($activeSession) {
                 }
             } else {
                 msg.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> ' + (data.error || data.message || 'Failed to record attendance') + '</div>';
+                announce('Student not found or invalid, please check and try again');
             }
         } catch (e) {
             msg.innerHTML = '<div class="alert alert-danger">Network error. Please try again.</div>';
+            announce('Network error, please try again');
         }
     }
 
@@ -1493,5 +1498,9 @@ if ($activeSession) {
     filterSections();
 })();
 </script>
+<!-- MediaPipe FaceMesh (liveness / anti-spoofing) -->
+<script>window.FACE_MESH_BASE = '<?= BASE_URL ?>/assets/vendor/face_mesh';</script>
+<script src="<?= BASE_URL ?>/assets/vendor/face_mesh/face_mesh.js"></script>
+<script src="<?= BASE_URL ?>/assets/js/liveness.js?v=<?= @filemtime(__DIR__ . '/../assets/js/liveness.js') ?: time() ?>"></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -1028,15 +1028,19 @@ try {
     };
 
     // ─── Refresh Stats ──────────────────────────────────────────────────
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
     window.refreshStats = async function() {
         try {
             var fd = new FormData();
             fd.append('action', 'registration_stats');
+            if (csrfMeta) fd.append('csrf_token', csrfMeta.getAttribute('content'));
             var r = await fetch(BASE_URL + '/api/gate.php', { method: 'POST', credentials: 'same-origin', body: fd });
             var d = await r.json();
             if (d.success) {
                 showToast('success', 'Stats refreshed');
                 location.reload();
+            } else {
+                showToast('danger', esc(d.message || d.error || 'Could not refresh stats.'));
             }
         } catch (err) {
             console.error(err);

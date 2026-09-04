@@ -19,27 +19,6 @@ function dispatchParentNotification($db, $student_id, $trigger_event, $extra_dat
     error_log("DISPATCH CALLED student_id=$student_id event=$trigger_event");
 
     try {
-        // Auto-migrate gate_absent template column if missing
-        try {
-            $colStmt = $db->query("SHOW COLUMNS FROM system_notification_config WHERE Field = 'template_gate_absent'");
-            if (!$colStmt->fetch()) {
-                $db->exec("ALTER TABLE `system_notification_config` ADD COLUMN `template_gate_absent` TEXT DEFAULT NULL AFTER `template_absent_3x`");
-            }
-        } catch (Exception $e) {
-            error_log('Auto-migrate template_gate_absent error: ' . $e->getMessage());
-        }
-
-        // Auto-migrate notification_logs trigger_event enum if missing GATE_ABSENT
-        try {
-            $evtStmt = $db->query("SHOW COLUMNS FROM notification_logs WHERE Field = 'trigger_event'");
-            $evtRow = $evtStmt->fetch();
-            if ($evtRow && strpos($evtRow['Type'], 'GATE_ABSENT') === false) {
-                $db->exec("ALTER TABLE `notification_logs` MODIFY COLUMN `trigger_event` ENUM('TIME_IN','TIME_OUT','3X_ABSENCE','GATE_ABSENT') NOT NULL");
-            }
-        } catch (Exception $e) {
-            error_log('Auto-migrate notification_logs trigger_event error: ' . $e->getMessage());
-        }
-
         // Load notification configuration
         $stmt = $db->prepare("SELECT * FROM system_notification_config LIMIT 1");
         $stmt->execute();

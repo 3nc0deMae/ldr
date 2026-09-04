@@ -445,12 +445,23 @@ try {
                                 </div>
                             <?php else: ?>
                                 <?php foreach ($recentScans as $scan): ?>
-                                <div class="d-flex align-items-center p-3 border-bottom">
+                                <?php
+                                    $gStatus = $scan['status'] ?: 'present';
+                                    $gColor  = $gStatus === 'present' ? 'ad-success' : ($gStatus === 'late' ? 'ad-warning' : 'ad-danger');
+                                    $gIcon   = $gStatus === 'present' ? 'check' : ($gStatus === 'late' ? 'clock' : 'x');
+                                ?>
+                                <div class="scan-item d-flex align-items-center p-3 border-bottom"
+                                     data-record-id="<?= (int)$scan['id'] ?>"
+                                     data-student-id="<?= sanitize($scan['student_id']) ?>"
+                                     data-name="<?= sanitize($scan['first_name'] . ' ' . $scan['last_name']) ?>"
+                                     data-status="<?= $gStatus ?>"
+                                     data-session-id="<?= (int)$scan['gate_session_id'] ?>"
+                                     data-session-type="time_out">
                                     <div class="me-3">
                                         <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                             style="width:40px;height:40px;background:var(--ad-success-light);">
-                                            <i class="bi bi-check"
-                                               style="color:var(--ad-success);"></i>
+                                             style="width:40px;height:40px;background:var(--<?= $gColor ?>-light);">
+                                            <i class="bi bi-<?= $gIcon ?>"
+                                               style="color:var(--<?= $gColor ?>);"></i>
                                         </div>
                                     </div>
                                     <div class="flex-grow-1">
@@ -463,10 +474,15 @@ try {
                                         </small>
                                     </div>
                                     <div class="text-end">
-                                        <span class="badge-status badge-present">Present</span>
+                                        <span class="badge-status badge-<?= $gStatus ?>">
+                                            <?= ucfirst($gStatus) ?>
+                                        </span>
                                         <div style="font-size:11px;color:#999;">
                                             <?= date('h:i A', strtotime($scan['scan_time'])) ?>
                                         </div>
+                                        <button type="button" class="btn btn-icon btn-sm btn-outline-primary mt-1 edit-status-btn" title="Edit status" style="width:26px;height:26px;font-size:11px;padding:0;">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <?php endforeach; ?>
@@ -485,6 +501,9 @@ try {
     let isScanning = false;
     let voiceEnabled = true;
     let liveness = null;
+
+    const gateStatusColorMap = { present: 'ad-success', late: 'ad-warning', absent: 'ad-danger' };
+    const gateStatusIconMap  = { present: 'check', late: 'clock', absent: 'x' };
 
     function playConfirmationBeep() {
         try {
@@ -660,6 +679,8 @@ try {
                 document.getElementById('duplicateName').textContent = data.student_name || '';
                 document.getElementById('duplicateInfo').textContent =
                     `${data.student_id || ''} | Grade ${data.grade_level || ''}`;
+                // Speak the duplicate alert
+                announce((data.student_name || 'Student') + ' already marked time out, please step aside');
             } else {
                 // New scan - show success
                 successDiv.style.display = 'block';
@@ -677,45 +698,66 @@ try {
             document.getElementById('invalidName').textContent = data.student_name || '';
             document.getElementById('invalidInfo').textContent =
                 `${data.student_id || ''} | Grade ${data.grade_level || ''}`;
+            // Speak the invalid alert
+            announce((data.student_name || 'Student') + ' has no time in record, cannot mark time out');
         } else {
             failedDiv.style.display = 'block';
             const failedSmall = failedDiv.querySelector('small');
             if (failedSmall && data.quality_warnings && data.quality_warnings.length > 0) {
                 failedSmall.textContent = data.quality_warnings.join(' | ');
             }
+            // Speak the recognition failure alert
+            const failMsg = data.error || data.message || 'Face not recognized, please try again';
+            announce('Face not recognized, ' + failMsg);
         }
         setTimeout(() => resultDiv.classList.add('d-none'), 3000);
     }
 
     function addScanToLog(data) {
         const list = document.getElementById('liveScanList');
+        const status = data.status || 'present';
+        const recordId = data.record_id || '';
+        const sessionId = data.session_id || (document.getElementById('scanSessionId')?.value || '');
+        const sessionType = data.session_type || 'time_out';
+        const color = gateStatusColorMap[status] || 'ad-danger';
+        const icon  = gateStatusIconMap[status] || 'x';
+        const label = status.charAt(0).toUpperCase() + status.slice(1);
 
         // Remove "No scans yet" placeholder if present
         const placeholder = list.querySelector('.text-center.text-muted');
         if (placeholder) placeholder.remove();
 
-        const html = `
-            <div class="d-flex align-items-center p-3 border-bottom" style="animation:fadeIn 0.3s;">
-                <div class="me-3">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center"
-                         style="width:40px;height:40px;background:var(--ad-success-light);">
-                        <i class="bi bi-check"
-                           style="color:var(--ad-success);"></i>
-                    </div>
-                </div>
-                <div class="flex-grow-1">
-                    <div class="fw-600" style="font-size:13px;">${data.student_name || 'Unknown'}</div>
-                    <small class="text-muted">${data.student_id || ''} | Grade ${data.grade_level || ''}</small>
-                </div>
-                <div class="text-end">
-                    <span class="badge-status badge-present">Present</span>
-                    <div style="font-size:11px;color:#999;">
-                        ${new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})}
-                    </div>
+        const div = document.createElement('div');
+        div.className = 'scan-item d-flex align-items-center p-3 border-bottom';
+        div.style.animation = 'fadeIn 0.3s';
+        if (recordId) div.setAttribute('data-record-id', recordId);
+        div.setAttribute('data-student-id', data.student_id || '');
+        div.setAttribute('data-name', data.student_name || 'Unknown');
+        div.setAttribute('data-status', status);
+        if (sessionId) div.setAttribute('data-session-id', sessionId);
+        div.setAttribute('data-session-type', sessionType);
+        div.innerHTML = `
+            <div class="me-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                     style="width:40px;height:40px;background:var(--${color}-light);">
+                    <i class="bi bi-${icon}" style="color:var(--${color});"></i>
                 </div>
             </div>
+            <div class="flex-grow-1">
+                <div class="fw-600" style="font-size:13px;">${data.student_name || 'Unknown'}</div>
+                <small class="text-muted">${data.student_id || ''} | Grade ${data.grade_level || ''}</small>
+            </div>
+            <div class="text-end">
+                <span class="badge-status badge-${status}">${label}</span>
+                <div style="font-size:11px;color:#999;">
+                    ${new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})}
+                </div>
+                <button type="button" class="btn btn-icon btn-sm btn-outline-primary mt-1 edit-status-btn" title="Edit status" style="width:26px;height:26px;font-size:11px;padding:0;">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
         `;
-        list.insertAdjacentHTML('afterbegin', html);
+        list.insertBefore(div, list.firstChild);
 
         announce((data.student_name || 'Student') + ' marked time out');
 
@@ -788,6 +830,38 @@ try {
     </div>
 </div>
 
+<!-- Modal: Edit Attendance Status -->
+<div class="event-modal-overlay" id="gateEditStatusOverlay">
+    <div class="event-modal">
+        <div class="event-modal-header">
+            <div class="event-modal-title"><i class="bi bi-pencil-square"></i><span>Edit Attendance Status</span></div>
+            <button class="event-modal-close" id="gateEditStatusClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form id="gateEditStatusForm" onsubmit="submitGateEditStatus(event)">
+            <div class="event-modal-body">
+                <input type="hidden" id="gateEditRecordId">
+                <input type="hidden" id="gateEditStudentId">
+                <input type="hidden" id="gateEditSessionId">
+                <input type="hidden" id="gateEditSessionType">
+                <p style="font-size:13px;opacity:0.6;margin-bottom:12px">Update attendance status for <strong id="gateEditNameDisplay"></strong></p>
+                <div class="evt-field">
+                    <label>Status <span class="required">*</span></label>
+                    <select id="gateEditSelect" required>
+                        <option value="present">Present</option>
+                        <option value="late">Late</option>
+                        <option value="absent">Absent</option>
+                    </select>
+                </div>
+                <div id="gateEditMessage"></div>
+            </div>
+            <div class="event-modal-footer">
+                <button type="button" class="evt-btn evt-btn-cancel" id="gateEditStatusCancel">Cancel</button>
+                <button type="submit" class="evt-btn evt-btn-save"><i class="bi bi-check-circle me-1"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // Manual attendance submission
 async function submitManualAttendance(event) {
@@ -825,7 +899,7 @@ async function submitManualAttendance(event) {
         
         const data = await response.json();
 
-        if (data.success) {
+            if (data.success) {
             if (data.duplicate) {
                 msg.innerHTML = `
                     <div class="alert alert-warning">
@@ -841,6 +915,7 @@ async function submitManualAttendance(event) {
                             </small>
                         </div>
                     </div>`;
+                announce((data.student_name || 'Student') + ' already marked time out today');
             } else {
                 msg.innerHTML = `
                     <div class="alert alert-success">
@@ -858,7 +933,12 @@ async function submitManualAttendance(event) {
                 
                 addScanToLog({
                     student_name: data.student_name || 'Student',
-                    student_id: studentId
+                    student_id: studentId,
+                    grade_level: data.grade_level || '',
+                    status: data.status || 'present',
+                    record_id: data.record_id || '',
+                    session_id: data.session_id || (document.getElementById('scanSessionId')?.value || ''),
+                    session_type: data.session_type || 'time_out'
                 });
                 
                 document.getElementById('manualLrn').value = '';
@@ -886,12 +966,15 @@ async function submitManualAttendance(event) {
                             <i class="bi bi-shield-lock"></i> Student must time-in first before time-out
                         </small>
                     </div>
-                </div>`;
+                    </div>`;
+            announce((data.student_name || 'Student') + ', you must time in first before time out');
         } else {
             msg.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> ' + (data.error || data.message || 'Failed to record time-out') + '</div>';
+            announce('Student not found or invalid, please check and try again');
         }
     } catch (e) {
         msg.innerHTML = '<div class="alert alert-danger">Network error. Please try again.</div>';
+        announce('Network error, please try again');
     }
 }
 
@@ -1037,5 +1120,131 @@ function confirmAutoEnd(sessionId) {
             form.submit();
         }
     });
+
+    // ============================================
+    // EDIT ATTENDANCE STATUS (detected student)
+    // ============================================
+    function openGateEditModal(recordId, studentId, studentName, currentStatus, sessionId, sessionType) {
+        const overlay = document.getElementById('gateEditStatusOverlay');
+        if (!overlay) return;
+
+        if (!recordId) {
+            showAlertModal('Unable to edit: missing attendance record.', { title: 'Edit Status', icon: 'exclamation-triangle', type: 'warning' });
+            return;
+        }
+
+        document.getElementById('gateEditRecordId').value = recordId || '';
+        document.getElementById('gateEditStudentId').value = studentId || '';
+        document.getElementById('gateEditSessionId').value = sessionId || (document.getElementById('scanSessionId')?.value || '');
+        document.getElementById('gateEditSessionType').value = sessionType || 'time_out';
+        document.getElementById('gateEditNameDisplay').textContent = studentName || 'Student';
+        document.getElementById('gateEditSelect').value = currentStatus || 'present';
+        document.getElementById('gateEditMessage').innerHTML = '';
+
+        overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideGateEditModal() {
+        const overlay = document.getElementById('gateEditStatusOverlay');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    function submitGateEditStatus(event) {
+        event.preventDefault();
+
+        const recordId = document.getElementById('gateEditRecordId').value;
+        const studentId = document.getElementById('gateEditStudentId').value;
+        const sessionId = document.getElementById('gateEditSessionId').value;
+        const sessionType = document.getElementById('gateEditSessionType').value;
+        const newStatus = document.getElementById('gateEditSelect').value;
+        const msgEl = document.getElementById('gateEditMessage');
+
+        if (!recordId || !studentId || !sessionId || !newStatus) {
+            msgEl.innerHTML = '<div class="alert alert-danger">Invalid parameters.</div>';
+            return;
+        }
+
+        msgEl.innerHTML = '<div class="alert alert-info"><span class="spinner-border spinner-border-sm"></span> Updating...</div>';
+
+        const formData = new FormData();
+        formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+        formData.append('action', 'update_status');
+        formData.append('record_id', recordId);
+        formData.append('student_id', studentId);
+        formData.append('session_id', sessionId);
+        formData.append('session_type', sessionType);
+        formData.append('status', newStatus);
+
+        fetch(window.BASE_URL + '/api/gate.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const row = document.querySelector('#liveScanList [data-record-id="' + recordId + '"]');
+                if (row) {
+                    row.setAttribute('data-status', newStatus);
+                    const color = (typeof gateStatusColorMap !== 'undefined' && gateStatusColorMap[newStatus]) ? gateStatusColorMap[newStatus] : 'ad-danger';
+                    const icon  = (typeof gateStatusIconMap !== 'undefined' && gateStatusIconMap[newStatus]) ? gateStatusIconMap[newStatus] : 'x';
+                    const label = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                    const avatar = row.querySelector('.rounded-circle');
+                    if (avatar) {
+                        avatar.style.background = 'var(--' + color + '-light)';
+                        const i = avatar.querySelector('i');
+                        if (i) { i.className = 'bi bi-' + icon; i.style.color = 'var(--' + color + ')'; }
+                    }
+                    const badge = row.querySelector('.badge-status');
+                    if (badge) {
+                        badge.className = 'badge-status badge-' + newStatus;
+                        badge.textContent = label;
+                    }
+                }
+                msgEl.innerHTML = '<div class="alert alert-success">Status updated successfully.</div>';
+                setTimeout(hideGateEditModal, 800);
+            } else {
+                msgEl.innerHTML = '<div class="alert alert-danger">' + (data.error || 'Failed to update status.') + '</div>';
+            }
+        })
+        .catch(function () {
+            msgEl.innerHTML = '<div class="alert alert-danger">Network error. Please try again.</div>';
+        });
+    }
+
+    document.getElementById('gateEditStatusClose').addEventListener('click', hideGateEditModal);
+    document.getElementById('gateEditStatusCancel').addEventListener('click', hideGateEditModal);
+    document.getElementById('gateEditStatusOverlay').addEventListener('click', function (e) {
+        if (e.target === this) hideGateEditModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.getElementById('gateEditStatusOverlay').classList.contains('show')) {
+            hideGateEditModal();
+        }
+    });
+
+    // Delegated handler so both server-rendered and dynamically added rows work
+    const gateLiveLog = document.getElementById('liveScanList');
+    if (gateLiveLog) {
+        gateLiveLog.addEventListener('click', function (e) {
+            const btn = e.target.closest('.edit-status-btn');
+            if (!btn) return;
+            const row = btn.closest('.scan-item');
+            if (!row) return;
+            openGateEditModal(
+                row.getAttribute('data-record-id') || '',
+                row.getAttribute('data-student-id') || '',
+                row.getAttribute('data-name') || '',
+                row.getAttribute('data-status') || 'present',
+                row.getAttribute('data-session-id') || (document.getElementById('scanSessionId')?.value || ''),
+                row.getAttribute('data-session-type') || 'time_out'
+            );
+        });
+    }
   </script>
+<!-- MediaPipe FaceMesh (liveness / anti-spoofing) -->
+<script>window.FACE_MESH_BASE = '<?= BASE_URL ?>/assets/vendor/face_mesh';</script>
+<script src="<?= BASE_URL ?>/assets/vendor/face_mesh/face_mesh.js"></script>
+<script src="<?= BASE_URL ?>/assets/js/liveness.js?v=<?= @filemtime(__DIR__ . '/../assets/js/liveness.js') ?: time() ?>"></script>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

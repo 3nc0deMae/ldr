@@ -715,7 +715,8 @@ function callTeacherFaceAPI($endpoint, $data = []) {
         CURLOPT_POST           => true,
         CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'X-API-Key: ' . PYTHON_API_KEY],
         CURLOPT_POSTFIELDS     => json_encode($data),
-        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_SSL_VERIFYPEER => false
     ]);
     $response = curl_exec($ch);

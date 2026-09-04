@@ -8,6 +8,13 @@ requireRole(['admin']);
 // ============================================================
 $pageTitle = 'Admin Dashboard';
 
+// Cache chart data for 5 minutes to avoid heavy UNION queries on every load
+$chartCacheFile = sys_get_temp_dir() . '/ldb_admin_charts_' . date('Y-m-d-H-i') . '.json';
+$chartData = null;
+if (file_exists($chartCacheFile) && (time() - filemtime($chartCacheFile)) < 300) {
+    $chartData = @json_decode(file_get_contents($chartCacheFile), true);
+}
+
 $stats = getDashboardStats($db);
 $recentLogins = [];
 try { $stmt = $db->query("SELECT al.*,u.email,u.role FROM audit_logs al LEFT JOIN users u ON al.user_id=u.id WHERE al.action='login' ORDER BY al.created_at DESC LIMIT 5"); $recentLogins = $stmt->fetchAll(); } catch (Exception $e) {}
@@ -44,7 +51,15 @@ try {
         ];
     }
 } catch (Exception $e) {
-    $weeklyData = [];
+$weeklyData = [];
+$monthlyDailyData = [];
+$monthlyData = [];
+
+if ($chartData) {
+    $weeklyData = $chartData['weekly'] ?? [];
+    $monthlyDailyData = $chartData['monthlyDaily'] ?? [];
+    $monthlyData = $chartData['monthly'] ?? [];
+} else {
 }
 
 $monthlyDailyData = [];
@@ -111,6 +126,13 @@ try {
     }
 } catch (Exception $e) {
     $monthlyData = [];
+}
+
+    @file_put_contents($chartCacheFile, json_encode([
+        'weekly' => $weeklyData,
+        'monthlyDaily' => $monthlyDailyData,
+        'monthly' => $monthlyData,
+    ]));
 }
 
 $totalToday = $stats['present_today'] + $stats['absent_today'] + $stats['late_today'];

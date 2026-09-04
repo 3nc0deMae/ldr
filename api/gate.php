@@ -15,21 +15,6 @@ csrfMiddleware(true);
 
 $db = getDB();
 
-try {
-    $stmt = $db->query("SHOW COLUMNS FROM gate_sessions WHERE Field = 'session_period'");
-    if (!$stmt->fetch()) {
-        $db->exec("ALTER TABLE gate_sessions ADD COLUMN session_period enum('morning','afternoon') DEFAULT NULL COMMENT 'Daily period: morning or afternoon' AFTER session_type");
-    }
-} catch (Exception $e) {}
-
-try {
-    $stmt = $db->query("SHOW COLUMNS FROM attendance_records WHERE Field = 'status'");
-    $row = $stmt->fetch();
-    if ($row && strpos($row['Type'], 'pending') === false) {
-        $db->exec("ALTER TABLE attendance_records MODIFY COLUMN status enum('present','late','absent','pending') NOT NULL DEFAULT 'present'");
-    }
-} catch (Exception $e) {}
-
 error_log("GATE API LOADED action=" . ($_POST['action'] ?? $_GET['action'] ?? 'none') . " helper_loaded=" . (function_exists('dispatchParentNotification') ? 'yes' : 'NO'));
 $action = sanitize($_POST['action'] ?? $_GET['action'] ?? '');
 
@@ -60,16 +45,26 @@ try {
                 exit;
             }
 
-            $endDateTime = date('Y-m-d') . ' ' . $endTime . ':00';
-            if (strtotime($endDateTime) < time()) {
+            $now   = time();
+            $endTs = strtotime(date('Y-m-d') . ' ' . $endTime . ':00');
+
+            if ($endTs === false) {
                 echo json_encode([
                     'success' => false,
-                    'error'   => 'End time must be later than the current time.'
+                    'error'   => 'Invalid end time format.'
                 ]);
                 exit;
             }
 
-            $endTime = $endDateTime;
+            // End times are plain clock times anchored to today. A time
+            // earlier than "now" means the session ends after midnight
+            // (e.g. starts 11:30 PM, ends 12:30 AM), so roll it over to
+            // tomorrow. The 60s grace absorbs form submission delay.
+            if ($endTs < ($now - 60)) {
+                $endTs += 86400;
+            }
+
+            $endTime = date('Y-m-d H:i:s', $endTs);
 
             $stmt = $db->prepare(
                 "SELECT id FROM gate_sessions 
@@ -461,6 +456,9 @@ try {
                         'section'      => $matchedFace['section'] ?? '',
                         'status'       => $status,
                         'confidence'   => $apiResponse['confidence'] ?? 0,
+                        'record_id'    => $existing['id'],
+                        'session_id'   => $sessionId,
+                        'session_type' => $sessionType,
                         'message'      => 'Status updated from pending'
                     ]);
                 } else {
@@ -473,7 +471,9 @@ try {
                         'grade_level'  => $matchedFace['grade_level'],
                         'section'      => $matchedFace['section'] ?? '',
                         'status'       => $status,
-                        'confidence'   => $apiResponse['confidence'] ?? 0,
+                        'record_id'    => $existing['id'],
+                        'session_id'   => $sessionId,
+                        'session_type' => $sessionType,
                         'message'      => 'Already scanned'
                     ]);
                 }
@@ -493,6 +493,7 @@ try {
                 $status,
                 $apiResponse['confidence'] ?? 0
             ]);
+            $recordId = $db->lastInsertId();
 
             try {
                 error_log("GATE API: about to dispatch notification for student_id=" . $matchedFace['student_id'] . " event=" . $event);
@@ -515,6 +516,9 @@ try {
                 'status'       => $status,
                 'confidence'   => $apiResponse['confidence'] ?? 0,
                 'quality_warnings' => $apiResponse['quality_warnings'] ?? [],
+                'record_id'    => $recordId,
+                'session_id'   => $sessionId,
+                'session_type' => $sessionType,
                 'message'      => 'Attendance recorded'
             ]);
             break;
@@ -691,6 +695,9 @@ try {
                         'grade_level'  => $student['grade_level'],
                         'section'      => $student['section'] ?? '',
                         'status'       => $status,
+                        'record_id'    => $existing['id'],
+                        'session_id'   => $sessionId,
+                        'session_type' => $sessionType,
                         'message'      => 'Status updated from pending'
                     ]);
                 } else {
@@ -702,6 +709,9 @@ try {
                         'grade_level'  => $student['grade_level'],
                         'section'      => $student['section'] ?? '',
                         'status'       => $status,
+                        'record_id'    => $existing['id'],
+                        'session_id'   => $sessionId,
+                        'session_type' => $sessionType,
                         'message'      => 'Already scanned today'
                     ]);
                 }
@@ -720,6 +730,7 @@ try {
                 $sessionType,
                 $status
             ]);
+            $recordId = $db->lastInsertId();
 
             try {
                 $event = ($sessionType === 'time_in') ? 'TIME_IN' : 'TIME_OUT';
@@ -750,7 +761,77 @@ try {
                 'grade_level'  => $student['grade_level'],
                 'section'      => $student['section'] ?? '',
                 'status'       => $status,
+                'record_id'    => $recordId,
+                'session_id'   => $sessionId,
+                'session_type' => $sessionType,
                 'message'      => 'Attendance recorded manually'
+            ]);
+            break;
+
+        // ============================================
+        // UPDATE GATE ATTENDANCE STATUS (edit detected student)
+        // ============================================
+        case 'update_status':
+            requireRole(['admin', 'gate']);
+
+            $recordId     = intval($_POST['record_id'] ?? 0);
+            $studentIdInput = sanitize($_POST['student_id'] ?? '');
+            $sessionId    = intval($_POST['session_id'] ?? 0);
+            $sessionType  = sanitize($_POST['session_type'] ?? 'time_in');
+            $newStatus    = sanitize($_POST['status'] ?? '');
+
+            if (!$recordId || !$sessionId || empty($studentIdInput) || !in_array($newStatus, ['present', 'late', 'absent'], true)) {
+                echo json_encode(['success' => false, 'error' => 'Invalid parameters.']);
+                exit;
+            }
+
+            // Validate the session is still active
+            $stmt = $db->prepare("SELECT id FROM gate_sessions WHERE id = ? AND status = 'active'");
+            $stmt->execute([$sessionId]);
+            $session = $stmt->fetch();
+            if (!$session) {
+                echo json_encode(['success' => false, 'error' => 'No active session found.']);
+                exit;
+            }
+
+            // Validate student by display ID (e.g. LRN / 2024-0001)
+            $stmt = $db->prepare("SELECT id FROM students WHERE student_id = ? AND status = 'active'");
+            $stmt->execute([$studentIdInput]);
+            $student = $stmt->fetch();
+            if (!$student) {
+                echo json_encode(['success' => false, 'error' => 'Student not found.']);
+                exit;
+            }
+
+            // The record must belong to this student + session
+            $stmt = $db->prepare(
+                "SELECT id FROM attendance_records 
+                 WHERE id = ? AND student_id = ? AND gate_session_id = ? AND session_type = ?"
+            );
+            $stmt->execute([$recordId, $student['id'], $sessionId, $sessionType]);
+            if (!$stmt->fetch()) {
+                echo json_encode(['success' => false, 'error' => 'Attendance record not found for this student.']);
+                exit;
+            }
+
+            $stmt = $db->prepare("UPDATE attendance_records SET status = ? WHERE id = ?");
+            $stmt->execute([$newStatus, $recordId]);
+            error_log("GATE API: update_status updated attendance id=" . $recordId . " to status='" . $newStatus . "' for student=" . $studentIdInput . " session=$sessionId");
+
+            $stmt = $db->prepare(
+                "INSERT INTO audit_logs (user_id, action, description, ip_address, created_at)
+                 VALUES (?, 'gate_status_update', ?, ?, NOW())"
+            );
+            $stmt->execute([
+                $_SESSION['user_id'],
+                "Updated {$sessionType} status for student {$studentIdInput} to {$newStatus} in session {$sessionId}",
+                $_SERVER['REMOTE_ADDR'] ?? ''
+            ]);
+
+            echo json_encode([
+                'success' => true,
+                'status'  => $newStatus,
+                'message' => 'Attendance status updated successfully.'
             ]);
             break;
 
@@ -1096,7 +1177,8 @@ function callFaceAPI($endpoint, $data = []) {
         CURLOPT_POST           => true,
         CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
         CURLOPT_POSTFIELDS     => json_encode($data),
-        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_SSL_VERIFYPEER => false
     ]);
 

@@ -44,31 +44,6 @@ function sendEmailNotification($to, $subject, $body, $options = []) {
     error_log("EMAIL SEND START: to=$to subject=$subject");
     _emailLastError('');
 
-    // Auto-migrate email counter columns if missing
-    try {
-        $colsStmt = $db->query("SHOW COLUMNS FROM system_notification_config WHERE Field IN ('email_daily_count','email_monthly_count','email_yearly_count')");
-        $existingCols = $colsStmt->fetchAll(PDO::FETCH_COLUMN);
-        $missing = array_diff(['email_daily_count','email_monthly_count','email_yearly_count'], $existingCols);
-        if (!empty($missing)) {
-            $alterParts = [];
-            foreach ($missing as $col) {
-                if ($col === 'email_daily_count') {
-                    $alterParts[] = "ADD COLUMN `email_daily_count` INT DEFAULT 0 AFTER `sms_yearly_count`";
-                } elseif ($col === 'email_monthly_count') {
-                    $alterParts[] = "ADD COLUMN `email_monthly_count` INT DEFAULT 0 AFTER `email_daily_count`";
-                } elseif ($col === 'email_yearly_count') {
-                    $alterParts[] = "ADD COLUMN `email_yearly_count` INT DEFAULT 0 AFTER `email_monthly_count`";
-                }
-            }
-            if (!empty($alterParts)) {
-                $db->exec("ALTER TABLE `system_notification_config` " . implode(', ', $alterParts));
-                error_log('EMAIL COUNTER: Auto-migrated columns: ' . implode(', ', $missing));
-            }
-        }
-    } catch (Exception $e) {
-        error_log('Email counter auto-migration error: ' . $e->getMessage());
-    }
-
     $smtpHost     = getSetting($db, 'smtp_host', SMTP_HOST);
     $smtpPort     = (int)getSetting($db, 'smtp_port', SMTP_PORT);
     $smtpUsername = getSetting($db, 'smtp_username', '');
@@ -235,7 +210,8 @@ function sendSMSNotification($to, $message, $force = false) {
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $postData,
         CURLOPT_HTTPHEADER     => $headers,
-        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_SSL_VERIFYPEER => false
     ]);
 
