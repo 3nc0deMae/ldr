@@ -8,13 +8,17 @@ $activeTab = sanitize($_GET['tab'] ?? 'info');
 $currentRole = getCurrentUserRole();
 $isReadOnly = $currentRole !== 'admin';
 
+$returnToken = $_GET['return'] ?? '';
+$returnQuery = $returnToken ? '?' . base64_decode($returnToken) : '';
+$studentsListUrl = BASE_URL . '/admin/students.php' . $returnQuery;
+
 if (!$studentId) {
-    redirect('/admin/students.php', 'Invalid student ID.', 'danger');
+    redirect('/admin/students.php' . $returnQuery, 'Invalid student ID.', 'danger');
 }
 
 $student = getStudentById($db, $studentId);
 if (!$student) {
-    redirect('/admin/students.php', 'Student not found.', 'danger');
+    redirect('/admin/students.php' . $returnQuery, 'Student not found.', 'danger');
 }
 
 // Safe defaults — prevents "Undefined array key" warnings
@@ -88,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentRole === 'admin' && isset($
                 'email'         => sanitize($_POST['guardian_email'] ?? ''),
                 'address'       => sanitize($_POST['guardian_address'] ?? '')
             ]);
-            redirect("/admin/student-edit.php?id=$studentId", 'Student updated successfully.', 'success');
+            redirect("/admin/student-edit.php?id=$studentId" . ($returnToken ? "&return=" . urlencode($returnToken) : ""), 'Student updated successfully.', 'success');
             } else {
                 $errors[] = 'Failed to update student.';
             }
@@ -367,7 +371,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                 <h5 class="mb-0"><?= sanitize($student['first_name'] . ' ' . ($student['name_extension'] ? $student['name_extension'] . ' ' : '') . $student['last_name']) ?></h5>
                 <small>LRN: <span class="student-code"><?= sanitize($student['student_id']) ?></span> &nbsp;|&nbsp; Grade <?= $student['grade_level'] ?> &ndash; <?= sanitize($student['section']) ?></small>
             </div>
-            <a href="<?= BASE_URL ?>/admin/students.php" class="btn-theme btn-theme-back"><i class="bi bi-arrow-left"></i> Back to List</a>
+            <a href="<?= $studentsListUrl ?>" class="btn-theme btn-theme-back"><i class="bi bi-arrow-left"></i> Back to List</a>
         </div>
 
         <!-- ===== MOBILE PAGE HEADER ===== -->
@@ -380,7 +384,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                         <span>Grade <?= $student['grade_level'] ?> &ndash; <?= sanitize($student['section']) ?></span>
                     </div>
                 </div>
-                <a href="<?= BASE_URL ?>/admin/students.php" class="btn-theme btn-theme-back" style="flex-shrink:0;"><i class="bi bi-arrow-left"></i> Back</a>
+                <a href="<?= $studentsListUrl ?>" class="btn-theme btn-theme-back" style="flex-shrink:0;"><i class="bi bi-arrow-left"></i> Back</a>
             </div>
         </div>
 
@@ -397,11 +401,11 @@ require_once __DIR__ . '/../includes/sidebar.php';
         <!-- ===== TABS ===== -->
         <div class="edit-tabs">
             <a class="edit-tab <?= $activeTab === 'info' ? 'active' : '' ?>"
-               href="?id=<?= $studentId ?>&tab=info">
+               href="?id=<?= $studentId ?>&tab=info<?= $returnToken ? '&return=' . urlencode($returnToken) : '' ?>">
                 <i class="bi bi-person"></i> Student Info
             </a>
             <a class="edit-tab <?= $activeTab === 'face' ? 'active' : '' ?>"
-               href="?id=<?= $studentId ?>&tab=face">
+               href="?id=<?= $studentId ?>&tab=face<?= $returnToken ? '&return=' . urlencode($returnToken) : '' ?>">
                 <i class="bi bi-camera"></i> Face Registration
                 <?php if ($hasFace): ?>
                     <span class="tab-badge-done">Done</span>
@@ -411,7 +415,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
         <?php if ($activeTab === 'info'): ?>
         <!-- ===== TAB 1: EDIT INFO ===== -->
-        <form method="POST" action="?id=<?= $studentId ?>&tab=info" <?= $isReadOnly ? 'class="readonly-form"' : '' ?>>
+        <form method="POST" action="?id=<?= $studentId ?>&tab=info<?= $returnToken ? '&return=' . urlencode($returnToken) : '' ?>" <?= $isReadOnly ? 'class="readonly-form"' : '' ?>>
             <?= csrfField() ?>
             <input type="hidden" name="update_info" value="1">
 

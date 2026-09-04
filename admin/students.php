@@ -6,7 +6,8 @@ if (isset($_GET['delete'])) {
     $deleteId = intval($_GET['delete']);
     if ($deleteId) {
         deleteStudent($db, $deleteId);
-        redirect('/admin/students.php', 'Student deleted successfully.', 'success');
+        $returnTo = isset($_GET['return']) ? '?' . base64_decode($_GET['return']) : '';
+        redirect('/admin/students.php' . $returnTo, 'Student deleted successfully.', 'success');
     }
 }
 
@@ -63,6 +64,13 @@ try { $faceCount = $db->query("SELECT COUNT(*) FROM student_faces WHERE face_enc
 
 $gradeCount = 0;
 try { $gradeCount = $db->query("SELECT COUNT(DISTINCT grade_level) FROM students")->fetchColumn(); } catch (Exception $e) {}
+
+$returnParams = [];
+if ($search)     $returnParams['search']      = $search;
+if ($gradeLevel) $returnParams['grade_level'] = $gradeLevel;
+if ($section)    $returnParams['section']     = $section;
+if ($page > 1)   $returnParams['page']        = $page;
+$returnToken = $returnParams ? base64_encode(http_build_query($returnParams)) : '';
 
 $studentIds = array_column($students, 'id');
 $faceMap = [];
@@ -690,9 +698,9 @@ select.filter-input option{
                                 </td>
                                 <td>
                                     <div style="display:flex;gap:4px;">
-                                        <a href="<?= BASE_URL ?>/admin/student-edit.php?id=<?= $student['id'] ?>" class="btn-action-icon edit" title="Edit"><i class="bi bi-pencil"></i></a>
-                                        <a href="<?= BASE_URL ?>/admin/student-edit.php?id=<?= $student['id'] ?>&tab=face" class="btn-action-icon face" title="Face Registration"><i class="bi bi-camera"></i></a>
-                                        <button class="btn-action-icon delete" onclick="openDeleteConfirm(<?= $student['id'] ?>, '<?= sanitize(addslashes($student['first_name'] . ' ' . $student['name_extension'] . ' ' . $student['last_name'])) ?>')" title="Delete"><i class="bi bi-trash3"></i></button>
+                                        <a href="<?= BASE_URL ?>/admin/student-edit.php?id=<?= $student['id'] ?><?= $returnToken ? '&return=' . urlencode($returnToken) : '' ?>" class="btn-action-icon edit" title="Edit"><i class="bi bi-pencil"></i></a>
+                                        <a href="<?= BASE_URL ?>/admin/student-edit.php?id=<?= $student['id'] ?>&tab=face<?= $returnToken ? '&return=' . urlencode($returnToken) : '' ?>" class="btn-action-icon face" title="Face Registration"><i class="bi bi-camera"></i></a>
+                                        <button class="btn-action-icon delete" onclick="openDeleteConfirm(<?= $student['id'] ?>, '<?= sanitize(addslashes($student['first_name'] . ' ' . $student['name_extension'] . ' ' . $student['last_name'])) ?>', '<?= $returnToken ? urlencode($returnToken) : '' ?>')" title="Delete"><i class="bi bi-trash3"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -796,7 +804,7 @@ select.filter-input option{
 <script>
 (function(){'use strict';
 // Delete
-var dO=document.getElementById('deleteConfirmOverlay'),dN=document.getElementById('deleteStudentName'),dB=document.getElementById('deleteConfirmBtn'),dC=document.getElementById('deleteCancelBtn'),dX=document.getElementById('deleteModalClose'),BU=window.BASE_URL||'';window.openDeleteConfirm=function(id,name){dN.textContent='"'+name+'" will be permanently removed along with all associated records including attendance history and face data.';dB.href=BU+'/admin/students.php?delete='+id;dO.classList.add('show');document.body.style.overflow='hidden'};function cD(){dO.classList.remove('show');document.body.style.overflow=''}dC.addEventListener('click',cD);if(dX)dX.addEventListener('click',cD);dO.addEventListener('click',function(e){if(e.target===dO)cD()});
+var dO=document.getElementById('deleteConfirmOverlay'),dN=document.getElementById('deleteStudentName'),dB=document.getElementById('deleteConfirmBtn'),dC=document.getElementById('deleteCancelBtn'),dX=document.getElementById('deleteModalClose'),BU=window.BASE_URL||'';window.openDeleteConfirm=function(id,name,ret){dN.textContent='"'+name+'" will be permanently removed along with all associated records including attendance history and face data.';dB.href=BU+'/admin/students.php?delete='+id+(ret?'&return='+ret:'');dO.classList.add('show');document.body.style.overflow='hidden'};function cD(){dO.classList.remove('show');document.body.style.overflow=''}dC.addEventListener('click',cD);if(dX)dX.addEventListener('click',cD);dO.addEventListener('click',function(e){if(e.target===dO)cD()});
 // Import
 var iO=document.getElementById('importModalOverlay'),iCl=document.getElementById('importModalClose'),iCa=document.getElementById('importCancelBtn');function oI(){iO.classList.add('show');document.body.style.overflow='hidden'}function cI(){iO.classList.remove('show');document.body.style.overflow=''}var iB1=document.getElementById('openImportBtn'),iB2=document.getElementById('openImportBtnMobile');if(iB1)iB1.addEventListener('click',oI);if(iB2)iB2.addEventListener('click',oI);iCl.addEventListener('click',cI);iCa.addEventListener('click',cI);iO.addEventListener('click',function(e){if(e.target===iO)cI()});iO.addEventListener('transitionend',function(){if(!iO.classList.contains('show')){document.getElementById('csvFile').value='';document.getElementById('importPreview').classList.add('d-none');document.getElementById('importResults').classList.add('d-none');csvData=null;excelFile=null}});
 // Escape
