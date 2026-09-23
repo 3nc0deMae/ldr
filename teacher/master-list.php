@@ -109,11 +109,15 @@ if ($teacher) {
 if (empty($teacherName)) $teacherName = 'ANGELYN S. PARRABA';
 $principalName = 'ERWIN M. ESPENILLA';
 
-/* Advisory class (JHS/SHS) assigned to this teacher by the admin — when the
-   printed grade & section is the advisory, the signature reads "Adviser". */
-$advisoryRecord = getAdvisorySectionRecord($db);
-$advisoryGrade        = $advisoryRecord ? (string)$advisoryRecord['grade_level']   : '';
-$advisorySectionName  = $advisoryRecord ? trim((string)$advisoryRecord['section_name']) : '';
+/* Advisory classes (JHS/SHS) assigned to this teacher by the admin — when the
+   printed grade & section matches ANY of them, the signature reads "Adviser"
+   (multi-advisory aware). */
+$advisoryRecords = getAdvisorySectionRecords($db);
+$advisoryPairs = [];
+foreach ($advisoryRecords as $advRow) {
+    $advisoryPairs[] = trim((string)$advRow['grade_level']) . '|' . strtolower(trim((string)$advRow['section_name']));
+}
+$advisoryPairJson = json_encode($advisoryPairs);
 ?>
 
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
@@ -347,8 +351,7 @@ $advisorySectionName  = $advisoryRecord ? trim((string)$advisoryRecord['section_
     
     const teacherName = '<?= addslashes(sanitize($teacherName)) ?>';
     const principalName = '<?= addslashes(sanitize($principalName)) ?>';
-    const advisoryGrade = '<?= addslashes(sanitize($advisoryGrade)) ?>';
-    const advisorySectionName = '<?= addslashes(sanitize($advisorySectionName)) ?>';
+    const advisoryPairs = <?= $advisoryPairJson ?>;
 
     const subjectSelect = document.getElementById('subjectFilter');
     const gradeSelect   = document.getElementById('gradeFilter');
@@ -545,8 +548,7 @@ $advisorySectionName  = $advisoryRecord ? trim((string)$advisoryRecord['section_
         const sectionName = data.section || '';
         const strandName = selectedStrandName || '';
 
-        const isAdvisory = String(gradeLevel) === advisoryGrade &&
-            (!advisorySectionName || String(sectionName) === advisorySectionName);
+        const isAdvisory = (advisoryPairs || []).indexOf(String(gradeLevel) + '|' + String(sectionName).toLowerCase()) !== -1;
         
         let gradeSectionHeader = 'GRADE ' + gradeLevel;
         

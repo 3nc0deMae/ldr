@@ -175,9 +175,17 @@ if ($format === 'matrix') {
     $femalePresent  = max(0, $femaleCount * $schoolDaysCount - $femaleBlock['absent']);
     $combinedPresent = max(0, $registeredLearners * $schoolDaysCount - $combinedAbsent);
 
-    $fiveConsec = 0; $droppedOutM = 0; $droppedOutF = 0; $transferredOutM = 0; $transferredOutF = 0;
+    $fiveConsecM = 0;
+    foreach ($maleBlock['rows'] as $r) {
+        if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsecM++;
+    }
+    $fiveConsecF = 0;
+    foreach ($femaleBlock['rows'] as $r) {
+        if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsecF++;
+    }
+    $fiveConsec = $fiveConsecM + $fiveConsecF;
+    $droppedOutM = 0; $droppedOutF = 0; $transferredOutM = 0; $transferredOutF = 0;
     foreach (array_merge($maleBlock['rows'], $femaleBlock['rows']) as $r) {
-        if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsec++;
         $st = strtolower(trim((string)($r['student']['status'] ?? 'active')));
         $isMale = strcasecmp(trim((string)($r['student']['gender'] ?? '')), 'Male') === 0;
         if (in_array($st, ['inactive', 'dropped'], true)) {
@@ -188,7 +196,14 @@ if ($format === 'matrix') {
     }
     $droppedOut = $droppedOutM + $droppedOutF;
     $transferredOut = $transferredOutM + $transferredOutF;
-    $pctEnrol = $registeredLearners > 0 ? round(($registeredLearners / max(1, $enrolFirstFriday)) * 100, 2) : 0;
+    $pctEnrol = $enrolFirstFriday > 0 ? round(($registeredLearners / $enrolFirstFriday) * 100, 2) : 0;
+    $malePctEnrol = $maleEnrolFirstFriday > 0 ? round(($maleCount / $maleEnrolFirstFriday) * 100, 2) : 0;
+    $femalePctEnrol = $femaleEnrolFirstFriday > 0 ? round(($femaleCount / $femaleEnrolFirstFriday) * 100, 2) : 0;
+    $maleADA = $schoolDaysCount > 0 ? round(array_sum($maleBlock['attended']) / $schoolDaysCount, 2) : 0;
+    $femaleADA = $schoolDaysCount > 0 ? round(array_sum($femaleBlock['attended']) / $schoolDaysCount, 2) : 0;
+    $malePctAttendance = $maleCount > 0 ? round(($maleADA / $maleCount) * 100, 2) : 0;
+    $femalePctAttendance = $femaleCount > 0 ? round(($femaleADA / $femaleCount) * 100, 2) : 0;
+    $pctAttendance = $registeredLearners > 0 ? round(($ada / $registeredLearners) * 100, 2) : 0;
     $principalName = ($settings['principal_name'] ?? '') !== '' ? $settings['principal_name'] : 'ERWIN M. ESPENILLA';
 
     $S = function ($v, $st) { return ['v' => (string)$v, 's' => $st]; };
@@ -499,6 +514,8 @@ if ($format === 'matrix') {
     $put('Average daily attendance', XLSX_ST_TEXT, 11, 11, $frac1, $frac2, $sumWidth($frac1 - 1, $frac2 - 1));
     $put('x 100', XLSX_ST_TEXT, 11, 12, $fx1, $fx2, $sumWidth($fx1 - 1, $fx2 - 1));
     $put('Percentage of Enrolment as of', XLSX_ST_SUM_LABEL, 11, 11, $RLB1, $RLB2, $rl);
+    $put($malePctEnrol . '%', XLSX_ST_SUM_VALUE, 11, 12, $VM, $VM, $rv);
+    $put($femalePctEnrol . '%', XLSX_ST_SUM_VALUE, 11, 12, $VF, $VF, $rv);
     $put($pctEnrol . '%', XLSX_ST_SUM_VALUE, 11, 12, $VTT1, $VTT2, $rv);
 
     /* Row 12  (template r63) */
@@ -509,6 +526,8 @@ if ($format === 'matrix') {
     /* Row 13  (template r64) */
     $put("b.1. Illness\nb.2. Overage\nb.3. Death\nb.4. Drug Abuse\nb.5. Poor academic performance\nb.6. Lack of interest/Distractions\nb.7. Hunger/Malnutrition", XLSX_ST_TEXT_SMALL, 13, 17, $c1, $c2, $cw);
     $put('Average Daily Attendance', XLSX_ST_SUM_LABEL, 13, 14, $RLB1, $RLB2, $rl);
+    $put((string)$maleADA, XLSX_ST_SUM_VALUE, 13, 14, $VM, $VM, $rv);
+    $put((string)$femaleADA, XLSX_ST_SUM_VALUE, 13, 14, $VF, $VF, $rv);
     $put((string)$ada, XLSX_ST_SUM_VALUE, 13, 14, $VTT1, $VTT2, $rv);
 
     /* Row 14  (template r65) */
@@ -516,10 +535,14 @@ if ($format === 'matrix') {
 
     /* Row 15  (template r66) */
     $put('Percentage of Attendance for the month', XLSX_ST_SUM_LABEL, 15, 15, $RLB1, $RLB2, $rl);
+    $put($malePctAttendance . '%', XLSX_ST_SUM_VALUE, 15, 15, $VM, $VM, $rv);
+    $put($femalePctAttendance . '%', XLSX_ST_SUM_VALUE, 15, 15, $VF, $VF, $rv);
     $put($pctAttendance . '%', XLSX_ST_SUM_VALUE, 15, 15, $VTT1, $VTT2, $rv);
 
     /* Row 16  (template r67) */
     $put('Number of students absent for 5 consecutive days', XLSX_ST_SUM_LABEL, 16, 16, $RLB1, $RLB2, $rl);
+    $put((string)$fiveConsecM, XLSX_ST_SUM_VALUE, 16, 16, $VM, $VM, $rv);
+    $put((string)$fiveConsecF, XLSX_ST_SUM_VALUE, 16, 16, $VF, $VF, $rv);
     $put((string)$fiveConsec, XLSX_ST_SUM_VALUE, 16, 16, $VTT1, $VTT2, $rv);
 
     /* Row 17  (template r68) */

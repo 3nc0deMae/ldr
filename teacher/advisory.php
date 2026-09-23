@@ -6,28 +6,52 @@ require_once __DIR__ . '/../config.php';
 
 requireRole(['teacher']);
 
-// ─── AJAX: Student Search (scoped to the adviser's advisory class) ───────────
+// ─── AJAX: Student Search (scoped to the adviser's advisory class(es)) ───────
 if (isset($_GET['action']) && $_GET['action'] === 'search_students') {
     header('Content-Type: application/json');
     $search = sanitize($_GET['q'] ?? '');
-    $secId  = getAdvisorySectionId($db);
-    $secRow = getAdvisorySectionRecord($db);
-    if (strlen($search) < 2 || !$secId || !$secRow) { echo json_encode([]); exit; }
+    $secId  = intval($_GET['section_id'] ?? 0);
+    $mine   = getAdvisorySectionIds($db);
+    if (strlen($search) < 2 || empty($mine)) { echo json_encode([]); exit; }
+
     try {
+        // Respect an explicit, owned section scope first (multi-advisory aware).
+        if ($secId && in_array($secId, $mine, true)) {
+            $st = $db->prepare("SELECT grade_level, section_name FROM sections WHERE id = ?");
+            $st->execute([$secId]);
+            $sr = $st->fetch();
+            if ($sr) {
+                $stmt = $db->prepare(
+                    "SELECT id, student_id, first_name, last_name, grade_level, section
+                     FROM students
+                     WHERE (first_name LIKE :q1 OR last_name LIKE :q2 OR student_id LIKE :q3)
+                       AND status = 'active'
+                       AND grade_level = :grade AND section = :section
+                     ORDER BY last_name, first_name LIMIT 20"
+                );
+                $like = "%{$search}%";
+                $stmt->execute([
+                    ':q1' => $like, ':q2' => $like, ':q3' => $like,
+                    ':grade'   => $sr['grade_level'],
+                    ':section' => $sr['section_name'],
+                ]);
+                echo json_encode($stmt->fetchAll(), JSON_INVALID_UTF8_SUBSTITUTE);
+                exit;
+            }
+        }
+
+        // Default: search across every section this teacher advises.
+        $ph = implode(',', array_fill(0, count($mine), '?'));
         $stmt = $db->prepare(
             "SELECT id, student_id, first_name, last_name, grade_level, section
              FROM students
-             WHERE (first_name LIKE :q1 OR last_name LIKE :q2 OR student_id LIKE :q3)
+             WHERE (first_name LIKE ? OR last_name LIKE ? OR student_id LIKE ?)
                AND status = 'active'
-               AND grade_level = :grade AND section = :section
-             ORDER BY last_name, first_name LIMIT 20"
+               AND section_id IN ($ph)
+             ORDER BY grade_level, section, last_name, first_name LIMIT 20"
         );
         $like = "%{$search}%";
-        $stmt->execute([
-            ':q1' => $like, ':q2' => $like, ':q3' => $like,
-            ':grade'   => $secRow['grade_level'],
-            ':section' => $secRow['section_name'],
-        ]);
+        $stmt->execute(array_merge([$like, $like, $like], $mine));
         echo json_encode($stmt->fetchAll(), JSON_INVALID_UTF8_SUBSTITUTE);
     } catch (Exception $e) {
         echo json_encode(['error' => $e->getMessage()], JSON_INVALID_UTF8_SUBSTITUTE);
@@ -54,10 +78,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = intval($_POST['announcement_id'] ?? 0);
         if ($id > 0) {
             try {
-                $sectionId = getAdvisorySectionId($db);
-                $stmt = $db->prepare("DELETE FROM announcements WHERE id = ? AND scope = 'advisory' AND target_section_id = ?");
-                $stmt->execute([$id, $sectionId]);
-                $_SESSION['flash_message'] = ['type' => 'success', 'message' => 'Announcement deleted.'];
+                $stmt = $db->prepare("SELECT id, scope, target_section_id, created_by FROM announcements WHERE id = ? LIMIT 1");
+                $stmt->execute([$id]);
+                $delAnn  = $stmt->fetch();
+                $mine    = getAdvisorySectionIds($db);
+                $isOwner = $delAnn && (int)$delAnn['created_by'] === (int)$_SESSION['user_id'];
+                $isMine  = $delAnn && in_array((int)$delAnn['target_section_id'], $mine, true);
+                if ($delAnn && $delAnn['scope'] === 'advisory' && ($isOwner || $isMine)) {
+                    $del = $db->prepare("DELETE FROM announcements WHERE id = ?");
+                    $del->execute([$id]);
+                    $_SESSION['flash_message'] = ['type' => 'success', 'message' => 'Announcement deleted.'];
+                } else {
+                    $_SESSION['flash_message'] = ['type' => 'danger', 'message' => 'You are not authorized to delete this announcement.'];
+                }
             } catch (Exception $e) {
                 $_SESSION['flash_message'] = ['type' => 'danger', 'message' => 'Failed to delete announcement.'];
             }
@@ -69,8 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ─── Data ───────────────────────────────────────────────────────────────────
-$advisorySectionId = getAdvisorySectionId($db);
-$advisorySection   = getAdvisorySectionRecord($db);
+$advisorySectionIds = getAdvisorySectionIds($db);
+$advisorySections   = getAdvisorySectionRecords($db);
+$advisorySection    = $advisorySections ? $advisorySections[0] : null;
+$advisorySectionId  = $advisorySection ? (int)$advisorySection['id'] : 0;
 $currentTeacher    = getCurrentTeacherRecord($db);
 $perPage = 10;
 $currentPage = max(1, intval($_GET['page'] ?? 1));
@@ -78,21 +113,19 @@ $currentPage = max(1, intval($_GET['page'] ?? 1));
 $currentTeacherId = getCurrentUserId();
 $totalAnnouncements = 0;
 try {
-    if ($advisorySectionId) {
+    if (!empty($advisorySectionIds)) {
+        $ph = implode(',', array_fill(0, count($advisorySectionIds), '?'));
         $stmt = $db->prepare(
             "SELECT COUNT(*) FROM announcements
-             WHERE scope = 'advisory' AND (target_section_id = :section_id OR created_by = :created_by)"
+             WHERE scope = 'advisory' AND (target_section_id IN ($ph) OR created_by = ?)"
         );
-        $stmt->bindValue(':section_id', $advisorySectionId, PDO::PARAM_INT);
-        $stmt->bindValue(':created_by', $currentTeacherId, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute(array_merge($advisorySectionIds, [$currentTeacherId]));
     } else {
         $stmt = $db->prepare(
             "SELECT COUNT(*) FROM announcements
-             WHERE scope = 'advisory' AND created_by = :created_by"
+             WHERE scope = 'advisory' AND created_by = ?"
         );
-        $stmt->bindValue(':created_by', $currentTeacherId, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute([$currentTeacherId]);
     }
     $totalAnnouncements = (int)$stmt->fetchColumn();
 } catch (Exception $e) {}
@@ -103,33 +136,27 @@ $offset = ($currentPage - 1) * $perPage;
 
 $announcements = [];
 try {
-    if ($advisorySectionId) {
+    if (!empty($advisorySectionIds)) {
+        $ph = implode(',', array_fill(0, count($advisorySectionIds), '?'));
         $stmt = $db->prepare(
             "SELECT a.*, u.email AS created_by_email
              FROM announcements a
              LEFT JOIN users u ON a.created_by = u.id
-             WHERE a.scope = 'advisory' AND (a.target_section_id = :section_id OR a.created_by = :created_by)
+             WHERE a.scope = 'advisory' AND (a.target_section_id IN ($ph) OR a.created_by = ?)
              ORDER BY a.created_at DESC
-             LIMIT :limit OFFSET :offset"
+             LIMIT ? OFFSET ?"
         );
-        $stmt->bindValue(':section_id', $advisorySectionId, PDO::PARAM_INT);
-        $stmt->bindValue(':created_by', $currentTeacherId, PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute(array_merge($advisorySectionIds, [$currentTeacherId, $perPage, $offset]));
     } else {
         $stmt = $db->prepare(
             "SELECT a.*, u.email AS created_by_email
              FROM announcements a
              LEFT JOIN users u ON a.created_by = u.id
-             WHERE a.scope = 'advisory' AND a.created_by = :created_by
+             WHERE a.scope = 'advisory' AND a.created_by = ?
              ORDER BY a.created_at DESC
-             LIMIT :limit OFFSET :offset"
+             LIMIT ? OFFSET ?"
         );
-        $stmt->bindValue(':created_by', $currentTeacherId, PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute([$currentTeacherId, $perPage, $offset]);
     }
     $announcements = $stmt->fetchAll();
 } catch (Exception $e) {}
@@ -354,6 +381,12 @@ $resendAnn = null;
     font-size: 16px; font-weight: 800; letter-spacing: -0.02em;
     color: var(--ann-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.advisory-banner-section .banner-section-chip {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    border-radius: 6px; background: rgba(79,70,229,0.12);
+    border: 1px solid rgba(79,70,229,0.25);
+    font-size: 12px; font-weight: 700; letter-spacing: -0.01em; color: var(--ann-accent);
+}
 .advisory-banner-section em { font-weight: 600; font-style: normal; color: var(--ann-text-secondary); }
 .advisory-banner-hint {
     font-size: 11px; color: var(--ann-text-secondary);
@@ -396,6 +429,12 @@ $resendAnn = null;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .locked-recipient-hint { font-size: 11px; color: var(--ann-text-secondary); }
+.recipient-section-chip {
+    display: inline-block; padding: 2px 8px; margin: 4px 6px 0 0;
+    border-radius: 6px; background: rgba(79,70,229,0.12);
+    border: 1px solid rgba(79,70,229,0.25);
+    font-size: 12px; font-weight: 700; letter-spacing: -0.01em; color: var(--ann-accent);
+}
 
 /* ─── Card System ─────────────────────────────────────────────────────── */
 .card {
@@ -1447,13 +1486,23 @@ $resendAnn = null;
             <div class="advisory-banner-info">
                 <span class="advisory-banner-label">Broadcast Target</span>
                 <span class="advisory-banner-section">
-                    Grade <?= sanitize($advisorySection['grade_level']) ?> - <?= sanitize($advisorySection['section_name']) ?>
-                    <?php if (!empty($advisorySection['strand_name'])): ?>
-                        <em>(<?= sanitize($advisorySection['strand_name']) ?>)</em>
+                    <?php
+                    $bannerLabels = array_map(function ($sec) {
+                        return 'Grade ' . ($sec['grade_level'] ?? '') . ' - ' . ($sec['section_name'] ?? '')
+                            . (!empty($sec['strand_name']) ? ' (' . $sec['strand_name'] . ')' : '');
+                    }, $advisorySections);
+                    ?>
+                    <?php if (count($advisorySections) === 1): ?>
+                        <?= sanitize($bannerLabels[0]) ?>
+                    <?php else: ?>
+                        <em style="display:block;font-size:12px;font-weight:600;margin-bottom:2px;"><?= count($advisorySections) ?> advisory classes</em>
+                        <?php foreach ($bannerLabels as $bl): ?>
+                            <span class="banner-section-chip"><?= sanitize($bl) ?></span>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </span>
                 <span class="advisory-banner-hint">
-                    <i class="bi bi-lock-fill"></i> Broadcasts reach the guardians of students in this advisory class
+                    <i class="bi bi-lock-fill"></i> Broadcasts reach the guardians of students in <?= count($advisorySections) === 1 ? 'this advisory class' : 'all of your advisory classes' ?> at once
                 </span>
             </div>
             <span class="advisory-banner-chip"><i class="bi bi-broadcast"></i> Advisory Scope</span>
@@ -1461,7 +1510,7 @@ $resendAnn = null;
         <?php else: ?>
         <div class="alert-preview" style="margin-bottom:16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);">
             <i class="bi bi-exclamation-triangle-fill" style="font-size:16px;flex-shrink:0;margin-top:1px;"></i>
-            <span>No advisory class assigned to your account. Please contact the administrator to set your advisory section before sending class announcements.</span>
+            <span>No advisory class assigned to your account. Please contact the administrator to set your advisory section(s) before sending class announcements.</span>
         </div>
         <?php endif; ?>
 
@@ -1714,12 +1763,19 @@ $resendAnn = null;
                                 <div class="locked-recipient-info">
                                     <span class="locked-recipient-label">Advisory Class</span>
                                     <span class="locked-recipient-name">
-                                        Grade <?= sanitize($advisorySection['grade_level']) ?> - <?= sanitize($advisorySection['section_name']) ?>
-                                        <?php if (!empty($advisorySection['strand_name'])): ?>
-                                            (<?= sanitize($advisorySection['strand_name']) ?>)
+                                        <?php if (count($advisorySections) === 1): ?>
+                                            Grade <?= sanitize($advisorySection['grade_level']) ?> - <?= sanitize($advisorySection['section_name']) ?>
+                                            <?php if (!empty($advisorySection['strand_name'])): ?>
+                                                (<?= sanitize($advisorySection['strand_name']) ?>)
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <?= count($advisorySections) ?> sections
+                                            <?php foreach ($advisorySections as $advSec): ?>
+                                                <span class="recipient-section-chip">Grade <?= sanitize($advSec['grade_level']) ?> - <?= sanitize($advSec['section_name']) ?><?= !empty($advSec['strand_name']) ? ' (' . sanitize($advSec['strand_name']) . ')' : '' ?></span>
+                                            <?php endforeach; ?>
                                         <?php endif; ?>
                                     </span>
-                                    <span class="locked-recipient-hint">Guardians of students in this section</span>
+                                    <span class="locked-recipient-hint">Guardians of students in <?= count($advisorySections) === 1 ? 'this section' : 'all of these sections' ?></span>
                                 </div>
                             </div>
 
@@ -1737,7 +1793,7 @@ $resendAnn = null;
                                 <div id="advisoryIndividualSearch" style="display:none;margin-top:10px;">
                                     <div class="search-box" style="margin-bottom:10px;position:relative;">
                                         <i class="bi bi-search search-icon"></i>
-                                        <input type="text" class="search-input" id="advisoryStudentSearchInput" placeholder="Search students in this advisory class...">
+                                        <input type="text" class="search-input" id="advisoryStudentSearchInput" placeholder="Search students in your advisory class(es)...">
                                         <button type="button" class="search-btn" id="advisorySearchBtn"><i class="bi bi-search"></i> Search</button>
                                         <div class="search-results-dropdown" id="advisorySearchResults" style="display:none;"></div>
                                     </div>
@@ -1844,7 +1900,10 @@ $resendAnn = null;
                                         if ($rt === 'all_parents' || $rt === 'all' || !empty($recJson['all'])) $recLabels[] = 'All Parents';
                                         elseif ($rt === 'all_teachers') $recLabels[] = 'All Teachers';
                                         elseif ($rt === 'advisers_only') $recLabels[] = 'Class Advisers Only';
-                                        elseif ($rt === 'advisory_class') $recLabels[] = 'All Parents (Advisory Class)';
+                                        elseif ($rt === 'advisory_class') {
+                                            $secIds = array_values(array_filter(array_map('intval', (array)($recJson['section_ids'] ?? []))));
+                                            $recLabels[] = empty($secIds) ? 'All Parents (Advisory Class)' : 'All Parents (' . count($secIds) . ' section' . (count($secIds) > 1 ? 's' : '') . ')';
+                                        }
                                         elseif ($rt === 'grade') $recLabels[] = 'Grades ' . implode(', ', $recJson['grades'] ?? []);
                                         elseif ($rt === 'individual') $recLabels[] = count($recJson['student_ids'] ?? []) . ' individual parent(s)';
                                     }
@@ -2189,7 +2248,7 @@ function showToast(type, message) {
             .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(function(data) {
                 if (data.error) { throw new Error(data.error); }
-                if (!data.length) { advSearchDD.innerHTML = '<div style="padding:14px;text-align:center;color:var(--ann-text-muted);font-size:12px;">No students found in this advisory class</div>'; }
+                if (!data.length) { advSearchDD.innerHTML = '<div style="padding:14px;text-align:center;color:var(--ann-text-muted);font-size:12px;">No students found in your advisory classes</div>'; }
                 else {
                     advSearchDD.innerHTML = data.map(function(s) {
                         var sel = advSelMap.has(s.id);
@@ -2212,7 +2271,12 @@ function showToast(type, message) {
     }
 
     function advisoryRecipientLabel() {
-        var grade = '<?= $advisorySection ? addslashes($advisorySection['grade_level'] . ' - ' . $advisorySection['section_name']) : 'N/A' ?>';
+        var labels = <?= json_encode(array_map(function ($sec) {
+            $lbl = 'Grade ' . ($sec['grade_level'] ?? '') . ' - ' . ($sec['section_name'] ?? '');
+            if (!empty($sec['strand_name'])) $lbl .= ' (' . $sec['strand_name'] . ')';
+            return $lbl;
+        }, $advisorySections), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+        var grade = (labels && labels.length) ? (labels.length === 1 ? labels[0] : labels.length + ' sections (' + labels.join(', ') + ')') : 'N/A';
         if (recScopeIndividual && recScopeIndividual.checked) {
             return advSelMap.size ? advSelMap.size + ' individual parent(s) of ' + grade : 'No students selected';
         }

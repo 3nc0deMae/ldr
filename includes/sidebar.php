@@ -4,15 +4,23 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $activeSection = $_GET['section'] ?? '';
 
 // For teachers, "Class Advisories" is only shown when an advisory class is assigned by the admin.
+// Multi-advisory: check the teacher_advisory_sections pivot first, then legacy advisory_class.
 $__teacherHasAdvisory = false;
 if ($currentRole === 'teacher') {
     try {
-        $stmt = $db->prepare("SELECT advisory_class FROM teachers WHERE user_id = ? LIMIT 1");
-        $stmt->execute([getCurrentUserId()]);
-        $__teacherAdvisory = $stmt->fetchColumn();
-        $__teacherHasAdvisory = !empty(trim((string)$__teacherAdvisory));
+        $__teacherHasAdvisory = count(getAdvisorySectionIds($db)) > 0;
     } catch (Exception $e) {
         $__teacherHasAdvisory = false;
+    }
+    if (!$__teacherHasAdvisory) {
+        try {
+            $stmt = $db->prepare("SELECT advisory_class FROM teachers WHERE user_id = ? LIMIT 1");
+            $stmt->execute([getCurrentUserId()]);
+            $__teacherAdvisory = $stmt->fetchColumn();
+            $__teacherHasAdvisory = !empty(trim((string)$__teacherAdvisory));
+        } catch (Exception $e) {
+            $__teacherHasAdvisory = false;
+        }
     }
 }
 

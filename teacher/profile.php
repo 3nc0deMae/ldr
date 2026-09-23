@@ -24,6 +24,11 @@ try {
     }
 } catch (Exception $e) {}
 
+$advisorySectionRecords = [];
+try {
+    $advisorySectionRecords = getAdvisorySectionRecords($db);
+} catch (Exception $e) {}
+
 $createdAt = $user['created_at'] ?? '';
 $lastLogin = '';
 try {
@@ -155,6 +160,17 @@ if (empty($teacherFullName)) {
     font-family: var(--prof-mono); font-size: 13px; font-weight: 500;
     color: rgba(255,255,255,0.5); letter-spacing: 0.02em;
 }
+.profile-advisory-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--prof-primary-light); color: var(--prof-primary);
+    border: 1px solid rgba(79,70,229,0.25);
+    border-radius: 8px; padding: 4px 10px; margin: 2px 5px 2px 0;
+    font-size: 12px; font-weight: 600;
+}
+.profile-advisory-badge::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--prof-primary); flex-shrink: 0;
+}
 </style>
 
 <?php require_once __DIR__ . '/../includes/pages-topnavbar.php'; ?>
@@ -277,8 +293,16 @@ if (empty($teacherFullName)) {
                         <div class="profile-info-value"><?= sanitize($teacher['subjects_handled'] ?? 'N/A') ?></div>
                     </div>
                     <div class="profile-info-item">
-                        <div class="profile-info-label">Advisory Section</div>
-                        <div class="profile-info-value"><?= sanitize($teacher['advisory_class'] ?? 'N/A') ?></div>
+                        <div class="profile-info-label">Advisory Section(s)</div>
+                        <div class="profile-info-value">
+                            <?php if (!empty($advisorySectionRecords)): ?>
+                                <?php foreach ($advisorySectionRecords as $advRec): ?>
+                                    <span class="profile-advisory-badge"><?= sanitize(formatAdvisoryClassLabel($advRec['grade_level'] ?? '', $advRec['section_name'] ?? '', $advRec['strand_name'] ?? '')) ?></span>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                N/A
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </div>

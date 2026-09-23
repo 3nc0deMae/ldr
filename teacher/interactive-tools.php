@@ -31,6 +31,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
     exit;
 }
 
+/* ── Persist today's Participation Tracker + Points & Leaderboard state (AJAX POST) ── */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_tools_state') {
+    header('Content-Type: application/json');
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        echo json_encode(['success' => false, 'message' => 'Invalid security token.']);
+        exit;
+    }
+    $uid       = (int)(getCurrentUserId() ?: 0);
+    $classLabel = trim($_POST['class_label'] ?? '');
+    $stateJson = trim($_POST['state'] ?? '');
+    $decoded   = json_decode($stateJson, true);
+    if ($uid <= 0 || $classLabel === '' || !is_array($decoded)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid state data.']);
+        exit;
+    }
+    try {
+        $stmt = $db->prepare(
+            "INSERT INTO interactive_tools_state (user_id, state_date, class_label, state_json, created_at, updated_at)
+             VALUES (?,?,?,?,NOW(),NOW())
+             ON DUPLICATE KEY UPDATE state_json = VALUES(state_json), updated_at = NOW()"
+        );
+        $stmt->execute([$uid, date('Y-m-d'), $classLabel, $stateJson]);
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        error_log('Interactive Tools save state: ' . $e->getMessage());
+        $_SESSION['it_tools_state'] = $_SESSION['it_tools_state'] ?? [];
+        $_SESSION['it_tools_state'][$classLabel] = $decoded;
+        echo json_encode(['success' => true, 'message' => 'Session-only save (DB unavailable).']);
+    }
+    exit;
+}
+
+/* ── Reset today's state for the current class (AJAX POST) ── */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'reset_tools_state') {
+    header('Content-Type: application/json');
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        echo json_encode(['success' => false, 'message' => 'Invalid security token.']);
+        exit;
+    }
+    $uid        = (int)(getCurrentUserId() ?: 0);
+    $classLabel = trim($_POST['class_label'] ?? '');
+    try {
+        $stmt = $db->prepare("DELETE FROM interactive_tools_state WHERE user_id = ? AND state_date = ? AND class_label = ?");
+        $stmt->execute([$uid, date('Y-m-d'), $classLabel]);
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        error_log('Interactive Tools reset state: ' . $e->getMessage());
+        if (isset($_SESSION['it_tools_state'][$classLabel])) { unset($_SESSION['it_tools_state'][$classLabel]); }
+        echo json_encode(['success' => true]);
+    }
+    exit;
+}
+
 /* ── Roster: real registered Grade & Section combos from the students table ── */
 $classes = [];
 $userRole = $_SESSION['user_role'] ?? 'admin';
@@ -137,6 +190,41 @@ $classesJson = json_encode($classes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS
 $topicsJson  = json_encode($topics,  JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $rewardsJson = json_encode($rewards, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $csrfToken   = generateCSRFToken();
+
+/* ── Load today's persisted Interactive Tools state (per class) ── */
+$persistedByClass = [];
+$lastActiveClass  = null;
+$persistedUid = (int)(getCurrentUserId() ?: 0);
+if ($persistedUid > 0) {
+    try {
+        $stmt = $db->prepare(
+            "SELECT class_label, state_json FROM interactive_tools_state
+             WHERE user_id = ? AND state_date = ? ORDER BY updated_at DESC"
+        );
+        $stmt->execute([$persistedUid, date('Y-m-d')]);
+        foreach ($stmt->fetchAll() as $row) {
+            $decoded = json_decode($row['state_json'] ?? '', true);
+            if (!is_array($decoded)) { continue; }
+            if ($lastActiveClass === null) { $lastActiveClass = $row['class_label']; }
+            $persistedByClass[$row['class_label']] = $decoded;
+        }
+    } catch (Exception $e) {
+        error_log('Interactive Tools load state (db): ' . $e->getMessage());
+    }
+    /* Session fallback (used only if the DB table was unavailable) */
+    if (!empty($_SESSION['it_tools_state']) && is_array($_SESSION['it_tools_state'])) {
+        foreach ($_SESSION['it_tools_state'] as $classLabel => $state) {
+            if (is_array($state) && !isset($persistedByClass[$classLabel])) {
+                $persistedByClass[$classLabel] = $state;
+                if ($lastActiveClass === null) { $lastActiveClass = $classLabel; }
+            }
+        }
+    }
+}
+$persistedJson = json_encode(
+    ['classes' => (object)$persistedByClass, 'last' => $lastActiveClass],
+    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+);
 
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
@@ -557,12 +645,92 @@ require_once __DIR__ . '/../includes/sidebar.php';
     var CLASSES = <?= $classesJson ?>;
     var TOPICS  = <?= $topicsJson ?>;
     var REWARDS = <?= $rewardsJson ?>;
-    var CSRF    = '<?= $csrfToken ?>';
 
     var classSelect = document.getElementById('itClassSelect');
     Object.keys(CLASSES).forEach(function(label){
         var o = document.createElement('option'); o.value = label; o.textContent = label;
         classSelect.appendChild(o);
+    });
+
+    var CSRF    = '<?= $csrfToken ?>';
+    var PERSISTED = <?= $persistedJson ?>;   // {classes:{label:state}, last:label} or {classes:{},last:null}
+
+    /* ══════════ PERSISTENCE (per teacher · per day · per class) ══════════ */
+    var saveTimer = null, currentClass = '';
+    function buildStatePayload(){
+        return JSON.stringify({
+            points: points,
+            pickCounts: pickCounts,
+            log: log.slice(0, 40),
+            names: names.slice(),
+            wheelItems: wheelItems.slice(),
+            customTopics: customTopics.slice(),
+            customRewards: customRewards.slice(),
+            lastGroups: lastGroups,
+            mode: mode,
+            contentType: contentType
+        });
+    }
+    function scheduleSave(){
+        if(!currentClass) return;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(sendState, 300);
+    }
+    function sendState(label){
+        var cl = (label !== undefined && label !== null) ? label : currentClass;
+        if(!cl) return;
+        var stateJson = buildStatePayload();
+        var fd = new FormData();
+        fd.append('action','save_tools_state');
+        fd.append('csrf_token', CSRF);
+        fd.append('class_label', cl);
+        fd.append('state', stateJson);
+        fetch(window.location.href,{method:'POST',body:fd,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}})
+            .then(function(r){return r.json();})
+            .then(function(res){
+                if(res && res.success && PERSISTED && PERSISTED.classes){
+                    PERSISTED.classes[cl] = JSON.parse(stateJson);
+                    if(!PERSISTED.last) PERSISTED.last = cl;
+                }
+            })
+            .catch(function(err){ console.warn('[InteractiveTools] state save error', err); });
+    }
+    function resetSavedState(){
+        if(!currentClass) return;
+        var fd = new FormData();
+        fd.append('action','reset_tools_state');
+        fd.append('csrf_token', CSRF);
+        fd.append('class_label', currentClass);
+        fetch(window.location.href,{method:'POST',body:fd,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}})
+            .then(function(r){return r.json();})
+            .catch(function(err){ console.warn('[InteractiveTools] state reset error', err); });
+        if(PERSISTED && PERSISTED.classes) delete PERSISTED.classes[currentClass];
+    }
+    function hydrateFromPersisted(classLabel){
+        var p = (PERSISTED && PERSISTED.classes) ? PERSISTED.classes[classLabel] : null;
+        if(!p) return;
+        if(typeof p.points==='object' && p.points) points = p.points;
+        if(typeof p.pickCounts==='object' && p.pickCounts) pickCounts = p.pickCounts;
+        if(Array.isArray(p.log)) log = p.log.slice(0, 40);
+        if(Array.isArray(p.names) && p.names.length) names = p.names.slice();
+        if(Array.isArray(p.customTopics)) customTopics = p.customTopics.slice();
+        if(Array.isArray(p.customRewards)) customRewards = p.customRewards.slice();
+        if(Array.isArray(p.wheelItems) && p.wheelItems.length) wheelItems = p.wheelItems.slice();
+        if(p.lastGroups !== undefined && p.lastGroups !== null) lastGroups = p.lastGroups;
+        if(p.mode) mode = p.mode;
+        if(p.contentType) contentType = p.contentType;
+    }
+    window.addEventListener('pagehide', function(){
+        if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+        if(!currentClass) return;
+        try{
+            var fd = new FormData();
+            fd.append('action','save_tools_state');
+            fd.append('csrf_token', CSRF);
+            fd.append('class_label', currentClass);
+            fd.append('state', buildStatePayload());
+            navigator.sendBeacon(window.location.href, fd);
+        }catch(e){}
     });
 
     /* ── State ── */
@@ -637,6 +805,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
             var ni=names.indexOf(winner); if(ni>=0) names.splice(ni,1);
             document.getElementById('itNamesCount').textContent=wheelItems.length; draw();
         }
+        scheduleSave();
     }
 
     /* ── Winner modal ── */
@@ -678,32 +847,30 @@ require_once __DIR__ . '/../includes/sidebar.php';
     }
 
     /* ── Live log ── */
-    function addLog(name){
-        var d=new Date(); var t=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);
-        log.unshift({name:name,t:t,m:mode});
+    function renderLog(){
         var box=document.getElementById('itLog');
-        if(log.length===1) box.innerHTML='';
-        var item=document.createElement('div'); item.className='it-log-item';
-        var modeLabel = mode==='custom' ? (contentType==='topics'?'Topic':contentType==='rewards'?'Reward':'Pick') : (mode==='group'?'Group':'Pick');
-        item.innerHTML='<span class="it-log-dot"></span><span class="it-log-name">'+escapeHtml(name)+'</span><span class="it-log-meta">'+modeLabel+' · '+t+'</span>';
-        box.insertBefore(item,box.firstChild);
+        if(!log.length){ box.innerHTML='<div class="it-log-empty">No spins yet — give the wheel a spin!</div>'; return; }
+        box.innerHTML='';
+        log.forEach(function(e){
+            var modeLabel = e.m==='custom' ? (e.c==='topics'?'Topic':e.c==='rewards'?'Reward':'Pick') : (e.m==='group'?'Group':'Pick');
+            var item=document.createElement('div'); item.className='it-log-item';
+            item.innerHTML='<span class="it-log-dot"></span><span class="it-log-name">'+escapeHtml(e.name)+'</span><span class="it-log-meta">'+modeLabel+' · '+e.t+'</span>';
+            box.appendChild(item);
+        });
         while(box.children.length>40) box.removeChild(box.lastChild);
     }
-    document.getElementById('itClearLog').addEventListener('click',function(){log=[];document.getElementById('itLog').innerHTML='<div class="it-log-empty">No spins yet — give the wheel a spin!</div>';});
+    function addLog(name){
+        var d=new Date(); var t=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);
+        log.unshift({name:name,t:t,m:mode,c:contentType});
+        renderLog();
+        scheduleSave();
+    }
+    document.getElementById('itClearLog').addEventListener('click',function(){log=[];renderLog();scheduleSave();});
 
     /* ── Group maker ── */
-    function generateGroups(){
-        var by=document.getElementById('itGroupBy').value, num=parseInt(document.getElementById('itGroupNum').value,10);
-        if(!names.length){showToast('Load a class first','warning');return;}
-        if(isNaN(num)||num<1){showToast('Enter a valid quantity','warning');return;}
-        var pool=names.slice();
-        for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t;}
-        var teamCount=(by==='teams')?num:Math.ceil(pool.length/num); if(teamCount>pool.length)teamCount=pool.length;
-        var groups=[]; for(var g=0;g<teamCount;g++) groups.push([]);
-        pool.forEach(function(m,idx){groups[idx%teamCount].push(m);});
-        lastGroups=groups;
+    function renderGroups(){
         var html='';
-        groups.forEach(function(members,gi){
+        lastGroups.forEach(function(members,gi){
             var leaderIdx=members.length?Math.floor(Math.random()*members.length):-1;
             html+='<div class="it-group"><div class="it-group-head"><div class="it-group-title"><i class="bi bi-flag-fill" style="color:#a5b4fc"></i>Team '+(gi+1)+'</div><span class="it-group-badge">'+members.length+'</span></div>';
             members.forEach(function(m,mi){
@@ -714,7 +881,21 @@ require_once __DIR__ . '/../includes/sidebar.php';
         });
         document.getElementById('itGroups').innerHTML=html;
         document.getElementById('itGroupResults').classList.remove('it-hidden');
+    }
+    function generateGroups(){
+        var by=document.getElementById('itGroupBy').value, num=parseInt(document.getElementById('itGroupNum').value,10);
+        if(!names.length){showToast('Load a class first','warning');return;}
+        if(isNaN(num)||num<1){showToast('Enter a valid quantity','warning');return;}
+        var pool=names.slice();
+        for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t;}
+        var teamCount=(by==='teams')?num:Math.ceil(pool.length/num); if(teamCount>pool.length)teamCount=pool.length;
+        var groups=[]; for(var g=0;g<teamCount;g++) groups.push([]);
+        pool.forEach(function(m,idx){groups[idx%teamCount].push(m);});
+        lastGroups=groups;
+        renderGroups();
+        document.getElementById('itGroupResults').classList.remove('it-hidden');
         showToast('Generated '+teamCount+' team'+(teamCount>1?'s':''),'success');
+        scheduleSave();
     }
     document.getElementById('itGenGroups').addEventListener('click',generateGroups);
     document.getElementById('itRegenGroups').addEventListener('click',generateGroups);
@@ -731,42 +912,58 @@ require_once __DIR__ . '/../includes/sidebar.php';
     });
 
     /* ── Mode / content switching ── */
+    function syncModeUI(){
+        document.querySelectorAll('.it-mode').forEach(function(m){m.classList.toggle('active',m.dataset.mode===mode);});
+        var custom=mode==='custom';
+        document.getElementById('itContentControls').classList.toggle('it-hidden',!custom);
+        document.getElementById('itGroupControls').classList.toggle('it-hidden',mode!=='group');
+        document.getElementById('itGroupResults').classList.toggle('it-hidden',mode!=='group' || !lastGroups);
+        document.getElementById('itContentType').value=contentType;
+    }
+    function updateWheelStatus(){
+        var status=document.getElementById('itWheelStatus');
+        if(!fullRoster.length){ status.textContent='No students'; return; }
+        status.textContent = mode==='group' ? 'Use Generate Teams for groups' :
+            (mode==='custom' ? 'Custom wheel — tap the wheel to edit content' : 'Tap SPIN to pick a student');
+    }
     document.querySelectorAll('.it-mode').forEach(function(el){
         el.addEventListener('click',function(){
-            document.querySelectorAll('.it-mode').forEach(function(m){m.classList.remove('active');});
-            el.classList.add('active'); mode=el.dataset.mode;
-            var custom=mode==='custom';
-            document.getElementById('itContentControls').classList.toggle('it-hidden',!custom);
-            document.getElementById('itGroupControls').classList.toggle('it-hidden',mode!=='group');
-            document.getElementById('itGroupResults').classList.toggle('it-hidden',mode!=='group');
-            document.getElementById('itWheelStatus').textContent =
-                mode==='group' ? 'Use Generate Teams for groups' :
-                (custom ? 'Custom wheel — tap the wheel to edit content' : 'Tap SPIN to pick a student');
-            rebuildWheel();
+            mode=el.dataset.mode;
+            syncModeUI(); updateWheelStatus(); rebuildWheel(); scheduleSave();
         });
     });
     document.getElementById('itContentType').addEventListener('change',function(){
-        contentType=this.value; rebuildWheel();
+        contentType=this.value; rebuildWheel(); scheduleSave();
     });
 
     /* ── Class load ── */
     classSelect.addEventListener('change',function(){
+        /* Flush any pending save against the previous class before switching */
+        if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; if(currentClass){ sendState(currentClass); } }
+        currentClass = this.value;
         fullRoster=(CLASSES[this.value]||[]).slice();
         names=fullRoster.slice(); customTopics=TOPICS.slice(); customRewards=REWARDS.slice();
-        points={}; pickCounts={};
+        points={}; pickCounts={}; log=[]; lastGroups=null;
         fullRoster.forEach(function(n){points[n]=0;pickCounts[n]=0;});
         document.getElementById('itRosterCount').textContent=fullRoster.length;
         document.getElementById('itSpinBtn').disabled=!fullRoster.length;
-        document.getElementById('itWheelStatus').textContent=fullRoster.length?(fullRoster.length+' ready to spin'):'No students';
         document.getElementById('itGroupResults').classList.add('it-hidden');
-        rotation=0; rebuildWheel(); renderLeaderboard(); renderParticipation();
+        hydrateFromPersisted(this.value);
+        rotation=0; rebuildWheel();
+        if(lastGroups && mode==='group'){ renderGroups(); }
+        syncModeUI(); updateWheelStatus();
+        renderLeaderboard(); renderParticipation(); renderLog();
+        scheduleSave();
     });
     document.getElementById('itSpinBtn').addEventListener('click',spin);
     document.getElementById('itResetNames').addEventListener('click',function(){
         names=fullRoster.slice(); customTopics=TOPICS.slice(); customRewards=REWARDS.slice();
-        points={}; pickCounts={}; fullRoster.forEach(function(n){points[n]=0;pickCounts[n]=0;});
+        points={}; pickCounts={}; log=[]; lastGroups=null;
+        fullRoster.forEach(function(n){points[n]=0;pickCounts[n]=0;});
         document.getElementById('itGroupResults').classList.add('it-hidden');
-        rebuildWheel(); renderLeaderboard(); renderParticipation();
+        rotation=0; rebuildWheel(); renderLeaderboard(); renderParticipation(); renderLog();
+        syncModeUI(); updateWheelStatus();
+        resetSavedState();
         showToast('Wheel & scores reset','info');
     });
 
@@ -789,7 +986,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
         box.querySelectorAll('.it-pt-btn').forEach(function(b){
             b.addEventListener('click',function(){
                 var nm=this.dataset.n, d=this.classList.contains('plus')?1:-1;
-                points[nm]=Math.max(0,(points[nm]||0)+d); renderLeaderboard();
+                points[nm]=Math.max(0,(points[nm]||0)+d); renderLeaderboard(); scheduleSave();
             });
         });
     }
@@ -927,6 +1124,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
         }
         document.getElementById('itNamesCount').textContent=wheelItems.length;
         draw(); closeContentEditor(); showToast('Wheel content saved','success');
+        scheduleSave();
     });
     /* Clicking the wheel (canvas or pointer) opens the editor — SPIN button is separate */
     canvas.addEventListener('click',openContentEditor);
@@ -1081,7 +1279,12 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
     window.addEventListener('resize',resizeCanvas);
     resizeCanvas();
-    if(classSelect.options.length>1){classSelect.selectedIndex=1;classSelect.dispatchEvent(new Event('change'));}
+
+    /* Restore today's persisted class & scores (falls back to first class) */
+    var initClass = null;
+    if(PERSISTED && PERSISTED.last && CLASSES[PERSISTED.last]) initClass = PERSISTED.last;
+    if(!initClass && classSelect.options.length>1) initClass = classSelect.options[1].value;
+    if(initClass){ classSelect.value=initClass; classSelect.dispatchEvent(new Event('change')); }
 })();
 </script>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

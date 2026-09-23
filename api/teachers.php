@@ -114,7 +114,8 @@ switch ($action) {
              'grade_section_handled' => $gradeSectionHandled,
              'core_subjects_handled' => $coreSubjectsHandled,
              'track_elective_handled' => $trackElectiveHandled,
-             'advisory_class'  => sanitize($_POST['advisory_class'] ?? '')
+             'advisory_class'  => sanitize($_POST['advisory_class'] ?? ''),
+             'advisory_section_ids' => $_POST['advisory_section_ids'] ?? []
          ];
 
          if (empty($data['first_name']) || empty($data['last_name']) || empty($data['email'])) {
@@ -168,6 +169,7 @@ switch ($action) {
                         'core_subjects_handled' => $newTeacher['core_subjects_handled'],
                         'track_elective_handled' => $newTeacher['track_elective_handled'],
                         'advisory_class' => $newTeacher['advisory_class'] ?? '',
+                        'advisory_section_ids' => getTeacherAdvisorySectionIds($db, (int)$result),
                     ]
                 ]);
             } else {
@@ -259,7 +261,8 @@ switch ($action) {
              'grade_section_handled' => $gradeSectionHandled,
              'core_subjects_handled' => $coreSubjectsHandled,
              'track_elective_handled' => $trackElectiveHandled,
-             'advisory_class'  => sanitize($_POST['advisory_class'] ?? '')
+             'advisory_class'  => sanitize($_POST['advisory_class'] ?? ''),
+             'advisory_section_ids' => $_POST['advisory_section_ids'] ?? []
          ];
 
          if (updateTeacher($db, $id, $data)) {

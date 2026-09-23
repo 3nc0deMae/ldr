@@ -53,6 +53,66 @@ migrate($db, 'teachers.advisory_section_id', function ($db) {
     if (empty($col)) $db->exec("ALTER TABLE teachers ADD COLUMN advisory_section_id INT DEFAULT NULL AFTER advisory_class");
 });
 
+// 2b. teacher_advisory_sections pivot table (multi-advisory support)
+//     A teacher can be adviser of more than one section (e.g. A-St. Luke and
+//     B-St. Sebastian). Legacy single-section data is backfilled into the pivot.
+migrate($db, 'teacher_advisory_sections table', function ($db) {
+    $db->exec("CREATE TABLE IF NOT EXISTS teacher_advisory_sections (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        teacher_id INT UNSIGNED NOT NULL,
+        section_id INT UNSIGNED NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uk_teacher_section (teacher_id, section_id),
+        KEY idx_teacher_id (teacher_id),
+        KEY idx_section_id (section_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // Backfill from the legacy single-section columns so existing teachers
+    // keep their advisory assignments without any manual re-entry.
+    $rows = $db->query("SELECT id, advisory_class, advisory_section_id FROM teachers")->fetchAll();
+    $ins  = $db->prepare("INSERT IGNORE INTO teacher_advisory_sections (teacher_id, section_id) VALUES (?, ?)");
+    foreach ($rows as $t) {
+        $sid = (int)($t['advisory_section_id'] ?? 0);
+        if ($sid <= 0 && !empty($t['advisory_class'])) {
+            $resolved = resolveAdvisorySection($db, $t['advisory_class']);
+            $sid = $resolved ? (int)$resolved : 0;
+        }
+        if ($sid > 0) $ins->execute([(int)$t['id'], $sid]);
+    }
+
+    // Mirror the first advisory back onto the legacy columns (keeps old
+    // single-value lookups such as the sidebar + profile display working).
+    $sync = $db->prepare(
+        "SELECT t.id FROM teachers t
+         JOIN teacher_advisory_sections tas ON tas.teacher_id = t.id
+         GROUP BY t.id HAVING COUNT(*) > 0"
+    );
+    $teachers = $sync->fetchAll(PDO::FETCH_COLUMN);
+    $upd = $db->prepare(
+        "UPDATE teachers SET advisory_section_id = :sid, advisory_class = :cls WHERE id = :id"
+    );
+    foreach ($teachers as $tid) {
+        $sec = $db->prepare(
+            "SELECT s.id, s.grade_level, s.section_name, st.strand_name
+             FROM teacher_advisory_sections tas
+             JOIN sections s ON s.id = tas.section_id
+             LEFT JOIN strands st ON s.strand_id = st.id
+             WHERE tas.teacher_id = ?
+             ORDER BY tas.id LIMIT 1"
+        );
+        $sec->execute([$tid]);
+        $row = $sec->fetch();
+        if ($row) {
+            $upd->execute([
+                ':sid'  => (int)$row['id'],
+                ':cls'  => formatAdvisoryClassLabel($row['grade_level'], $row['section_name'], $row['strand_name'] ?? ''),
+                ':id'   => (int)$tid,
+            ]);
+        }
+    }
+});
+
 // 3. user_notifications.user_id column
 migrate($db, 'user_notifications.user_id', function ($db) {
     $col = $db->query("SHOW COLUMNS FROM user_notifications LIKE 'user_id'")->fetchAll();

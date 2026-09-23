@@ -304,21 +304,67 @@ $combinedTardy  = $maleBlock['tardy']  + $femaleBlock['tardy'];
 
 /* ── Bottom analytics ───────────────────────────────────────────────────── */
 $registeredLearners   = count($roster);
+$maleCount            = count($males);
+$femaleCount          = count($females);
 $schoolDaysCount      = count($schoolDays);
 $totalDailyAttendance = array_sum($combinedAttended);
 $ada                  = $schoolDaysCount > 0 ? round($totalDailyAttendance / $schoolDaysCount, 2) : 0;
 $pctAttendance        = $registeredLearners > 0 ? round(($ada / $registeredLearners) * 100, 2) : 0;
 
-$enrolFirstFriday = $registeredLearners;
-$firstFriday = null;
-for ($d = clone $start; $d <= $end; $d->modify('+1 day')) {
-    if ((int)$d->format('N') === 5) { $firstFriday = $d->format('Y-m-d'); break; }
+/* ── Male analytics ─────────────────────────────────────────────────────── */
+$maleTotalDailyAttendance = array_sum($maleBlock['attended']);
+$maleAda                  = $schoolDaysCount > 0 ? round($maleTotalDailyAttendance / $schoolDaysCount, 2) : 0;
+$malePctAttendance        = $maleCount > 0 ? round(($maleAda / $maleCount) * 100, 2) : 0;
+
+/* ── Female analytics ───────────────────────────────────────────────────── */
+$femaleTotalDailyAttendance = array_sum($femaleBlock['attended']);
+$femaleAda                  = $schoolDaysCount > 0 ? round($femaleTotalDailyAttendance / $schoolDaysCount, 2) : 0;
+$femalePctAttendance        = $femaleCount > 0 ? round(($femaleAda / $femaleCount) * 100, 2) : 0;
+
+/* ── 5+ Consecutive Absences (separate M/F/TOTAL) ───────────────────────── */
+$fiveConsecM = 0;
+foreach ($maleBlock['rows'] as $r) {
+    if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsecM++;
 }
-if ($firstFriday) {
+$fiveConsecF = 0;
+foreach ($femaleBlock['rows'] as $r) {
+    if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsecF++;
+}
+$fiveConsec = $fiveConsecM + $fiveConsecF;
+
+/* ── Enrolment as of 1st Friday of School Year (June) ───────────────────── */
+$enrolFirstFriday = $registeredLearners;
+$maleEnrolFirstFriday = $maleCount;
+$femaleEnrolFirstFriday = $femaleCount;
+$firstFridaySY = null;
+
+/* Find 1st Friday of June of the school year */
+$syStartYear = (int)explode('-', $schoolYear)[0];
+$juneFirst = new DateTime("{$syStartYear}-06-01");
+for ($d = clone $juneFirst; $d <= (clone $juneFirst)->modify('+6 days'); $d->modify('+1 day')) {
+    if ((int)$d->format('N') === 5) { $firstFridaySY = $d->format('Y-m-d'); break; }
+}
+
+if ($firstFridaySY) {
     try {
         $cntStmt = $db->prepare("SELECT COUNT(*) FROM students WHERE grade_level = :g AND section = :s AND DATE(created_at) <= :ff");
-        $cntStmt->execute([':g' => $gradeLevel, ':s' => $section, ':ff' => $firstFriday]);
+        $cntStmt->execute([':g' => $gradeLevel, ':s' => $section, ':ff' => $firstFridaySY]);
         $enrol = (int)$cntStmt->fetchColumn();
         if ($enrol > 0) $enrolFirstFriday = $enrol;
+
+        $cntStmtM = $db->prepare("SELECT COUNT(*) FROM students WHERE grade_level = :g AND section = :s AND gender = 'Male' AND DATE(created_at) <= :ff");
+        $cntStmtM->execute([':g' => $gradeLevel, ':s' => $section, ':ff' => $firstFridaySY]);
+        $enrolM = (int)$cntStmtM->fetchColumn();
+        if ($enrolM > 0) $maleEnrolFirstFriday = $enrolM;
+
+        $cntStmtF = $db->prepare("SELECT COUNT(*) FROM students WHERE grade_level = :g AND section = :s AND gender = 'Female' AND DATE(created_at) <= :ff");
+        $cntStmtF->execute([':g' => $gradeLevel, ':s' => $section, ':ff' => $firstFridaySY]);
+        $enrolF = (int)$cntStmtF->fetchColumn();
+        if ($enrolF > 0) $femaleEnrolFirstFriday = $enrolF;
     } catch (Exception $e) {}
 }
+
+/* ── Percentage of Enrolment as of end of month ─────────────────────────── */
+$pctEnrol         = $enrolFirstFriday > 0 ? round(($registeredLearners / $enrolFirstFriday) * 100, 2) : 0;
+$malePctEnrol     = $maleEnrolFirstFriday > 0 ? round(($maleCount / $maleEnrolFirstFriday) * 100, 2) : 0;
+$femalePctEnrol   = $femaleEnrolFirstFriday > 0 ? round(($femaleCount / $femaleEnrolFirstFriday) * 100, 2) : 0;

@@ -940,11 +940,18 @@ if ($activeSession) {
             document.getElementById('stopScanBtn').classList.remove('d-none');
             isScanning = true;
 
-            liveness = new Liveness({
-                video: document.getElementById('classVideo'),
-                onStatus: onLivenessStatus
-            });
-            await liveness.start();
+            // Start liveness (anti-spoofing) watcher on the live video.
+            // Never block scanning if it cannot start: liveness is fail-open.
+            try {
+                liveness = new Liveness({
+                    video: document.getElementById('classVideo'),
+                    onStatus: onLivenessStatus
+                });
+                await liveness.start();
+            } catch (e) {
+                console.warn('Liveness failed to start, scanning without it:', e);
+                liveness = null;
+            }
 
             scanningInterval = setInterval(autoClassScan, 3000);
             document.getElementById('statusText').textContent = '👁️ Please blink to verify you are present';

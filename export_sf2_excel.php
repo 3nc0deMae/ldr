@@ -62,9 +62,17 @@ $malePresent   = max(0, $maleCount * $schoolDaysCount - $maleBlock['absent']);
 $femalePresent = max(0, $femaleCount * $schoolDaysCount - $femaleBlock['absent']);
 $combinedPresent = max(0, $registeredLearners * $schoolDaysCount - $combinedAbsent);
 
-$fiveConsec = 0; $droppedOutM = 0; $droppedOutF = 0; $transferredOutM = 0; $transferredOutF = 0;
+$fiveConsecM = 0;
+foreach ($maleBlock['rows'] as $r) {
+    if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsecM++;
+}
+$fiveConsecF = 0;
+foreach ($femaleBlock['rows'] as $r) {
+    if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsecF++;
+}
+$fiveConsec = $fiveConsecM + $fiveConsecF;
+$droppedOutM = 0; $droppedOutF = 0; $transferredOutM = 0; $transferredOutF = 0;
 foreach (array_merge($maleBlock['rows'], $femaleBlock['rows']) as $r) {
-    if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsec++;
     $st = strtolower(trim((string)($r['student']['status'] ?? 'active')));
     $isMale = strcasecmp(trim((string)($r['student']['gender'] ?? '')), 'Male') === 0;
     if (in_array($st, ['inactive', 'dropped'], true)) {
@@ -75,9 +83,13 @@ foreach (array_merge($maleBlock['rows'], $femaleBlock['rows']) as $r) {
 }
 $droppedOut       = $droppedOutM + $droppedOutF;
 $transferredOut   = $transferredOutM + $transferredOutF;
-$pctEnrol         = $registeredLearners > 0 ? round(($registeredLearners / max(1, $enrolFirstFriday)) * 100, 2) : 0;
+$pctEnrol         = $enrolFirstFriday > 0 ? round(($registeredLearners / $enrolFirstFriday) * 100, 2) : 0;
+$malePctEnrol     = $maleEnrolFirstFriday > 0 ? round(($maleCount / $maleEnrolFirstFriday) * 100, 2) : 0;
+$femalePctEnrol   = $femaleEnrolFirstFriday > 0 ? round(($femaleCount / $femaleEnrolFirstFriday) * 100, 2) : 0;
 $maleADA          = $schoolDaysCount > 0 ? round(array_sum($maleBlock['attended']) / $schoolDaysCount, 2) : 0;
 $femaleADA        = $schoolDaysCount > 0 ? round(array_sum($femaleBlock['attended']) / $schoolDaysCount, 2) : 0;
+$malePctAttendance  = $maleCount > 0 ? round(($maleADA / $maleCount) * 100, 2) : 0;
+$femalePctAttendance = $femaleCount > 0 ? round(($femaleADA / $femaleCount) * 100, 2) : 0;
 
 /* ── 1. Dynamic header metadata ───────────────────────────────────────────
    Only overwrite template cells when the live value is non-empty; otherwise
@@ -175,12 +187,18 @@ $ws->setCellValue('AT56', 0);
 $ws->setCellValue('AR60', $maleCount);           // Registered Learners as of end of month
 $ws->setCellValue('AS60', $femaleCount);
 $ws->setCellValue('AT60', $registeredLearners);
-$ws->setCellValue('AT62', $pctEnrol . '%');      // Percentage of Enrolment as of end of month
+$ws->setCellValue('AR62', $malePctEnrol . '%');  // Percentage of Enrolment as of end of month
+$ws->setCellValue('AS62', $femalePctEnrol . '%');
+$ws->setCellValue('AT62', $pctEnrol . '%');
 $ws->setCellValue('AR64', $maleADA);             // Average Daily Attendance
 $ws->setCellValue('AS64', $femaleADA);
 $ws->setCellValue('AT64', $ada);
-$ws->setCellValue('AT66', $pctAttendance . '%'); // Percentage of Attendance for the month
-$ws->setCellValue('AT67', $fiveConsec);          // Number of students absent for 5 consecutive days
+$ws->setCellValue('AR66', $malePctAttendance . '%');  // Percentage of Attendance for the month
+$ws->setCellValue('AS66', $femalePctAttendance . '%');
+$ws->setCellValue('AT66', $pctAttendance . '%');
+$ws->setCellValue('AR67', $fiveConsecM);         // Number of students absent for 5 consecutive days
+$ws->setCellValue('AS67', $fiveConsecF);
+$ws->setCellValue('AT67', $fiveConsec);
 $ws->setCellValue('AR68', $droppedOutM);         // Dropped out
 $ws->setCellValue('AS68', $droppedOutF);
 $ws->setCellValue('AT68', $droppedOut);

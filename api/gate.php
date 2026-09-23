@@ -1175,7 +1175,7 @@ function callFaceAPI($endpoint, $data = []) {
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'X-API-Key: ' . PYTHON_API_KEY],
         CURLOPT_POSTFIELDS     => json_encode($data),
         CURLOPT_TIMEOUT        => 10,
         CURLOPT_CONNECTTIMEOUT => 5,

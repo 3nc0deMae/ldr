@@ -556,6 +556,34 @@ function getAllFaceEncodings($db) {
 // ============================================================
 
 /**
+ * Ensure the teacher_advisory_sections pivot table exists (multi-advisory support).
+ * Self-heals deployments where migrations/run_once.php has not been executed yet.
+ *
+ * @param PDO $db
+ * @return bool
+ */
+function ensureTeacherAdvisorySectionsTable($db) {
+    try {
+        $tableCheck = $db->query("SHOW TABLES LIKE 'teacher_advisory_sections'")->fetchAll();
+        if (!empty($tableCheck)) return true;
+        $db->exec("CREATE TABLE IF NOT EXISTS teacher_advisory_sections (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            teacher_id INT UNSIGNED NOT NULL,
+            section_id INT UNSIGNED NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uk_teacher_section (teacher_id, section_id),
+            KEY idx_teacher_id (teacher_id),
+            KEY idx_section_id (section_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        return true;
+    } catch (Exception $e) {
+        error_log('ensureTeacherAdvisorySectionsTable: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
  * Get all teachers with optional filters
  * @param PDO $db
  * @param array $filters
@@ -564,7 +592,27 @@ function getAllFaceEncodings($db) {
  * @return array
  */
 function getTeachers($db, $filters = [], $limit = 0, $offset = 0) {
-    $sql = "SELECT t.*, u.email as user_email FROM teachers t
+    // Advisory pivot CSV columns (multi-advisory support). Format for labels:
+    // "grade|section|strand" separated by "~"; ids CSV is section ids "~"-separated.
+    $advisorySub = ", '' AS advisory_sections_csv, '' AS advisory_section_ids_csv";
+    try {
+        ensureTeacherAdvisorySectionsTable($db);
+        $tableCheck = $db->query("SHOW TABLES LIKE 'teacher_advisory_sections'")->fetchAll();
+        if (!empty($tableCheck)) {
+            $advisorySub = ",
+                (SELECT GROUP_CONCAT(CONCAT_WS('|', s.grade_level, s.section_name, IFNULL(st.strand_name, ''))
+                         ORDER BY CAST(s.grade_level AS UNSIGNED), s.section_name SEPARATOR '~')
+                 FROM teacher_advisory_sections tas
+                 JOIN sections s ON s.id = tas.section_id
+                 LEFT JOIN strands st ON s.strand_id = st.id
+                 WHERE tas.teacher_id = t.id) AS advisory_sections_csv,
+                (SELECT GROUP_CONCAT(tas.section_id SEPARATOR '~')
+                 FROM teacher_advisory_sections tas
+                 WHERE tas.teacher_id = t.id) AS advisory_section_ids_csv";
+        }
+    } catch (Exception $e) { /* table may not exist yet */ }
+
+    $sql = "SELECT t.*, u.email as user_email {$advisorySub} FROM teachers t
             LEFT JOIN users u ON t.user_id = u.id";
     $conditions = [];
     $params = [];
@@ -718,7 +766,142 @@ function resolveAdvisorySection($db, $label) {
 }
 
 /**
- * Resolve the currently logged-in teacher's advisory section id.
+ * Fetch the advisory section ids (multi-advisory support) assigned to a teacher.
+ *
+ * @param PDO $db
+ * @param int $teacherId
+ * @return array
+ */
+function getTeacherAdvisorySectionIds($db, $teacherId) {
+    try {
+        $stmt = $db->prepare(
+            "SELECT section_id FROM teacher_advisory_sections
+             WHERE teacher_id = ? ORDER BY id ASC"
+        );
+        $stmt->execute([$teacherId]);
+        return array_values(array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+/**
+ * Persist a teacher's advisory section assignments.
+ *
+ * Accepts an array of section ids, replaces the pivot rows, then mirrors the
+ * first (primary) assignment back onto the legacy `advisory_class` and
+ * `advisory_section_id` columns so older single-value lookups keep working.
+ *
+ * @param PDO $db
+ * @param int $teacherId
+ * @param array $sectionIds
+ * @return array  The validated section ids that were stored.
+ */
+function syncTeacherAdvisorySections($db, $teacherId, $sectionIds) {
+    $teacherId = (int)$teacherId;
+    $sectionIds = array_values(array_unique(array_filter(array_map('intval', (array)$sectionIds), function ($id) {
+        return $id > 0;
+    })));
+
+    // Only persist sections that actually exist.
+    $valid = [];
+    if (!empty($sectionIds)) {
+        $ph = implode(',', array_fill(0, count($sectionIds), '?'));
+        try {
+            $stmt = $db->prepare("SELECT id FROM sections WHERE id IN ($ph)");
+            $stmt->execute($sectionIds);
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $sid) {
+                $valid[] = (int)$sid;
+            }
+        } catch (Exception $e) {
+            $valid = [];
+        }
+    }
+
+    try {
+        ensureTeacherAdvisorySectionsTable($db);
+        $db->prepare("DELETE FROM teacher_advisory_sections WHERE teacher_id = ?")->execute([$teacherId]);
+        $ins = $db->prepare("INSERT INTO teacher_advisory_sections (teacher_id, section_id) VALUES (?, ?)");
+        foreach ($valid as $sid) {
+            $ins->execute([$teacherId, $sid]);
+        }
+    } catch (Exception $e) {
+        error_log('syncTeacherAdvisorySections: ' . $e->getMessage());
+    }
+
+    // Mirror primary advisory onto the legacy columns.
+    $advisoryClass    = '';
+    $advisorySectionId = null;
+    if (!empty($valid)) {
+        $advisorySectionId = $valid[0];
+        try {
+            $stmt = $db->prepare(
+                "SELECT s.grade_level, s.section_name, st.strand_name
+                 FROM sections s
+                 LEFT JOIN strands st ON s.strand_id = st.id
+                 WHERE s.id = ? LIMIT 1"
+            );
+            $stmt->execute([$advisorySectionId]);
+            $row = $stmt->fetch();
+            if ($row) {
+                $advisoryClass = formatAdvisoryClassLabel($row['grade_level'], $row['section_name'], $row['strand_name'] ?? '');
+            }
+        } catch (Exception $e) {
+            $advisoryClass = '';
+        }
+    }
+    try {
+        $db->prepare("UPDATE teachers SET advisory_class = ?, advisory_section_id = ? WHERE id = ?")
+           ->execute([$advisoryClass, $advisorySectionId, $teacherId]);
+    } catch (Exception $e) {
+        error_log('syncTeacherAdvisorySections legacy sync: ' . $e->getMessage());
+    }
+
+    return $valid;
+}
+
+/**
+ * Resolve the advisory section ids for the currently logged-in teacher.
+ * Prefers the pivot (multi-advisory); falls back to legacy single-value fields.
+ *
+ * @param PDO $db
+ * @return array
+ */
+function getAdvisorySectionIds($db) {
+    $uid = getCurrentUserId();
+    if (!$uid) return [];
+
+    $teacher = null;
+    $stmt = $db->prepare("SELECT id FROM teachers WHERE user_id = ? LIMIT 1");
+    $stmt->execute([$uid]);
+    $teacher = $stmt->fetch();
+    if (!$teacher) {
+        $email = getCurrentUserEmail();
+        if ($email) {
+            $stmt = $db->prepare("SELECT id FROM teachers WHERE email = ? LIMIT 1");
+            $stmt->execute([$email]);
+            $teacher = $stmt->fetch();
+        }
+    }
+    if (!$teacher) return [];
+
+    $ids = getTeacherAdvisorySectionIds($db, (int)$teacher['id']);
+    if (!empty($ids)) return $ids;
+
+    // Legacy fallback: single advisory_section_id resolved from advisory_class.
+    $single = getAdvisorySectionId($db);
+    if ($single) {
+        $ids = [$single];
+        try {
+            $db->prepare("INSERT IGNORE INTO teacher_advisory_sections (teacher_id, section_id) VALUES (?, ?)")
+               ->execute([(int)$teacher['id'], $single]);
+        } catch (Exception $e) { /* table may not exist yet */ }
+    }
+    return $ids;
+}
+
+/**
+ * Resolve the currently logged-in teacher's primary advisory section id.
  * Also caches the result in the session for quick access.
  *
  * @param PDO $db
@@ -727,6 +910,29 @@ function resolveAdvisorySection($db, $label) {
 function getAdvisorySectionId($db) {
     $uid = getCurrentUserId();
     if (!$uid) return null;
+
+    // Locate the teacher row by user id (fall back to email).
+    $teacher = null;
+    $stmt = $db->prepare("SELECT id, advisory_class, advisory_section_id FROM teachers WHERE user_id = ? LIMIT 1");
+    $stmt->execute([$uid]);
+    $teacher = $stmt->fetch();
+    if (!$teacher) {
+        $email = getCurrentUserEmail();
+        if ($email) {
+            $stmt = $db->prepare("SELECT id, advisory_class, advisory_section_id FROM teachers WHERE email = ? LIMIT 1");
+            $stmt->execute([$email]);
+            $teacher = $stmt->fetch();
+        }
+    }
+    if (!$teacher) return null;
+
+    // Prefer the first pivot row (keeps multi-advisory teachers working).
+    $ids = getTeacherAdvisorySectionIds($db, (int)$teacher['id']);
+    if (!empty($ids)) {
+        $sectionId = $ids[0];
+        $_SESSION['advisory_section_id'] = $sectionId;
+        return $sectionId;
+    }
 
     // Reuse a previously resolved id, but only while its section still exists.
     if (!empty($_SESSION['advisory_section_id'])) {
@@ -737,29 +943,7 @@ function getAdvisorySectionId($db) {
         unset($_SESSION['advisory_section_id']);
     }
 
-    // Locate the teacher row by user id (fall back to email).
-    $teacher = null;
-    $stmt = $db->prepare(
-        "SELECT advisory_class, advisory_section_id FROM teachers
-         WHERE user_id = ? AND (advisory_class IS NOT NULL AND advisory_class != '')
-         LIMIT 1"
-    );
-    $stmt->execute([$uid]);
-    $teacher = $stmt->fetch();
-    if (!$teacher) {
-        $email = getCurrentUserEmail();
-        if ($email) {
-            $stmt = $db->prepare(
-                "SELECT advisory_class, advisory_section_id FROM teachers
-                 WHERE email = ? AND (advisory_class IS NOT NULL AND advisory_class != '')
-                 LIMIT 1"
-            );
-            $stmt->execute([$email]);
-            $teacher = $stmt->fetch();
-        }
-    }
-    if (!$teacher) return null;
-
+    // Legacy single-section fallback.
     $sectionId = null;
     if (!empty($teacher['advisory_section_id'])) {
         $sectionId = (int)$teacher['advisory_section_id'];
@@ -773,25 +957,41 @@ function getAdvisorySectionId($db) {
 }
 
 /**
- * Fetch the advisory section record (id, grade_level, section_name, strand) for
- * the currently logged-in teacher.
+ * Fetch all advisory section records (id, grade_level, section_name, strand)
+ * for the currently logged-in teacher (multi-advisory support).
+ *
+ * @param PDO $db
+ * @return array
+ */
+function getAdvisorySectionRecords($db) {
+    $ids = getAdvisorySectionIds($db);
+    if (empty($ids)) return [];
+
+    $ph = implode(',', array_fill(0, count($ids), '?'));
+    try {
+        $stmt = $db->prepare(
+            "SELECT s.id, s.grade_level, s.section_name, st.strand_name, st.strand_code
+             FROM sections s
+             LEFT JOIN strands st ON s.strand_id = st.id
+             WHERE s.id IN ($ph)
+             ORDER BY CAST(s.grade_level AS UNSIGNED), s.section_name ASC"
+        );
+        $stmt->execute($ids);
+        return $stmt->fetchAll() ?: [];
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+/**
+ * Fetch the primary advisory section record for the currently logged-in teacher.
  *
  * @param PDO $db
  * @return array|null
  */
 function getAdvisorySectionRecord($db) {
-    $sectionId = getAdvisorySectionId($db);
-    if (!$sectionId) return null;
-
-    $stmt = $db->prepare(
-        "SELECT s.id, s.grade_level, s.section_name, st.strand_name, st.strand_code
-         FROM sections s
-         LEFT JOIN strands st ON s.strand_id = st.id
-         WHERE s.id = ? LIMIT 1"
-    );
-    $stmt->execute([$sectionId]);
-    $row = $stmt->fetch();
-    return $row ?: null;
+    $records = getAdvisorySectionRecords($db);
+    return $records ? $records[0] : null;
 }
 
 /**
@@ -897,6 +1097,17 @@ function addTeacher($db, $data) {
     }
     $trackElectiveSubjectIds = array_values(array_unique($trackElectiveSubjectIds));
 
+    // Multi-advisory: section ids (pivot). Falls back to resolving a legacy
+    // advisory_class label when only the old single-value field was posted.
+    $advisorySectionIds = (array)($data['advisory_section_ids'] ?? []);
+    $advisorySectionIds = array_values(array_unique(array_filter(array_map('intval', $advisorySectionIds), function ($id) {
+        return $id > 0;
+    })));
+    if (empty($advisorySectionIds) && !empty($data['advisory_class'])) {
+        $resolved = resolveAdvisorySection($db, $data['advisory_class']);
+        if ($resolved) $advisorySectionIds = [$resolved];
+    }
+
     $sql = "INSERT INTO teachers (employee_id, first_name, middle_name, last_name, email, phone, department, subjects_handled, grade_section_handled, core_subjects_handled, track_elective_handled, advisory_class, created_at)
             VALUES (:employee_id, :first_name, :middle_name, :last_name, :email, :phone, :department, :subjects_handled, :grade_section_handled, :core_subjects_handled, :track_elective_handled, :advisory_class, NOW())";
     $stmt = $db->prepare($sql);
@@ -917,6 +1128,7 @@ function addTeacher($db, $data) {
     $teacherId = $result ? $db->lastInsertId() : false;
 
     if ($teacherId) {
+        syncTeacherAdvisorySections($db, $teacherId, $advisorySectionIds);
         $allSubjectIds = array_values(array_unique(array_merge($subjectIds, $coreSubjectIds, $trackElectiveSubjectIds)));
         syncTeacherSubjects($db, $teacherId, $allSubjectIds);
     }
@@ -1015,6 +1227,17 @@ function updateTeacher($db, $id, $data) {
     }
     $trackElectiveSubjectIds = array_values(array_unique($trackElectiveSubjectIds));
 
+    // Multi-advisory: section ids (pivot). Falls back to resolving a legacy
+    // advisory_class label when only the old single-value field was posted.
+    $advisorySectionIds = (array)($data['advisory_section_ids'] ?? []);
+    $advisorySectionIds = array_values(array_unique(array_filter(array_map('intval', $advisorySectionIds), function ($id) {
+        return $id > 0;
+    })));
+    if (empty($advisorySectionIds) && !empty($data['advisory_class'])) {
+        $resolved = resolveAdvisorySection($db, $data['advisory_class']);
+        if ($resolved) $advisorySectionIds = [$resolved];
+    }
+
     $sql = "UPDATE teachers SET employee_id = :employee_id, first_name = :first_name,
             middle_name = :middle_name, last_name = :last_name, email = :email, phone = :phone, department = :department,
             subjects_handled = :subjects_handled, grade_section_handled = :grade_section_handled,
@@ -1038,6 +1261,7 @@ function updateTeacher($db, $id, $data) {
         ':id'                 => $id
     ]);
     if ($updated) {
+        syncTeacherAdvisorySections($db, $id, $advisorySectionIds);
         $allSubjectIds = array_values(array_unique(array_merge($subjectIds, $coreSubjectIds, $trackElectiveSubjectIds)));
         syncTeacherSubjects($db, $id, $allSubjectIds);
     }
@@ -1060,6 +1284,8 @@ function deleteTeacher($db, $id) {
         $userId = $teacher['user_id'] ?? null;
 
         $db->prepare("DELETE FROM teachers WHERE id = ?")->execute([$id]);
+
+        try { $db->prepare("DELETE FROM teacher_advisory_sections WHERE teacher_id = ?")->execute([$id]); } catch (Exception $e) {}
 
         if ($userId) {
             $usr = $db->prepare("SELECT role FROM users WHERE id = ?");

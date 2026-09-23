@@ -29,13 +29,18 @@ $gradeLevel = sanitize($_GET['grade_level'] ?? '');
 $section    = sanitize($_GET['section']    ?? '');
 $subjectId  = intval($_GET['subject_id']   ?? 0);
 
-/* Advisory class (JHS/SHS) assigned to this teacher — the print signature shows
-   "Adviser" instead of "Subject Teacher" when the filtered grade & section is the advisory. */
+/* Advisory classes (JHS/SHS) assigned to this teacher — the print signature shows
+   "Adviser" instead of "Subject Teacher" when the filtered grade & section matches
+   any of the teacher's advisory sections (multi-advisory aware). */
 $isAdvisoryPrint = false;
-$advisoryRecord  = getAdvisorySectionRecord($db);
-if ($advisoryRecord && $gradeLevel !== '' && $section !== '') {
-    $isAdvisoryPrint = ((string)$gradeLevel === (string)$advisoryRecord['grade_level']
-        && strtolower(trim($section)) === strtolower(trim((string)$advisoryRecord['section_name'])));
+$advisoryRecords = getAdvisorySectionRecords($db);
+foreach ($advisoryRecords as $advisoryRecord) {
+    if ($gradeLevel !== '' && $section !== ''
+        && (string)$gradeLevel === (string)$advisoryRecord['grade_level']
+        && strtolower(trim($section)) === strtolower(trim((string)$advisoryRecord['section_name']))) {
+        $isAdvisoryPrint = true;
+        break;
+    }
 }
 
 $gradeSql = "SELECT DISTINCT s.grade_level FROM students s

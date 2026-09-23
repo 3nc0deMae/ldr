@@ -78,6 +78,9 @@
 
         /** Is a live person currently verified? */
         isLive() {
+            // Fail-open: if MediaPipe/FaceMesh is unavailable we treat the
+            // person as live so attendance scanning still works.
+            if (this._failOpen) return true;
             return this.faceVisible &&
                    (Date.now() - this.lastBlinkAt) < LIVE_WINDOW_MS;
         }
@@ -96,25 +99,35 @@
                     'liveness disabled (fail-open).');
                 this.running = true; // fail-open so attendance still works
                 this._failOpen = true;
+                this._emit(); // notify consumers (isLive() is true in fail-open)
                 return;
             }
 
             // Resolve the folder that holds the local MediaPipe FaceMesh assets.
             // Set window.FACE_MESH_BASE (e.g. "<BASE_URL>/assets/vendor/face_mesh")
             // before loading this script. Falls back to the CDN if unset.
-            const meshBase = (global.FACE_MESH_BASE || '').replace(/\/+$/, '');
-            this.faceMesh = new FaceMesh({
-                locateFile: (file) => meshBase
-                    ? `${meshBase}/${file}`
-                    : `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-            });
-            this.faceMesh.setOptions({
-                maxNumFaces: 1,
-                refineLandmarks: true,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-            this.faceMesh.onResults(this._onResults.bind(this));
+            try {
+                const meshBase = (global.FACE_MESH_BASE || '').replace(/\/+$/, '');
+                this.faceMesh = new FaceMesh({
+                    locateFile: (file) => meshBase
+                        ? `${meshBase}/${file}`
+                        : `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+                });
+                this.faceMesh.setOptions({
+                    maxNumFaces: 1,
+                    refineLandmarks: true,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+                this.faceMesh.onResults(this._onResults.bind(this));
+            } catch (e) {
+                console.warn('[Liveness] FaceMesh initialization failed; ' +
+                    'liveness disabled (fail-open).', e);
+                this.running = true;
+                this._failOpen = true;
+                this._emit(); // notify consumers (isLive() is true in fail-open)
+                return;
+            }
 
             this.running = true;
             this._loop();

@@ -56,8 +56,7 @@ if ($action === 'send_draft') {
     }
 
     if ($role === 'teacher') {
-        $currentSectionId = getAdvisorySectionId($db);
-        if ($draft['scope'] !== 'advisory' || (int)$draft['target_section_id'] !== $currentSectionId) {
+        if (!teacherOwnsAdvisoryDraft($db, $draft)) {
             respondJson(false, 'Unauthorized to send this draft announcement.');
         }
     } elseif ($role === 'admin') {
@@ -95,21 +94,23 @@ if ($action === 'send_draft') {
         $bodyHTML .= $attBlocks['html'];
 
         if ($role === 'teacher') {
-            $sectionRow = null;
-            try {
-                $st2 = $db->prepare("SELECT grade_level, section_name FROM sections WHERE id = ?");
-                $st2->execute([(int)$draft['target_section_id']]);
-                $sectionRow = $st2->fetch();
-            } catch (Exception $e) { $sectionRow = null; }
+            // Multi-advisory: deliver to every section targeted on the draft.
+            $recips  = $recipients;
+            $sectIds = array_values(array_unique(array_filter(array_map('intval', (array)($recips['section_ids'] ?? [])))));
+            if (empty($sectIds) && !empty($draft['target_section_id'])) $sectIds = [(int)$draft['target_section_id']];
+            $isIndividual = (($recips['recipient_type'] ?? '') === 'individual') && !empty($recips['student_ids']);
 
-            if ($sectionRow) {
+            foreach ($sectIds as $sid) {
+                $sectionRow = getSectionRow($db, $sid);
+                if (!$sectionRow) continue;
+
                 $sql = "SELECT g.guardian_name, g.email, g.phone
                         FROM students s
                         INNER JOIN guardians g ON s.id = g.student_id
                         WHERE s.status = 'active' AND s.grade_level = ? AND s.section = ?";
                 $params = [$sectionRow['grade_level'], $sectionRow['section_name']];
-                if (!empty($recipients['recipient_type']) && $recipients['recipient_type'] === 'individual' && !empty($recipients['student_ids'])) {
-                    $studentIds = array_map('intval', (array)$recipients['student_ids']);
+                if ($isIndividual) {
+                    $studentIds = array_map('intval', (array)$recips['student_ids']);
                     if ($studentIds) {
                         $sql .= " AND s.id IN (" . implode(',', array_fill(0, count($studentIds), '?')) . ")";
                         $params = array_merge($params, $studentIds);
@@ -234,43 +235,47 @@ $targetSectionId = null;
 $recipients      = [];
 
 if ($role === 'teacher') {
-    // ── Class Adviser: force advisory scope, lock section id ──────────────
-    $scope         = 'advisory';
-    $targetSectionId = getAdvisorySectionId($db);
+    // ── Class Adviser: force advisory scope, broadcast to ALL assigned sections ──
+    $scope              = 'advisory';
+    $advisorySectionIds = getAdvisorySectionIds($db);
 
-    if (!$targetSectionId) {
+    if (empty($advisorySectionIds)) {
         $message = 'You have no advisory class assigned. Please contact the administrator.';
         if (!empty($_POST['ajax'])) { respondJson(false, $message); }
         $_SESSION['flash_message'] = ['type' => 'danger', 'message' => $message];
         redirectToOrigin($role);
     }
 
-    // Adviser may target ALL parents of the advisory class (default) or
-    // individual parents of specific students in that class.
+    $targetSectionId = $advisorySectionIds[0];
+
+    // Adviser may target ALL parents of the advisory class(es) (default) or
+    // individual parents of specific students in any of those classes.
     $recipientScope = (($_POST['recipient_scope'] ?? 'all') === 'individual') ? 'individual' : 'all';
 
     if ($recipientScope === 'individual') {
-        $sectionRow = null;
-        try {
-            $st = $db->prepare("SELECT grade_level, section_name FROM sections WHERE id = ?");
-            $st->execute([$targetSectionId]);
-            $sectionRow = $st->fetch();
-        } catch (Exception $e) { $sectionRow = null; }
-
         $studentIds = array_values(array_unique(array_filter(array_map('intval', (array)($_POST['student_ids'] ?? [])))));
         $validIds   = [];
-        if ($sectionRow && !empty($studentIds)) {
-            $ph = implode(',', array_fill(0, count($studentIds), '?'));
-            try {
-                $st = $db->prepare(
-                    "SELECT id FROM students
-                     WHERE id IN ($ph) AND status = 'active'
-                       AND grade_level = ? AND section = ?"
-                );
-                $params = array_merge($studentIds, [$sectionRow['grade_level'], $sectionRow['section_name']]);
-                $st->execute($params);
-                $validIds = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
-            } catch (Exception $e) { $validIds = []; }
+        if (!empty($studentIds)) {
+            $ph         = implode(',', array_fill(0, count($studentIds), '?'));
+            $sectClause = [];
+            $qparams    = [];
+            foreach ($advisorySectionIds as $sid) {
+                $sr = getSectionRow($db, $sid);
+                if (!$sr) continue;
+                $sectClause[] = "(grade_level = ? AND section = ?)";
+                $qparams      = array_merge($qparams, [$sr['grade_level'], $sr['section_name']]);
+            }
+            if (!empty($sectClause)) {
+                try {
+                    $st = $db->prepare(
+                        "SELECT id FROM students
+                         WHERE id IN ($ph) AND status = 'active'
+                           AND (" . implode(' OR ', $sectClause) . ")"
+                    );
+                    $st->execute(array_merge($studentIds, $qparams));
+                    $validIds = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
+                } catch (Exception $e) { $validIds = []; }
+            }
         }
 
         if (!empty($validIds)) {
@@ -279,15 +284,17 @@ if ($role === 'teacher') {
                 'scope'             => 'advisory',
                 'recipient_type'    => 'individual',
                 'target_section_id' => $targetSectionId,
+                'section_ids'       => $advisorySectionIds,
                 'student_ids'       => $validIds,
             ];
         } else {
-            // Fall back to the whole advisory class if no valid students chosen.
+            // Fall back to the whole advisory class(es) if no valid students chosen.
             $recipientType = 'advisory_class';
             $recipients = [
                 'scope'             => 'advisory',
                 'recipient_type'    => 'advisory_class',
                 'target_section_id' => $targetSectionId,
+                'section_ids'       => $advisorySectionIds,
             ];
         }
     } else {
@@ -296,6 +303,7 @@ if ($role === 'teacher') {
             'scope'             => 'advisory',
             'recipient_type'    => 'advisory_class',
             'target_section_id' => $targetSectionId,
+            'section_ids'       => $advisorySectionIds,
         ];
     }
 } else {
@@ -374,8 +382,7 @@ if ($announcementId > 0) {
         redirectToOrigin($role);
     }
     if ($role === 'teacher') {
-        $currentSectionId = getAdvisorySectionId($db);
-        if ($existingAnnouncement['scope'] !== 'advisory' || (int)$existingAnnouncement['target_section_id'] !== $currentSectionId) {
+        if (!teacherOwnsAdvisoryDraft($db, $existingAnnouncement)) {
             $message = 'Unauthorized to update this announcement.';
             if (!empty($_POST['ajax'])) { respondJson(false, $message); }
             $_SESSION['flash_message'] = ['type' => 'danger', 'message' => $message];
@@ -495,16 +502,15 @@ if (!empty($channels) && $status === 'sent') {
         };
 
         if ($role === 'teacher') {
-            // ── Adviser: guardians of students in the locked section ──────
+            // ── Adviser: guardians of students in every assigned section ──
             //    (filtered to individually selected students when scoped so)
-            $sectionRow = null;
-            try {
-                $st2 = $db->prepare("SELECT grade_level, section_name FROM sections WHERE id = ?");
-                $st2->execute([$targetSectionId]);
-                $sectionRow = $st2->fetch();
-            } catch (Exception $e) { /* no-op */ }
+            $sectIds = array_values(array_unique(array_filter(array_map('intval', (array)($recipients['section_ids'] ?? [])))));
+            if (empty($sectIds) && !empty($targetSectionId)) $sectIds = [(int)$targetSectionId];
 
-            if ($sectionRow) {
+            foreach ($sectIds as $sid) {
+                $sectionRow = getSectionRow($db, $sid);
+                if (!$sectionRow) continue;
+
                 $sql = "SELECT g.guardian_name, g.email, g.phone
                         FROM students s
                         INNER JOIN guardians g ON s.id = g.student_id
@@ -583,11 +589,24 @@ if (!empty($channels) && $status === 'sent') {
                         WHERE u.role = 'teacher' AND t.status = 'active'";
                 $params = [];
                 if (in_array('advisers_only', $selected, true)) {
-                    $sql .= " AND t.advisory_class IS NOT NULL AND t.advisory_class != ''";
+                    $sql .= " AND (t.advisory_class IS NOT NULL AND t.advisory_class != ''
+                               OR EXISTS (SELECT 1 FROM teacher_advisory_sections tas WHERE tas.teacher_id = t.id))";
                 }
-                $stmt = $db->prepare($sql);
-                $stmt->execute($params);
-                foreach ($stmt->fetchAll() as $t) { $contactFilter($t); }
+                try {
+                    $stmt = $db->prepare($sql);
+                    $stmt->execute($params);
+                    foreach ($stmt->fetchAll() as $t) { $contactFilter($t); }
+                } catch (Exception $e) {
+                    // Pivot table missing (migration not run yet): legacy single-value check only.
+                    $legacySql = "SELECT CONCAT(t.first_name, ' ', t.last_name) AS guardian_name, t.email, t.phone
+                                  FROM teachers t
+                                  INNER JOIN users u ON t.user_id = u.id
+                                  WHERE u.role = 'teacher' AND t.status = 'active'"
+                        . (in_array('advisers_only', $selected, true) ? " AND t.advisory_class IS NOT NULL AND t.advisory_class != ''" : '');
+                    $stmt = $db->prepare($legacySql);
+                    $stmt->execute();
+                    foreach ($stmt->fetchAll() as $t) { $contactFilter($t); }
+                }
             }
         }
 
@@ -652,6 +671,42 @@ $_SESSION['flash_message'] = [
 redirectToOrigin($role);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+/**
+ * Whether the current teacher owns this advisory announcement and still has
+ * every targeted section assigned (multi-advisory aware).
+ */
+function teacherOwnsAdvisoryDraft($db, $draft) {
+    if (($draft['scope'] ?? '') !== 'advisory') return false;
+    if ((int)($draft['created_by'] ?? 0) !== (int)($_SESSION['user_id'] ?? 0)) return false;
+
+    $mine = getAdvisorySectionIds($db);
+    if (empty($mine)) return false;
+
+    $recips  = json_decode($draft['recipients'] ?? '{}', true) ?: [];
+    $draftSectionIds = array_values(array_unique(array_filter(array_map('intval', (array)($recips['section_ids'] ?? [])))));
+    if (empty($draftSectionIds) && !empty($draft['target_section_id'])) {
+        $draftSectionIds = [(int)$draft['target_section_id']];
+    }
+    if (empty($draftSectionIds)) return false;
+    foreach ($draftSectionIds as $sid) {
+        if (in_array($sid, $mine, true)) return true;
+    }
+    return false;
+}
+
+/**
+ * Resolve a section's grade_level / section_name for guard/student queries.
+ */
+function getSectionRow($db, $sectionId) {
+    try {
+        $st = $db->prepare("SELECT grade_level, section_name FROM sections WHERE id = ?");
+        $st->execute([(int)$sectionId]);
+        return $st->fetch() ?: null;
+    } catch (Exception $e) {
+        return null;
+    }
+}
+
 function redirectToOrigin($role) {
     if (ob_get_length()) { ob_end_clean(); }
     $dest = ($role === 'teacher') ? '/teacher/advisory.php' : '/admin/announcements.php';

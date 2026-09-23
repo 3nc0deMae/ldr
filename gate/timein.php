@@ -69,7 +69,7 @@ try {
             "SELECT ar.*, s.first_name, s.last_name, s.grade_level, s.section, s.student_id
              FROM attendance_records ar
              LEFT JOIN students s ON ar.student_id = s.id
-             WHERE ar.session_id = ? AND ar.session_type = 'time_in' AND ar.status != 'pending'
+             WHERE ar.gate_session_id = ? AND ar.session_type = 'time_in' AND ar.status != 'pending'
              ORDER BY ar.scan_time DESC LIMIT 20"
         );
         $stmt->execute([$activeSession['id']]);
@@ -691,11 +691,17 @@ try {
             isScanning = true;
 
             // Start liveness (anti-spoofing) watcher on the live video.
-            liveness = new Liveness({
-                video: document.getElementById('gateVideo'),
-                onStatus: onLivenessStatus
-            });
-            await liveness.start();
+            // Never block scanning if it cannot start: liveness is fail-open.
+            try {
+                liveness = new Liveness({
+                    video: document.getElementById('gateVideo'),
+                    onStatus: onLivenessStatus
+                });
+                await liveness.start();
+            } catch (e) {
+                console.warn('Liveness failed to start, scanning without it:', e);
+                liveness = null;
+            }
 
     // Auto-scan every 3 seconds
             scanningInterval = setInterval(autoScan, 3000);

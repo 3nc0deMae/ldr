@@ -122,6 +122,44 @@ function buildTeacherAdvisoryOptions($sections, $selectedValue = '') {
     return implode('', $options);
 }
 
+/**
+ * Build <option> list for the multi-select advisory section picker.
+ * Uses section ids as option values (multi-advisory support).
+ */
+function buildTeacherAdvisoryMultiOptions($sections, $selectedIds = []) {
+    $selected = array_map('intval', (array)$selectedIds);
+    $options = [];
+    foreach ($sections as $section) {
+        $label = formatAdvisoryClassLabel($section['grade_level'] ?? '', $section['section_name'] ?? '', $section['strand_name'] ?? '');
+        $checked = in_array((int)$section['id'], $selected, true) ? ' selected' : '';
+        $options[] = '<option value="' . (int)$section['id'] . '"' . $checked . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
+    }
+    return implode('', $options);
+}
+
+/**
+ * Parse the "advisory_sections_csv" produced by getTeachers() into labels.
+ * CSV format: "grade|section|strand" joined by "~".
+ */
+function parseAdvisorySectionsCsv($csv) {
+    $labels = [];
+    if (empty($csv)) return $labels;
+    foreach (explode('~', (string)$csv) as $part) {
+        $part = trim($part);
+        if ($part === '') continue;
+        $bits = array_pad(explode('|', $part), 3, '');
+        $labels[] = formatAdvisoryClassLabel($bits[0], $bits[1], $bits[2]);
+    }
+    return $labels;
+}
+
+function formatAdvisoryLabelsText($labels) {
+    if (empty($labels)) return '';
+    if (count($labels) === 1) return (string)$labels[0];
+    $last = array_pop($labels);
+    return implode(', ', $labels) . ' & ' . $last;
+}
+
 function getTeacherCoreSubjectNames($teacher) {
     $raw = $teacher['core_subjects_handled'] ?? '';
     if (empty($raw)) return [];
@@ -461,6 +499,21 @@ function formatTeacherTrackElectiveText($details) {
     .track-elective-row .rm-row-btn{background:var(--tm-danger-light);color:var(--tm-danger);border:none;width:32px;height:32px;border-radius:var(--tm-radius-sm);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all var(--tm-transition);flex-shrink:0;margin-bottom:2px;align-self:flex-end}
     .track-elective-row .rm-row-btn:hover{background:var(--tm-danger);color:#fff}
 
+    /* ADVISORY DUAL-LISTBOX (transfer) */
+    .adv-transfer{display:flex;gap:8px;align-items:stretch;margin-top:2px}
+    .adv-transfer-col{flex:1;min-width:0;display:flex;flex-direction:column}
+    .adv-transfer-header{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.5;margin-bottom:5px;text-align:center}
+    .adv-transfer select{width:100%;min-height:126px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:var(--tm-radius-sm);color:inherit;font-size:13px;padding:6px}
+    .adv-transfer select:focus{outline:none;border-color:var(--tm-primary);box-shadow:0 0 0 3px var(--tm-primary-glow)}
+    .adv-transfer select option{padding:7px 9px;border-radius:6px;cursor:pointer;background:var(--select-bg);color:var(--select-text)}
+    .adv-transfer select option:checked{background:var(--select-bg-hover)}
+    .adv-transfer-btns{display:flex;flex-direction:column;justify-content:center;gap:6px;flex-shrink:0}
+    .adv-transfer-btn{width:34px;height:34px;border:none;border-radius:var(--tm-radius-sm);background:rgba(255,255,255,0.08);color:inherit;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all var(--tm-transition)}
+    .adv-transfer-btn:hover{background:var(--tm-primary);color:#fff;transform:translateY(-1px)}
+    .adv-transfer-btn:active{transform:translateY(0)}
+    .adv-transfer-hint{font-size:10px;margin-top:5px;opacity:.45;text-align:center;line-height:1.4}
+    .adv-transfer-count{font-size:10px;font-weight:700;opacity:.6;margin-top:5px;text-align:center}
+
     /* TABLET */
     @media(max-width:991px){
         .content-area{padding:20px}
@@ -521,6 +574,10 @@ function formatTeacherTrackElectiveText($details) {
         .event-modal::before{content:'';display:block;width:36px;height:4px;border-radius:4px;background:rgba(255,255,255,0.2);margin:8px auto 0;flex-shrink:0}
         .delete-modal{width:100%;max-width:100vw;height:auto;max-height:92vh}
         .toast-container{bottom:24px;right:12px;left:12px}.toast-notification{max-width:100%;font-size:12px;padding:12px 16px}
+        .adv-transfer{flex-direction:column;gap:6px}
+        .adv-transfer-btns{flex-direction:row;justify-content:center}
+        .adv-transfer-btn{width:38px}
+        .adv-transfer select{min-height:96px}
     }
 
     /* SMALL PHONE */
@@ -620,7 +677,11 @@ function formatTeacherTrackElectiveText($details) {
                             <?php endif; ?>
                             <?php if(empty($jhDetails) && empty($shsDetails) && empty($trackElectiveDetails)): ?><span class="text-muted" style="font-size:12px">None</span><?php endif; ?>
                         </td>
-                        <td class="teacher-advisory"><?php if(!empty($t['advisory_class'])): ?><span class="badge bg-primary-soft text-primary"><?= sanitize($t['advisory_class']) ?></span><?php else: ?><span class="text-muted" style="font-size:12px">-</span><?php endif; ?></td>
+                        <td class="teacher-advisory"><?php
+    $advLabels = parseAdvisorySectionsCsv($t['advisory_sections_csv'] ?? '');
+    if (empty($advLabels) && !empty($t['advisory_class'])) $advLabels = [$t['advisory_class']];
+    if (!empty($advLabels)): ?><span style="font-size:12px"><?= sanitize(formatAdvisoryLabelsText($advLabels)) ?></span><?php
+    else: ?><span class="text-muted" style="font-size:12px">-</span><?php endif; ?></td>
                         <td class="teacher-department"><?php if(!empty($t['department'])): ?><span class="badge bg-success-soft text-success"><?= sanitize($t['department']) ?></span><?php else: ?><span class="text-muted" style="font-size:12px">-</span><?php endif; ?></td>
                         <td><div class="action-btns">
                             <button class="btn btn-icon btn-sm btn-outline-primary tm-edit-trigger" data-teacher='<?= htmlspecialchars(json_encode($t),ENT_QUOTES,'UTF-8') ?>' title="Edit"><i class="bi bi-pencil"></i></button>
@@ -688,7 +749,28 @@ function formatTeacherTrackElectiveText($details) {
                     <div id="trackElectiveRepeatable"></div>
                     <input type="hidden" name="track_elective_handled" id="track_elective_handled" value="[]">
                 </div>
-                <div class="evt-field"><label>Advisory Class <small>(optional)</small></label><select name="advisory_class"><option value="">Select advisory class</option><?= buildTeacherAdvisoryOptions($teacherSections) ?></select></div>
+                <div class="evt-field"><label>Advisory Class <small>(optional — one or more)</small></label>
+    <div class="adv-transfer" id="add-advtransfer">
+        <div class="adv-transfer-col">
+            <div class="adv-transfer-header">Available Classes</div>
+            <select id="add-adv-available" multiple size="6" class="form-select adv-available-select" data-placeholder="No sections available">
+                <?= buildTeacherAdvisoryMultiOptions($teacherSections) ?>
+            </select>
+            <div class="adv-transfer-hint"><i class="bi bi-mouse2 me-1"></i>Double-click to assign</div>
+        </div>
+        <div class="adv-transfer-btns">
+            <button type="button" class="adv-transfer-btn" data-move="all-right" title="Assign all"><i class="bi bi-chevron-double-right"></i></button>
+            <button type="button" class="adv-transfer-btn" data-move="right" title="Assign selected"><i class="bi bi-chevron-right"></i></button>
+            <button type="button" class="adv-transfer-btn" data-move="left" title="Remove selected"><i class="bi bi-chevron-left"></i></button>
+            <button type="button" class="adv-transfer-btn" data-move="all-left" title="Remove all"><i class="bi bi-chevron-double-left"></i></button>
+        </div>
+        <div class="adv-transfer-col">
+            <div class="adv-transfer-header">Assigned Classes</div>
+            <select id="add-adv-selected" name="advisory_section_ids[]" multiple size="6" class="form-select adv-selected-select"></select>
+            <div class="adv-transfer-hint"><i class="bi bi-mouse2 me-1"></i>Double-click to remove</div>
+        </div>
+    </div>
+</div>
                 <div class="evt-field"><label>Department <small>(optional)</small></label><select name="department"><option value="">Select department</option><option value="Junior High">Junior High</option><option value="Senior High">Senior High</option><option value="Both">Both</option></select></div>
             </div>
             <div class="event-modal-footer">
@@ -739,7 +821,28 @@ function formatTeacherTrackElectiveText($details) {
                     <div id="editTrackElectiveRepeatable"></div>
                     <input type="hidden" name="track_elective_handled" id="edit_track_elective_handled" value="[]">
                 </div>
-                <div class="evt-field"><label>Advisory Class</label><select id="edit-advisory_class" name="advisory_class"><option value="">Select advisory class</option><?= buildTeacherAdvisoryOptions($teacherSections) ?></select></div>
+                <div class="evt-field"><label>Advisory Class <small>(one or more)</small></label>
+    <div class="adv-transfer" id="edit-advtransfer">
+        <div class="adv-transfer-col">
+            <div class="adv-transfer-header">Available Classes</div>
+            <select id="edit-adv-available" multiple size="6" class="form-select adv-available-select" data-placeholder="No sections available">
+                <?= buildTeacherAdvisoryMultiOptions($teacherSections) ?>
+            </select>
+            <div class="adv-transfer-hint"><i class="bi bi-mouse2 me-1"></i>Double-click to assign</div>
+        </div>
+        <div class="adv-transfer-btns">
+            <button type="button" class="adv-transfer-btn" data-move="all-right" title="Assign all"><i class="bi bi-chevron-double-right"></i></button>
+            <button type="button" class="adv-transfer-btn" data-move="right" title="Assign selected"><i class="bi bi-chevron-right"></i></button>
+            <button type="button" class="adv-transfer-btn" data-move="left" title="Remove selected"><i class="bi bi-chevron-left"></i></button>
+            <button type="button" class="adv-transfer-btn" data-move="all-left" title="Remove all"><i class="bi bi-chevron-double-left"></i></button>
+        </div>
+        <div class="adv-transfer-col">
+            <div class="adv-transfer-header">Assigned Classes</div>
+            <select id="edit-adv-selected" name="advisory_section_ids[]" multiple size="6" class="form-select adv-selected-select"></select>
+            <div class="adv-transfer-hint"><i class="bi bi-mouse2 me-1"></i>Double-click to remove</div>
+        </div>
+    </div>
+</div>
                 <div class="evt-field"><label>Department</label><select id="edit-department" name="department"><option value="">Select department</option><option value="Junior High">Junior High</option><option value="Senior High">Senior High</option><option value="Both">Both</option></select></div>
             </div>
             <div class="event-modal-footer">
@@ -795,6 +898,36 @@ function formatTeacherTrackElectiveText($details) {
     var trackOptions = <?= json_encode(array_map(function($t){return ['value'=>$t['id'],'text'=>$t['track_name']];}, $tracks), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var electiveOptions = <?= json_encode(array_map(function($e){return ['value'=>$e['id'],'text'=>$e['elective_name'],'track_id'=>$e['track_id']];}, $electives), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
     var electiveSubjectOptions = <?= json_encode(array_map(function($es){return ['value'=>$es['subject_id'],'text'=>$es['subject_name'],'elective_id'=>$es['elective_id']];}, $electiveSubjects), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
+    var advisorySectionOptions = <?= json_encode(array_map(function($s){return ['value'=>$s['id'],'text'=>formatAdvisoryClassLabel($s['grade_level']??'',$s['section_name']??'',$s['strand_name']??'')];}, $teacherSections), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
+
+    function advisoryLabelFromBits(grade, section, strand){
+        var l=String(grade||'');if(section)l+=String(section);if(strand)l+=' - '+String(strand);return l;
+    }
+    function advisoryLabelsFromCsv(csv){
+        var labels=[];
+        if(csv){String(csv).split('~').forEach(function(part){part=String(part||'').trim();if(!part)return;var bits=part.split('|');labels.push(advisoryLabelFromBits(bits[0],bits[1],bits[2]));});}
+        return labels;
+    }
+    function advisoryLabelsFromTeacher(t){
+        var labels=advisoryLabelsFromCsv(t.advisory_sections_csv||'');
+        if(labels.length)return labels;
+        var ids=t.advisory_section_ids;
+        if(ids&&ids.length){ids.forEach(function(id){var val=String(id);var found=(advisorySectionOptions||[]).filter(function(o){return String(o.value)===val;});found.forEach(function(o){labels.push(o.text);});});}
+        if(!labels.length&&t.advisory_class)labels=[t.advisory_class];
+        return labels;
+    }
+    function escapeHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function advisoryText(labels){
+        if(!labels||!labels.length)return '';
+        labels = labels.map(function(l){return escapeHtml(l);});
+        if(labels.length===1)return labels[0];
+        var last = labels.pop();
+        return labels.join(', ') + ' & ' + last;
+    }
+    function advisoryDisplayHtml(labels){
+        if(!labels||!labels.length)return '<span class="text-muted" style="font-size:12px">-</span>';
+        return '<span style="font-size:12px">' + advisoryText(labels) + '</span>';
+    }
 
     function buildGradeHandledRow(data){
         var row=document.createElement('div');row.className='grade-handled-row';
@@ -877,17 +1010,30 @@ function formatTeacherTrackElectiveText($details) {
         var subjLbl=document.createElement('label');subjLbl.innerHTML='Core Subject Handled <small>(optional)</small>';
         var subjSel=document.createElement('select');subjSel.className='form-select core-subject-select';
         var defOpt2=document.createElement('option');defOpt2.value='';defOpt2.textContent='Select';subjSel.appendChild(defOpt2);
-        (coreSubjectOptions||[]).forEach(function(o){
-            var gl=parseInt(o.grade_level), ge=parseInt(o.grade_level_end||o.grade_level);
-            if(gl>=11 || ge>=11){var opt=document.createElement('option');opt.value=o.value;opt.textContent=o.text;subjSel.appendChild(opt);}
-        });
         subjWrap.appendChild(subjLbl);subjWrap.appendChild(subjSel);row.appendChild(subjWrap);
 
         var rm=document.createElement('button');rm.type='button';rm.className='rm-row-btn';rm.title='Remove';rm.innerHTML='<i class="bi bi-x-lg"></i>';
         rm.addEventListener('click',function(){if(row.parentNode)row.remove();});
         row.appendChild(rm);
 
-        if(data && data.section_id) gsSel.value = String(data.section_id);
+        function updateCoreSubjects(){
+            var gid=gsSel.value;
+            var grade=sectionGradeMap[gid]||null;
+            subjSel.innerHTML='';
+            var def=document.createElement('option');def.value='';def.textContent='Select';subjSel.appendChild(def);
+            (coreSubjectOptions||[]).forEach(function(o){
+                var gl=parseInt(o.grade_level,10), ge=parseInt(o.grade_level_end||o.grade_level,10);
+                if(gl>=11 || ge>=11){
+                    if(!grade || (gl<=parseInt(grade,10) && parseInt(grade,10)<=ge)){
+                        var opt=document.createElement('option');opt.value=o.value;opt.textContent=o.text;subjSel.appendChild(opt);
+                    }
+                }
+            });
+        }
+        updateCoreSubjects();
+        gsSel.addEventListener('change', updateCoreSubjects);
+
+        if(data && data.section_id){ gsSel.value = String(data.section_id); updateCoreSubjects(); }
         if(data && data.subject_id) subjSel.value = String(data.subject_id);
 
         return row;
@@ -1009,6 +1155,52 @@ function formatTeacherTrackElectiveText($details) {
         if(hiddenInput) hiddenInput.value = JSON.stringify(data);
     }
 
+    /* ADVISORY DUAL-LISTBOX (transfer) */
+    function initAdvisoryTransfer(prefix){
+        var root = document.getElementById(prefix + '-advtransfer');
+        var available = document.getElementById(prefix + '-adv-available');
+        var selected  = document.getElementById(prefix + '-adv-selected');
+        if(!root || !available || !selected) return null;
+
+        function moveOpts(from, to){
+            Array.prototype.slice.call(from.selectedOptions).forEach(function(o){ to.appendChild(o); });
+        }
+        function moveAll(from, to){
+            Array.prototype.slice.call(from.options).forEach(function(o){ to.appendChild(o); });
+        }
+        function reset(){
+            moveAll(selected, available);
+        }
+        function setSelectedIds(ids){
+            ids = (ids||[]).map(function(v){ return String(v); });
+            moveAll(selected, available);
+            Array.prototype.slice.call(available.options).forEach(function(o){
+                if(ids.indexOf(o.value) !== -1){ selected.appendChild(o); }
+            });
+        }
+
+        available.addEventListener('dblclick', function(e){
+            if(e.target && e.target.tagName === 'OPTION'){ selected.appendChild(e.target); }
+        });
+        selected.addEventListener('dblclick', function(e){
+            if(e.target && e.target.tagName === 'OPTION'){ available.appendChild(e.target); }
+        });
+
+        root.querySelectorAll('.adv-transfer-btn[data-move]').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                var move = btn.getAttribute('data-move');
+                if(move === 'right') moveOpts(available, selected);
+                else if(move === 'left') moveOpts(selected, available);
+                else if(move === 'all-right') moveAll(available, selected);
+                else if(move === 'all-left') moveAll(selected, available);
+            });
+        });
+
+        return { reset: reset, setSelectedIds: setSelectedIds };
+    }
+    var addAdvTransfer  = initAdvisoryTransfer('add');
+    var editAdvTransfer = initAdvisoryTransfer('edit');
+
     /* ADD TEACHER */
     var addO=document.getElementById('addTeacherOverlay'),addF=document.getElementById('addTeacherForm'),addB=document.getElementById('addTeacherSave');
     var addGradeContainer = document.getElementById('gradeHandledRepeatable');
@@ -1034,7 +1226,7 @@ function formatTeacherTrackElectiveText($details) {
         });
     }
     if(addO&&addF&&addB){
-        function openAddTeacher(){addF.reset();if(addGradeContainer) addGradeContainer.innerHTML='';if(addGradeHidden) addGradeHidden.value='[]';if(addCoreSubjectContainer) addCoreSubjectContainer.innerHTML='';if(addCoreSubjectHidden) addCoreSubjectHidden.value='[]';if(addTrackElectiveContainer) addTrackElectiveContainer.innerHTML='';if(addTrackElectiveHidden) addTrackElectiveHidden.value='[]';openModal(addO);}
+        function openAddTeacher(){addF.reset();if(addGradeContainer) addGradeContainer.innerHTML='';if(addGradeHidden) addGradeHidden.value='[]';if(addCoreSubjectContainer) addCoreSubjectContainer.innerHTML='';if(addCoreSubjectHidden) addCoreSubjectHidden.value='[]';if(addTrackElectiveContainer) addTrackElectiveContainer.innerHTML='';if(addTrackElectiveHidden) addTrackElectiveHidden.value='[]';if(addAdvTransfer) addAdvTransfer.reset();openModal(addO);}
         var openBtn=document.getElementById('openAddTeacher');if(openBtn)openBtn.addEventListener('click',openAddTeacher);
         var openBtnM=document.getElementById('openAddTeacherMobile');if(openBtnM)openBtnM.addEventListener('click',openAddTeacher);
         var _addClose = document.getElementById('addTeacherClose'); if(_addClose) _addClose.addEventListener('click',function(){closeModal(addO);});
@@ -1057,7 +1249,6 @@ function formatTeacherTrackElectiveText($details) {
                 if(addTrackElectiveContainer) addTrackElectiveContainer.appendChild(buildTrackElectiveRow({}));
             });
         }
-        function escapeHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
         function getSubjectNameById(id) {
             var s = subjectOptions.find(function(o) { return String(o.value) === String(id); });
             return s ? s.text : '';
@@ -1127,6 +1318,9 @@ function formatTeacherTrackElectiveText($details) {
                         phone: t.phone,
                         department: t.department,
                         advisory_class: t.advisory_class,
+                        advisory_sections_csv: t.advisory_sections_csv || '',
+                        advisory_section_ids_csv: t.advisory_section_ids_csv || '',
+                        advisory_section_ids: t.advisory_section_ids || [],
                         subjects_handled: t.subjects_handled,
                         grade_section_handled: t.grade_section_handled,
                         core_subjects_handled: t.core_subjects_handled,
@@ -1216,7 +1410,7 @@ var teacherName = escapeHtml(t.first_name);
                          '<td class="teacher-email"><a href="mailto:' + escapeHtml(t.email) + '">' + escapeHtml(t.email) + '</a></td>' +
                          '<td style="font-size:13px">' + escapeHtml(t.phone || '-') + '</td>' +
                          '<td class="teacher-subjects">' + subjectsCellHtml + '</td>' +
-                         '<td class="teacher-advisory">' + (t.advisory_class ? '<span class="badge bg-primary-soft text-primary">' + escapeHtml(t.advisory_class) + '</span>' : '<span class="text-muted" style="font-size:12px">-</span>') + '</td>' +
+                         '<td class="teacher-advisory">' + advisoryDisplayHtml(advisoryLabelsFromTeacher(t)) + '</td>' +
                          '<td class="teacher-department">' + (t.department ? '<span class="badge bg-success-soft text-success">' + escapeHtml(t.department) + '</span>' : '<span class="text-muted" style="font-size:12px">-</span>') + '</td>' +
                          '<td><div class="action-btns">' +
                              '<button class="btn btn-icon btn-sm btn-outline-primary tm-edit-trigger" data-teacher=\'' + teacherJson + '\' title="Edit"><i class="bi bi-pencil"></i></button>' +
@@ -1272,7 +1466,16 @@ var teacherName = escapeHtml(t.first_name);
         document.getElementById('edit-last_name').value = t.last_name || '';
         document.getElementById('edit-email').value = t.email || '';
         document.getElementById('edit-phone').value = t.phone || '';
-        document.getElementById('edit-advisory_class').value = t.advisory_class || '';
+        if (editAdvTransfer) {
+            var advIds = [];
+            if (t.advisory_section_ids_csv) advIds = String(t.advisory_section_ids_csv).split('~');
+            else if (t.advisory_section_ids && t.advisory_section_ids.length) advIds = t.advisory_section_ids;
+            else if (t.advisory_class) {
+                var found = (advisorySectionOptions||[]).filter(function(o){ return o.text === t.advisory_class; });
+                advIds = found.map(function(o){ return o.value; });
+            }
+            editAdvTransfer.setSelectedIds(advIds);
+        }
         document.getElementById('edit-department').value = t.department || '';
         
         var gradeItems = [];

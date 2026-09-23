@@ -25,9 +25,17 @@ $malePresent    = ($maleCount * $schoolDaysCount) - $maleBlock['absent'];
 $femalePresent  = ($femaleCount * $schoolDaysCount) - $femaleBlock['absent'];
 $combinedPresent = ($registeredLearners * $schoolDaysCount) - $combinedAbsent;
 
-$fiveConsec = 0; $droppedOutM = 0; $droppedOutF = 0; $transferredOutM = 0; $transferredOutF = 0; $transferredIn = 0;
+$fiveConsecM = 0;
+foreach ($maleBlock['rows'] as $r) {
+    if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsecM++;
+}
+$fiveConsecF = 0;
+foreach ($femaleBlock['rows'] as $r) {
+    if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsecF++;
+}
+$fiveConsec = $fiveConsecM + $fiveConsecF;
+$droppedOutM = 0; $droppedOutF = 0; $transferredOutM = 0; $transferredOutF = 0; $transferredIn = 0;
 foreach (array_merge($maleBlock['rows'], $femaleBlock['rows']) as $r) {
-    if ((int)($r['maxRun'] ?? 0) >= 5) $fiveConsec++;
     $st = strtolower(trim((string)($r['student']['status'] ?? 'active')));
     $isMale = strcasecmp(trim((string)($r['student']['gender'] ?? '')), 'Male') === 0;
     if (in_array($st, ['inactive', 'dropped'], true)) {
@@ -273,19 +281,27 @@ $dowShort = ['1' => 'M', '2' => 'T', '3' => 'W', '4' => 'TH', '5' => 'F'];
                     </tr>
                     <tr>
                         <td class="sf2-sum-label" colspan="5">Percentage of Enrolment as of end of month</td>
-                        <td class="sf2-sum-value" colspan="3"><?= $pctEnrol ?>%</td>
+                        <td class="sf2-sum-value"><?= $malePctEnrol ?>%</td>
+                        <td class="sf2-sum-value"><?= $femalePctEnrol ?>%</td>
+                        <td class="sf2-sum-value"><?= $pctEnrol ?>%</td>
                     </tr>
                     <tr>
                         <td class="sf2-sum-label" colspan="5">Average Daily Attendance</td>
-                        <td class="sf2-sum-value" colspan="3"><?= $ada ?></td>
+                        <td class="sf2-sum-value"><?= $maleAda ?></td>
+                        <td class="sf2-sum-value"><?= $femaleAda ?></td>
+                        <td class="sf2-sum-value"><?= $ada ?></td>
                     </tr>
                     <tr>
                         <td class="sf2-sum-label" colspan="5">Percentage of Attendance for the month</td>
-                        <td class="sf2-sum-value" colspan="3"><?= $pctAttendance ?>%</td>
+                        <td class="sf2-sum-value"><?= $malePctAttendance ?>%</td>
+                        <td class="sf2-sum-value"><?= $femalePctAttendance ?>%</td>
+                        <td class="sf2-sum-value"><?= $pctAttendance ?>%</td>
                     </tr>
                     <tr>
                         <td class="sf2-sum-label" colspan="5">Number of students absent for 5 consecutive days</td>
-                        <td class="sf2-sum-value" colspan="3"><?= $fiveConsec ?></td>
+                        <td class="sf2-sum-value"><?= $fiveConsecM ?></td>
+                        <td class="sf2-sum-value"><?= $fiveConsecF ?></td>
+                        <td class="sf2-sum-value"><?= $fiveConsec ?></td>
                     </tr>
                     <tr>
                         <td class="sf2-sum-label" colspan="5">Dropped out</td>

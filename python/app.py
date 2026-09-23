@@ -10,6 +10,7 @@ import numpy as np
 import base64
 import json
 import logging
+import uuid
 import warnings
 from datetime import datetime
 
@@ -270,9 +271,10 @@ def decode_base64_image(base64_string):
 
 
 def save_temp_image(image):
-    """Save image to a temporary file and return the path.
-    DeepFace's represent() requires a file path."""
-    temp_path = os.path.join(UPLOAD_FOLDER, '_temp_encode.jpg')
+    """Save image to a unique temporary file and return the path.
+    DeepFace's represent() requires a file path.
+    A unique name avoids concurrent requests overwriting each other's temp file."""
+    temp_path = os.path.join(UPLOAD_FOLDER, f'_temp_{uuid.uuid4().hex}.jpg')
     cv2.imwrite(temp_path, image)
     return temp_path
 
@@ -301,7 +303,10 @@ def detect_and_crop_face(image, padding_factor=0.15):
         if not isinstance(detections, list) or len(detections) == 0:
             return None
 
-        best = select_primary_face(detections, image.shape)
+        # Detection coordinates are relative to the RESIZED image, so the
+        # zone check must run against the resized dimensions too.
+        resized_h, resized_w = resized.shape[:2]
+        best = select_primary_face(detections, resized.shape)
         if best is None:
             return None
 
@@ -314,7 +319,7 @@ def detect_and_crop_face(image, padding_factor=0.15):
             int(region.get('y', 0)),
             int(region.get('w', 0)),
             int(region.get('h', 0)),
-            image.shape[0], image.shape[1]
+            resized_h, resized_w
         ):
             return None
 
@@ -538,6 +543,9 @@ def detect_faces_in_image(image):
 
         faces = []
         if isinstance(result, list):
+            # Detection coordinates are relative to the RESIZED image, so the
+            # zone check must run against the resized dimensions too.
+            resized_h, resized_w = resized.shape[:2]
             for face_data in result:
                 region = face_data.get('facial_area', {})
                 if region:
@@ -545,7 +553,7 @@ def detect_faces_in_image(image):
                     y = int(region.get('y', 0))
                     w = int(region.get('w', 0))
                     h = int(region.get('h', 0))
-                    if not is_face_in_zone(x, y, w, h, image.shape[0], image.shape[1]):
+                    if not is_face_in_zone(x, y, w, h, resized_h, resized_w):
                         continue
                     if scale != 1.0:
                         x = int(x / scale)
@@ -686,10 +694,13 @@ def recognize_face_endpoint():
                 'message': 'Image quality insufficient: ' + '; '.join(severe_issues)
             })
 
-        # Live recognition: encode directly without crop for speed.
-        # Registered embeddings were built with crop=True, so they remain
-        # hairstyle-robust even when live scans are encoded without cropping.
-        unknown_encoding, error = encode_face(image, check_quality=False, crop=False)
+        # Live recognition must encode the SAME isolated face region that was
+        # used when the student's embedding was registered. Registration bakes
+        # embeddings with crop=True (tight face crop, hairstyle/background
+        # robust). If live scans are encoded with crop=False (whole frame), the
+        # embedding is computed from a very different image region and the
+        # cosine distance to the stored embedding becomes unreliable.
+        unknown_encoding, error = encode_face(image, check_quality=False, crop=True)
         if error:
             return jsonify({'error': error, 'matched': False, 'quality_warnings': quality_warnings}), 400
 

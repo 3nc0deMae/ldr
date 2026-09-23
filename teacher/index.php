@@ -51,6 +51,22 @@ if (!empty($assignedSubjectIds)) {
     } catch (Exception $e) { error_log('mySubjects: ' . $e->getMessage()); }
 }
 
+// Multi-advisory: all sections this teacher advises (from the pivot / legacy fallback).
+$advisorySectionRecords = [];
+$advisoryStudentCounts = [];
+try {
+    $advisorySectionRecords = getAdvisorySectionRecords($db);
+} catch (Exception $e) { error_log('advisorySectionRecords: ' . $e->getMessage()); }
+if (!empty($advisorySectionRecords)) {
+    $advIds = array_map(function ($r) { return (int)$r['id']; }, $advisorySectionRecords);
+    $advIdx = implode(',', array_fill(0, count($advIds), '?'));
+    try {
+        $stmt = $db->prepare("SELECT section_id, COUNT(*) AS cnt FROM students WHERE section_id IN ($advIdx) GROUP BY section_id");
+        $stmt->execute($advIds);
+        foreach ($stmt->fetchAll() as $c) { $advisoryStudentCounts[(int)$c['section_id']] = (int)$c['cnt']; }
+    } catch (Exception $e) { error_log('advisoryStudentCounts: ' . $e->getMessage()); }
+}
+
 $teacherSessionIds = [];
 try {
     $stmt = $db->prepare("SELECT id FROM attendance_sessions WHERE created_by = ?");
@@ -646,6 +662,7 @@ $dashDaily = array_values($dashDaily);
         <div class="row g-4 mb-4">
             <div class="col-md-6"><div class="card"><div class="card-header p-3">Quick Actions</div><div class="card-body p-3"><a href="<?= BASE_URL ?>/teacher/attendance.php" class="btn btn-primary me-2 mb-2"><i class="bi bi-camera-video"></i> Start Attendance Session</a><a href="<?= BASE_URL ?>/teacher/records.php" class="btn btn-outline-secondary mb-2"><i class="bi bi-list-check"></i> View Records</a><a href="<?= BASE_URL ?>/teacher/reports.php" class="btn btn-outline-secondary mb-2"><i class="bi bi-file-earmark-bar-graph"></i> Generate Report</a></div></div></div>
             <div class="col-md-6"><div class="card"><div class="card-header p-3">My Subjects</div><div class="card-body p-3"><?php if (empty($mySubjects)): ?><p class="text-muted text-center mb-0">No subjects assigned yet.</p><?php else: ?><div class="d-flex flex-wrap gap-2"><?php foreach ($mySubjects as $subj): ?><span class="badge"><i class="bi bi-book me-1"></i> <?= sanitize($subj['subject_name']) ?></span><?php endforeach; ?></div><?php endif; ?></div></div></div>
+            <div class="col-md-6"><div class="card"><div class="card-header p-3">My Advisory Classes</div><div class="card-body p-3"><?php if (empty($advisorySectionRecords)): ?><p class="text-muted text-center mb-0">No advisory class assigned. Please contact the administrator.</p><?php else: ?><div class="d-flex flex-wrap gap-2"><?php foreach ($advisorySectionRecords as $advSec): ?><a href="<?= BASE_URL ?>/teacher/advisory.php" class="badge" title="<?= (int)($advisoryStudentCounts[(int)$advSec['id']] ?? 0) ?> student(s)"><i class="bi bi-people me-1"></i> <?= sanitize(formatAdvisoryClassLabel($advSec['grade_level'], $advSec['section_name'], $advSec['strand_name'])) ?></a><?php endforeach; ?></div><?php endif; ?></div></div></div>
         </div>
 
         <div class="row g-4 mb-4">
