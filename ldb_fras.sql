@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `announcements` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `title` varchar(255) DEFAULT NULL,
   `subject` varchar(255) DEFAULT NULL,
   `body` text NOT NULL,
@@ -50,7 +50,7 @@ INSERT INTO `announcements` (`id`, `title`, `subject`, `body`, `template_type`, 
 --
 
 CREATE TABLE `attendance` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `student_id` int(11) UNSIGNED NOT NULL,
   `subject_id` int(11) UNSIGNED DEFAULT NULL,
   `date` date NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE `attendance` (
 --
 
 CREATE TABLE `attendance_records` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `student_id` int(11) UNSIGNED NOT NULL,
   `gate_session_id` int(11) UNSIGNED DEFAULT NULL,
   `session_type` enum('time_in','time_out') NOT NULL DEFAULT 'time_in',
@@ -90,7 +90,7 @@ CREATE TABLE `attendance_records` (
 --
 
 CREATE TABLE `attendance_sessions` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `session_type` enum('gate','class') NOT NULL DEFAULT 'gate',
   `subject_id` int(11) UNSIGNED DEFAULT NULL COMMENT 'For class sessions',
   `grade_level` enum('7','8','9','10','11','12') DEFAULT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE `attendance_sessions` (
 --
 
 CREATE TABLE `audit_logs` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` int(11) UNSIGNED DEFAULT NULL,
   `action` varchar(100) NOT NULL,
   `description` text DEFAULT NULL,
@@ -194,7 +194,7 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `description`, `ip_address`
 --
 
 CREATE TABLE `gate_logs` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `student_id` int(11) UNSIGNED NOT NULL,
   `time_in` datetime DEFAULT NULL,
   `time_out` datetime DEFAULT NULL,
@@ -213,7 +213,7 @@ CREATE TABLE `gate_logs` (
 --
 
 CREATE TABLE `gate_sessions` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `created_by` int(11) UNSIGNED DEFAULT NULL,
   `session_type` enum('time_in','time_out') NOT NULL DEFAULT 'time_in',
   `session_period` enum('morning','afternoon') DEFAULT NULL COMMENT 'Daily period: morning or afternoon',
@@ -236,7 +236,7 @@ CREATE TABLE `gate_sessions` (
 --
 
 CREATE TABLE `guardians` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `student_id` int(11) UNSIGNED NOT NULL,
   `guardian_name` varchar(255) NOT NULL,
   `relationship` varchar(50) DEFAULT 'Parent',
@@ -263,7 +263,7 @@ INSERT INTO `guardians` (`id`, `student_id`, `guardian_name`, `relationship`, `p
 --
 
 CREATE TABLE `notifications` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `recipient` varchar(255) NOT NULL COMMENT 'Email or phone number',
   `channel` enum('email','sms') NOT NULL,
   `message` text NOT NULL,
@@ -289,7 +289,7 @@ INSERT INTO `notifications` (`id`, `recipient`, `channel`, `message`, `subject`,
 --
 
 CREATE TABLE `settings` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `setting_key` varchar(100) NOT NULL,
   `setting_value` text DEFAULT NULL,
   `description` varchar(255) DEFAULT NULL,
@@ -327,7 +327,7 @@ INSERT INTO `settings` (`id`, `setting_key`, `setting_value`, `description`, `up
 --
 
 CREATE TABLE `strands` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `strand_name` varchar(255) NOT NULL,
   `strand_code` varchar(50) NOT NULL,
   `description` text DEFAULT NULL,
@@ -354,7 +354,7 @@ INSERT INTO `strands` (`id`, `strand_name`, `strand_code`, `description`, `creat
 --
 
 CREATE TABLE `students` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `student_id` varchar(50) NOT NULL COMMENT 'LRN: 12 digits starting with 1134',
   `first_name` varchar(100) NOT NULL,
   `middle_name` varchar(100) DEFAULT '',
@@ -388,7 +388,7 @@ INSERT INTO `students` (`id`, `student_id`, `first_name`, `middle_name`, `last_n
 --
 
 CREATE TABLE `student_faces` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `student_id` int(11) UNSIGNED NOT NULL,
   `front_face` varchar(255) DEFAULT NULL COMMENT 'Path to front face image',
   `left_face` varchar(255) DEFAULT NULL COMMENT 'Path to left face image',
@@ -410,7 +410,7 @@ CREATE TABLE `student_faces` (
 --
 
 CREATE TABLE `subjects` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `subject_name` varchar(255) NOT NULL,
   `grade_level` enum('7','8','9','10','11','12') NOT NULL,
   `description` text DEFAULT NULL,
@@ -425,7 +425,7 @@ CREATE TABLE `subjects` (
 --
 
 CREATE TABLE `teachers` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `employee_id` varchar(50) DEFAULT NULL COMMENT 'Employee/teacher ID',
   `first_name` varchar(100) NOT NULL,
   `last_name` varchar(100) NOT NULL,
@@ -448,7 +448,7 @@ CREATE TABLE `teachers` (
 --
 
 CREATE TABLE `teacher_subjects` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `teacher_id` int(11) UNSIGNED NOT NULL,
   `subject_id` int(11) UNSIGNED NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
@@ -461,7 +461,7 @@ CREATE TABLE `teacher_subjects` (
 --
 
 CREATE TABLE `users` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `role` enum('admin','teacher','gate','parent') NOT NULL DEFAULT 'teacher',
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
@@ -641,27 +641,6 @@ ALTER TABLE `users`
   ADD KEY `idx_users_email` (`email`),
   ADD KEY `idx_users_status` (`status`);
 
---
--- AUTO_INCREMENT for dumped tables
---
-
-ALTER TABLE `announcements`       MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-ALTER TABLE `attendance`          MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
-ALTER TABLE `attendance_records`  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
-ALTER TABLE `attendance_sessions` MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
-ALTER TABLE `audit_logs`          MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
-ALTER TABLE `gate_logs`           MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
-ALTER TABLE `gate_sessions`       MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
-ALTER TABLE `guardians`           MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-ALTER TABLE `notifications`       MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-ALTER TABLE `settings`            MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
-ALTER TABLE `strands`             MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-ALTER TABLE `students`            MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-ALTER TABLE `student_faces`       MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
-ALTER TABLE `subjects`            MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
-ALTER TABLE `teachers`            MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
-ALTER TABLE `teacher_subjects`    MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
-ALTER TABLE `users`               MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables

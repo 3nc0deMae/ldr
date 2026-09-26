@@ -1,8 +1,8 @@
 <?php
 
 
-// Environment Detection (set to 'production' for live server)
-$environment = 'development'; // Change to 'production' for deployment
+// Environment Detection: APP_ENV env var wins; on Render, default to production
+$environment = getenv('APP_ENV') ?: (getenv('RENDER') ? 'production' : 'development');
 
 // Error Reporting
 if ($environment === 'production') {
@@ -80,9 +80,9 @@ define('ROOT_PATH', __DIR__);
 define('UPLOADS_PATH', __DIR__ . '/uploads');
 define('FACES_PATH', __DIR__ . '/uploads/faces');
 
-// Python Face Recognition API
-define('PYTHON_API_URL', 'http://127.0.0.1:5000');
-define('PYTHON_API_KEY', 'ldb_fras_api_key_2026');
+// Python Face Recognition API (overridable via environment variables)
+define('PYTHON_API_URL', rtrim(getenv('PYTHON_API_URL') ?: 'http://127.0.0.1:5000', '/'));
+define('PYTHON_API_KEY', getenv('PYTHON_API_KEY') ?: 'ldb_fras_api_key_2026');
 
 // User Roles
 define('ROLE_ADMIN', 'admin');
@@ -110,8 +110,11 @@ define('SMTP_FROM_EMAIL', 'noreply@liceodebaleno.edu.ph');
 define('SMTP_FROM_NAME', 'LDB-FRAS');
 define('SMTP_TIMEOUT', 10);
 
+// Application base URL (set APP_URL env var on the server, e.g. https://ldb-fras.onrender.com)
+define('APP_URL', rtrim(getenv('APP_URL') ?: 'http://localhost/Tin', '/'));
+
 // Email assets (absolute URLs accessible to email recipients)
-define('APP_LOGO_URL', 'http://localhost/Tin/assets/images/ldb_logo.webp');
+define('APP_LOGO_URL', APP_URL . '/assets/images/ldb_logo.webp');
 
 // Email asset file path (for CID embedding via PHPMailer)
 define('APP_LOGO_PATH', __DIR__ . '/assets/images/ldb_logo.webp');

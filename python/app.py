@@ -43,7 +43,7 @@ except Exception as e:
 # Configuration
 UPLOAD_FOLDER = 'uploads/faces'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-API_KEY = 'ldb_fras_api_key_2026'
+API_KEY = os.environ.get('PYTHON_API_KEY', 'ldb_fras_api_key_2026')
 
 # Model & detector settings
 # Detector backend can be overridden via environment variable:
@@ -938,9 +938,11 @@ if __name__ == '__main__':
     model_status = 'Loaded & warmed up' if warmup_success else 'Loaded (warm-up failed)'
     logger.info(f"Model status: {model_status}")
     
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
     logger.info("=" * 60)
-    logger.info("Service ready at http://0.0.0.0:5000")
+    logger.info(f"Service ready at http://0.0.0.0:{port}")
     logger.info("Press Ctrl+C to stop")
     logger.info("=" * 60)
     
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=port, debug=debug, use_reloader=False)

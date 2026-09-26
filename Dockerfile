@@ -1,4 +1,4 @@
-# LDB-FRAS - Railway deployment image
+# LDB-FRAS - Render deployment image
 # PHP 8.3 + Apache with pdo_mysql enabled and .htaccess support.
 
 FROM php:8.3-apache
@@ -8,15 +8,23 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libonig-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mysqli mbstring zip gd \
-    && a2enmod rewrite headers \
+    && a2enmod rewrite headers access_compat \
     && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install pdo_mysql mysqli mbstring zip
 # Clean MPM state at build time
 RUN rm -f /etc/apache2/mods-enabled/mpm_*.load && a2enmod mpm_prefork
 
 # Let the app's .htaccess rules take effect
 RUN sed -ri 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
+# PHP settings (belt-and-braces alongside .htaccess php_value directives)
+RUN printf 'upload_max_filesize = 10M\npost_max_size = 12M\nmax_execution_time = 300\nmax_input_time = 300\nmemory_limit = 256M\ndate.timezone = Asia/Manila\nexpose_php = Off\n' \
+    > /usr/local/etc/php/conf.d/ldb-fras.ini
+
+# Keep Apache prefork within a small instance's RAM budget (512MB-1GB)
+RUN printf '<IfModule mpm_prefork_module>\n    StartServers 2\n    MinSpareServers 1\n    MaxSpareServers 3\n    MaxRequestWorkers 25\n    MaxConnectionsPerChild 500\n</IfModule>\n' \
+    > /etc/apache2/conf-available/ldb-mpm.conf \
+    && a2enconf ldb-mpm
 
 # Composer dependencies
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -26,6 +34,13 @@ RUN composer install --no-dev --no-interaction --optimize-autoloader --prefer-di
 
 # Application code
 COPY . /var/www/html/
+
+# TiDB Serverless TLS root CA (ISRG Root X1) - referenced by DB_SSL_CA
+RUN mkdir -p /etc/ldb-fras
+COPY certs/isrg-root-x1.pem /etc/ldb-fras/tidb-ca.pem
+
+# The app writes to uploads/ (avatars, faces, logs) as www-data at runtime
+RUN chown -R www-data:www-data /var/www/html/uploads
 
 # Drop the stock Apache welcome page
 RUN rm -f /var/www/html/index.html

@@ -3,6 +3,7 @@
 .venv
 .vscode
 .kilo
+.env
 vendor
 tests
 docs
@@ -11,3 +12,4 @@ python
 composer.phar
 composer-setup.php
 *.log
+render.yaml

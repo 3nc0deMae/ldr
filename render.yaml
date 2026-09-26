@@ -1,0 +1,88 @@
+# Render blueprint for LDB-FRAS (Liceo de Baleno Facial Recognition Attendance System)
+#
+# Deploy: Render dashboard -> New -> Blueprint -> select this GitHub repo.
+# Render builds the Dockerfile at the repo root and injects $PORT (the
+# container's entrypoint already listens on it).
+#
+# After the first deploy:
+#   1. Update APP_URL to your real service URL (https://<service-name>.onrender.com)
+#   2. Set DB_PASSWORD in the service's Environment tab
+#      (the DB is TiDB Serverless; host/user/db name are already below)
+#   3. Database is already provisioned: ldb_fras.sql imported, run_once.php and
+#      migrations/tidb_schema_upgrade.sql applied. Re-run php migrations/run_once.php
+#      from the Render shell after schema changes.
+#   4. Enable "Force HTTPS" and add a persistent disk to uploads/ once you move
+#      off the free plan.
+
+services:
+  # ------------------------------------------------------------------
+  # 1. PHP application (Apache + PHP 8.3, Dockerfile at repo root)
+  # ------------------------------------------------------------------
+  - type: web
+    name: ldb-fras
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    httpsRedirect: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      # Change this to your real service URL after the first deploy
+      - key: APP_URL
+        value: https://ldb-fras.onrender.com
+      # Points at the face-recognition service defined (but disabled) below.
+      # Keep it in sync with that service's name/URL when you enable it.
+      - key: PYTHON_API_URL
+        value: https://ldb-fras-face-api.onrender.com
+      - key: PYTHON_API_KEY
+        value: ldb_fras_api_key_2026
+      # TiDB Serverless connection (DB_PASSWORD is set in the Render dashboard)
+      - key: DB_HOST
+        value: gateway01.ap-northeast-1.prod.aws.tidbcloud.com
+      - key: DB_PORT
+        value: "4000"
+      - key: DB_USER
+        value: UjFSrFkuwLVG3oe.root
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: ldb_fras
+      # TiDB Serverless requires TLS; CA baked into the image by the Dockerfile
+      - key: DB_SSL_CA
+        value: /etc/ldb-fras/tidb-ca.pem
+
+    # Persistent storage for uploads/ (avatars, face photos, logs).
+    # Disks are NOT available on the free plan - uncomment after upgrading:
+    # disk:
+    #   name: ldb-fras-uploads
+    #   mountPath: /var/www/html/uploads
+    #   sizeGB: 1
+
+  # ------------------------------------------------------------------
+  # 2. Face recognition API (Python + TensorFlow / DeepFace)
+  # Disabled: free instances have 512MB RAM; TensorFlow needs >= 2GB.
+  #
+  # To enable later:
+  #   1. Uncomment the whole block below
+  #   2. plan: standard (2GB RAM) is recommended; starter (512MB) is too small
+  #   3. Make sure the PHP service's PYTHON_API_URL matches this service's URL
+  # ------------------------------------------------------------------
+  # - type: web
+  #   name: ldb-fras-face-api
+  #   runtime: docker
+  #   dockerfilePath: ./python/Dockerfile
+  #   plan: standard
+  #   healthCheckPath: /api/health
+  #   envVars:
+  #     - key: PYTHON_API_KEY
+  #       value: ldb_fras_api_key_2026
+  #     - key: FACE_DETECTOR
+  #       value: yunet
+  #     # Cache downloaded models on the persistent disk so restarts are fast
+  #     - key: DEEPFACE_HOME
+  #       value: /app/uploads/.deepface
+  #   disk:
+  #     name: ldb-fras-face-encodings
+  #     mountPath: /app/uploads
+  #     sizeGB: 5

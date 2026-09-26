@@ -68,6 +68,13 @@ class Database {
                 $options[PDO::MYSQL_ATTR_CONNECT_TIMEOUT] = 5;
             }
 
+            // Optional TLS for managed/external MySQL hosts (e.g. TiDB Serverless):
+            // set DB_SSL_CA to the path of the CA certificate bundle.
+            $sslCa = getenv('DB_SSL_CA') ?: '';
+            if ($sslCa !== '' && file_exists($sslCa) && defined('PDO::MYSQL_ATTR_SSL_CA')) {
+                $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+            }
+
             $this->conn = new PDO($dsn, $this->username, $this->password, $options);
 
         } catch (PDOException $e) {

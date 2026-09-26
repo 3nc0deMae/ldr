@@ -8,7 +8,7 @@ RewriteEngine On
 # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Block access to sensitive files
-<FilesMatch "\.(sql|log|env|gitignore)$">
+<FilesMatch "\.(sql|log|env|gitignore|pem|crt|key)$">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
