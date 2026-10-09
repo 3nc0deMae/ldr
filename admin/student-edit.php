@@ -1209,7 +1209,8 @@ require_once __DIR__ . '/../includes/sidebar.php';
                             showRegisterSuccess();
                         } else {
                             msg.innerHTML = '<div class="form-alert form-alert-danger" style="margin-bottom:0;">' +
-                                '<i class="bi bi-exclamation-circle-fill"></i><div>' + (data.error || data.message || 'Registration failed') + '</div></div>';
+                                '<i class="bi bi-exclamation-circle-fill"></i><div></div></div>';
+                            msg.querySelector('.form-alert > div').textContent = data.error || data.message || 'Registration failed';
                             btn.disabled = false;
                             btn.innerHTML = '<i class="bi bi-cpu"></i> Register Face';
                         }
