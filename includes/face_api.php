@@ -9,7 +9,7 @@ class FaceRecognitionAPI {
     private $apiKey;
     private $timeout;
 
-    public function __construct($apiUrl = PYTHON_API_URL, $apiKey = PYTHON_API_KEY, $timeout = 10) {
+    public function __construct($apiUrl = PYTHON_API_URL, $apiKey = PYTHON_API_KEY, $timeout = 120) {
         $this->apiUrl  = rtrim($apiUrl, '/');
         $this->apiKey  = $apiKey;
         $this->timeout = $timeout;
