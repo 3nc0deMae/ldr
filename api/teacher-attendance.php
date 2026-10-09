@@ -348,7 +348,7 @@ try {
 
             if ($existing) {
                 error_log("recognize_class: existing status='" . $existing['status'] . "' for student_id=" . $matchedFace['student_id']);
-                if ($existing['status'] === 'pending') {
+                if (in_array($existing['status'], ['pending', 'absent'], true)) {
                     $stmt = $db->prepare(
                         "UPDATE attendance SET status = ?, time = ? WHERE id = ?"
                     );
@@ -365,7 +365,7 @@ try {
                         'section'      => $matchedFace['section'] ?? '',
                         'status'       => $status,
                         'confidence'   => $apiResponse['confidence'] ?? 0,
-                        'message'      => 'Status updated from pending'
+                        'message'      => 'Attendance status updated'
                     ]);
                 } else {
                     echo json_encode([
@@ -376,7 +376,7 @@ try {
                         'student_name' => $matchedFace['first_name'] . ' ' . $matchedFace['last_name'],
                         'grade_level'  => $matchedFace['grade_level'],
                         'section'      => $matchedFace['section'] ?? '',
-                        'status'       => $status,
+                        'status'       => $existing['status'],
                         'confidence'   => $apiResponse['confidence'] ?? 0,
                         'message'      => 'Already scanned today'
                     ]);
@@ -476,7 +476,7 @@ try {
             $existing = $stmt->fetch();
 
             if ($existing) {
-                if ($existing['status'] === 'pending') {
+                if (in_array($existing['status'], ['pending', 'absent'], true)) {
                     $stmt = $db->prepare(
                         "UPDATE attendance SET status = ?, time = ? WHERE id = ?"
                     );
@@ -491,7 +491,7 @@ try {
                         'grade_level'  => $student['grade_level'],
                         'section'      => $student['section'] ?? '',
                         'status'       => $status,
-                        'message'      => 'Status updated from pending'
+                        'message'      => 'Attendance status updated'
                     ]);
                 } else {
                     echo json_encode([
@@ -501,7 +501,7 @@ try {
                         'student_name' => $student['first_name'] . ' ' . $student['last_name'],
                         'grade_level'  => $student['grade_level'],
                         'section'      => $student['section'] ?? '',
-                        'status'       => $status,
+                        'status'       => $existing['status'],
                         'message'      => 'Already recorded today'
                     ]);
                 }
