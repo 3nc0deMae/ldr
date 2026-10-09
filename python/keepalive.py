@@ -11,9 +11,9 @@ import sys
 from datetime import datetime
 
 # Configuration
-API_URL = "http://localhost:5000"
+API_URL = "https://disciplined-expression-production.up.railway.app"
 HEALTH_ENDPOINT = f"{API_URL}/api/health"
-PING_INTERVAL = 300  # 5 minutes (prevents TF from unloading model)
+PING_INTERVAL = 300  # 5 minutes
 
 logging.basicConfig(
     level=logging.INFO,
