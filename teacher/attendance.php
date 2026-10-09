@@ -1143,7 +1143,7 @@ if ($activeSession) {
             
             if (data.updated) {
                 const successText = successDiv.querySelector('strong');
-                if (successText) successText.textContent = 'Status Updated from Pending';
+                if (successText) successText.textContent = 'Attendance status updated';
             }
             
             addClassScanToLog(data);
@@ -1171,10 +1171,6 @@ if ($activeSession) {
     function addClassScanToLog(data) {
         const studentId = String(data.student_id);
         console.log('addClassScanToLog:', { studentId, updated: data.updated, duplicate: data.duplicate, status: data.status });
-        if (!data.updated && (data.duplicate || scannedStudents.has(studentId))) {
-            console.log('Early return - duplicate or already scanned');
-            return;
-        }
         scannedStudents.add(studentId);
 
         const status = data.status || 'present';
@@ -1195,7 +1191,7 @@ if ($activeSession) {
         } else {
             const existing = roster[idx];
             console.log('Existing status:', existing.status, 'data.updated:', data.updated);
-            if (existing.status === 'pending' || data.updated) {
+            if (existing.status !== status || data.updated) {
                 console.log('Updating roster entry');
                 const stu = roster.splice(idx, 1)[0];
                 stu.status = status;
@@ -1322,7 +1318,7 @@ if ($activeSession) {
             });
         } else {
             const existing = roster[idx];
-            if (existing.status === 'pending' || data.updated) {
+            if (existing.status !== (data.status || 'present') || data.updated) {
                 const stu = roster.splice(idx, 1)[0];
                 stu.status = data.status || 'present';
                 stu.time = now;
