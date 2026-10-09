@@ -413,7 +413,7 @@ switch ($action) {
                 'faces_encoded' => $result['faces_encoded']
             ]);
         } else {
-            jsonResponse(['error' => 'Failed to encode faces. Ensure clear face images.'], 400);
+            jsonResponse(['error' => $faceApi->getLastError() ?: 'Failed to encode faces. Ensure clear face images.'], 400);
         }
         break;
 
