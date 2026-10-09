@@ -8,6 +8,7 @@ class Database {
     private $port;
     private $charset = 'utf8mb4';
     private $conn = null;
+    private $source = 'defaults';
 
     public function __construct() {
         $this->resolveFromEnv();
@@ -36,12 +37,16 @@ class Database {
                 $this->username = $parts['user'] ?? '';
                 $this->password = isset($parts['pass']) ? urldecode($parts['pass']) : '';
                 $this->port     = $parts['port'] ?? '3306';
+                $this->source   = 'DATABASE_URL';
                 return;
             }
         }
 
         // 2. Railway MySQL plugin variables, 3. generic overrides, 4. local development defaults
         // Note: '127.0.0.1' is used instead of 'localhost' to force TCP connections and avoid missing socket errors in Docker/Railway.
+        if (getenv('MYSQLHOST') || getenv('DB_HOST')) {
+            $this->source = getenv('MYSQLHOST') ? 'MYSQLHOST/MYSQLPORT/...' : 'DB_HOST/DB_PORT/...';
+        }
         $this->host     = getenv('MYSQLHOST')     ?: getenv('DB_HOST')     ?: '127.0.0.1';
         $this->port     = getenv('MYSQLPORT')     ?: getenv('DB_PORT')     ?: '3306';
         $this->username = getenv('MYSQLUSER')     ?: getenv('DB_USER')     ?: 'root';
@@ -78,8 +83,14 @@ class Database {
             $this->conn = new PDO($dsn, $this->username, $this->password, $options);
 
         } catch (PDOException $e) {
-            error_log("Database Connection Error: " . $e->getMessage());
+            error_log("Database Connection Error ({$this->source} -> {$this->host}:{$this->port}/{$this->db_name}): " . $e->getMessage());
             $message = "Database connection failed. Please check your configuration.";
+            if ($this->source === 'defaults') {
+                $message = "No database configuration found. Set DATABASE_URL (or DB_HOST, DB_PORT, DB_USER, "
+                         . "DB_PASSWORD, DB_NAME) in this service's environment variables, then redeploy.";
+            } else {
+                $message .= " [{$this->source} -> {$this->host}:{$this->port}]";
+            }
             // Show detailed error during development mode
             if (($GLOBALS['environment'] ?? '') === 'development') {
                 $message .= ' (' . $e->getMessage() . ')';
