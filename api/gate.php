@@ -1190,18 +1190,29 @@ function callFaceAPI($endpoint, $data = []) {
         CURLOPT_POST           => true,
         CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'X-API-Key: ' . PYTHON_API_KEY],
         CURLOPT_POSTFIELDS     => json_encode($data),
-        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_TIMEOUT        => 120,
         CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_SSL_VERIFYPEER => false
     ]);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
     curl_close($ch);
 
-    if ($httpCode !== 200 || !$response) {
+    if ($response === false) {
+        error_log("Face API transport error ($endpoint): $curlError");
         return ['error' => 'Face recognition service unavailable.'];
     }
 
-    return json_decode($response, true) ?: ['error' => 'Invalid API response.'];
+    $result = json_decode($response, true);
+    if ($httpCode >= 400) {
+        error_log("Face API HTTP error ($endpoint): $httpCode");
+        // Validation failures (e.g. no face detected) are useful to the user.
+        if ($httpCode === 400 && is_array($result) && isset($result['error'])) {
+            return $result;
+        }
+        return ['error' => 'Face recognition service unavailable.'];
+    }
+    return is_array($result) ? $result : ['error' => 'Invalid API response.'];
 }
