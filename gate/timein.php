@@ -613,11 +613,92 @@ try {
 </div>
 
 <?php if ($activeSession): ?>
+<script src="<?= BASE_URL ?>/assets/js/voice-queue.js?v=<?= @filemtime(__DIR__ . '/../assets/js/voice-queue.js') ?: time() ?>"></script>
 <script>
     let scanningInterval = null;
     let isScanning = false;
     let voiceEnabled = true;
     let liveness = null;
+
+    // Model loading indicator: scanning shows "Model still loading..." until
+    // the browser face model AND the Python recognition engine are both ready.
+    let livenessModelReady = false;
+    let engineModelReady = false;
+    let modelLoadTimer = null;
+    let engineCheckGen = 0;
+
+    function modelsReady() {
+        return livenessModelReady && engineModelReady;
+    }
+
+    function refreshModelStatus() {
+        if (!modelsReady() || !isScanning) return;
+        if (modelLoadTimer) { clearTimeout(modelLoadTimer); modelLoadTimer = null; }
+        const el = document.getElementById('statusText');
+        if (!el) return;
+        if (liveness) onLivenessStatus(liveness.status(), liveness.isLive());
+        else el.textContent = '👁️ Please blink to verify you are present';
+    }
+
+    function onLivenessModelReady() {
+        livenessModelReady = true;
+        refreshModelStatus();
+    }
+
+    function beginModelLoad() {
+        livenessModelReady = false;
+        engineModelReady = false;
+        const gen = ++engineCheckGen;
+        const el = document.getElementById('statusText');
+        if (el) el.textContent = '⏳ Model still loading…';
+        if (modelLoadTimer) clearTimeout(modelLoadTimer);
+        modelLoadTimer = setTimeout(function () {
+            if (gen !== engineCheckGen || modelsReady() || !isScanning) return;
+            const t = document.getElementById('statusText');
+            if (t) t.textContent = '⚠️ Model is taking too long — press Stop, then Start again';
+        }, 15000);
+        checkEngine(gen, 0);
+    }
+
+    // The Python engine can take 10-30s to warm up after a cold start, so
+    // keep asking every 2s until it answers (or the 15s timer gives up).
+    function checkEngine(gen, attempt) {
+        if (gen !== engineCheckGen || !isScanning) return;
+        const fd = new FormData();
+        fd.append('action', 'engine_status');
+        fd.append('csrf_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+        fetch(window.BASE_URL + '/api/gate.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: fd
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (gen !== engineCheckGen) return;
+                if (d && d.success && d.ready) {
+                    engineModelReady = true;
+                    refreshModelStatus();
+                } else {
+                    scheduleEngineRetry(gen, attempt);
+                }
+            })
+            .catch(() => { if (gen === engineCheckGen) scheduleEngineRetry(gen, attempt); });
+    }
+
+    function scheduleEngineRetry(gen, attempt) {
+        engineModelReady = false;
+        if (attempt >= 6 || !isScanning) { refreshModelStatus(); return; }
+        setTimeout(function () { checkEngine(gen, attempt + 1); }, 2000);
+    }
+
+    function stopModelLoadWatch() {
+        engineCheckGen++;
+        if (modelLoadTimer) { clearTimeout(modelLoadTimer); modelLoadTimer = null; }
+        livenessModelReady = false;
+        engineModelReady = false;
+        const el = document.getElementById('statusText');
+        if (el && el.textContent.indexOf('Model') !== -1) el.textContent = 'Camera stopped';
+    }
 
     const gateStatusColorMap = { present: 'ad-success', late: 'ad-warning', absent: 'ad-danger' };
     const gateStatusIconMap  = { present: 'check', late: 'clock', absent: 'x' };
@@ -637,8 +718,13 @@ try {
         } catch (e) {}
     }
 
-    function announce(text) {
+    function announce(text, options) {
         if (!voiceEnabled) return;
+        options = options || {};
+        if (window.VoiceQueue) {
+            VoiceQueue.say(text, { key: options.key || null, onstart: playConfirmationBeep });
+            return;
+        }
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
@@ -651,6 +737,7 @@ try {
 
     function toggleVoice() {
         voiceEnabled = !voiceEnabled;
+        if (!voiceEnabled && window.VoiceQueue) VoiceQueue.clear();
         const btn = document.getElementById('voiceToggle');
         const icon = document.getElementById('voiceIcon');
         if (voiceEnabled) {
@@ -664,9 +751,8 @@ try {
 
     // Unlock browser audio/speech on first user interaction
     document.addEventListener('click', function unlockAudio() {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-        }
+        if (window.VoiceQueue) VoiceQueue.clear();
+        else if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         playConfirmationBeep();
     }, { once: true });
 
@@ -674,6 +760,7 @@ try {
     function onLivenessStatus(status, isLive) {
         const el = document.getElementById('statusText');
         if (!el || !isScanning) return;
+        if (!modelsReady()) return;
         if (status === 'no_face') {
             el.textContent = 'Look at the camera...';
         } else if (status === 'awaiting_blink') {
@@ -689,23 +776,27 @@ try {
             document.getElementById('startScanBtn').classList.add('d-none');
             document.getElementById('stopScanBtn').classList.remove('d-none');
             isScanning = true;
+            document.getElementById('statusText').textContent = '👁️ Please blink to verify you are present';
+            beginModelLoad();
 
             // Start liveness (anti-spoofing) watcher on the live video.
             // Never block scanning if it cannot start: liveness is fail-open.
             try {
                 liveness = new Liveness({
                     video: document.getElementById('gateVideo'),
-                    onStatus: onLivenessStatus
+                    onStatus: onLivenessStatus,
+                    onReady: onLivenessModelReady
                 });
                 await liveness.start();
             } catch (e) {
                 console.warn('Liveness failed to start, scanning without it:', e);
                 liveness = null;
+                livenessModelReady = true;
+                refreshModelStatus();
             }
 
     // Auto-scan every 3 seconds
             scanningInterval = setInterval(autoScan, 3000);
-            document.getElementById('statusText').textContent = '👁️ Please blink to verify you are present';
 
             let sessionCheckInterval = null;
 
@@ -728,7 +819,9 @@ try {
                         if (scanningInterval) { clearInterval(scanningInterval); scanningInterval = null; }
                         if (sessionCheckInterval) { clearInterval(sessionCheckInterval); sessionCheckInterval = null; }
                         isScanning = false;
+                        if (window.VoiceQueue) VoiceQueue.clear();
                         if (liveness) { liveness.stop(); liveness = null; }
+                        stopCamera();
                         showAutoEndModal(sid);
                     }
                 })
@@ -737,11 +830,13 @@ try {
 
             sessionCheckInterval = setInterval(checkSessionStatus, 10000);
         } catch (e) {
-            showAlertModal('Camera access denied. Please allow camera access.', { title: 'Camera Error', icon: 'camera-video-off-fill', type: 'danger' });
+            showAlertModal((e && e.userMessage) || 'Camera access denied. Please allow camera access.', { title: 'Camera Error', icon: 'camera-video-off-fill', type: 'danger' });
         }
     }
 
     function stopScanning() {
+        stopModelLoadWatch();
+        if (window.VoiceQueue) VoiceQueue.clear();
         stopCamera();
         if (scanningInterval) clearInterval(scanningInterval);
         if (liveness) { liveness.stop(); liveness = null; }
@@ -806,7 +901,7 @@ try {
                 document.getElementById('duplicateInfo').textContent =
                     `${data.student_id || ''} | Grade ${data.grade_level || ''}`;
                 // Speak the duplicate alert so nearby students are aware
-                announce((data.student_name || 'Student') + ' already marked, please step aside');
+                if (isScanning) announce((data.student_name || 'Student') + ' already marked, please step aside');
             } else {
                 // New scan - show success
                 successDiv.style.display = 'block';
@@ -821,7 +916,7 @@ try {
                 }
 
                 // Add to live log only for new scans
-                addScanToLog(data);
+                addScanToLog(data, { voice: isScanning });
 
                 // Require a fresh blink before the next student is recorded.
                 if (liveness) liveness.reset();
@@ -837,7 +932,7 @@ try {
             }
             // Speak the recognition failure alert so nearby students are aware
             const failMsg = data.error || data.message || 'Face not recognized, please try again';
-            announce('Face not recognized, ' + failMsg);
+            if (isScanning) announce('Face not recognized, ' + failMsg, { key: 'scan-fail' });
         }
 
         // Hide after 3 seconds
@@ -846,7 +941,8 @@ try {
         }, 3000);
     }
 
-    function addScanToLog(data) {
+    function addScanToLog(data, options) {
+        options = options || {};
         const list = document.getElementById('liveScanList');
         const status = data.status || 'present';
         const recordId = data.record_id || '';
@@ -893,7 +989,7 @@ try {
         list.insertBefore(div, list.firstChild);
 
         // Voice announcement
-        announce((data.student_name || 'Student') + ' marked ' + (status === 'late' ? 'late' : 'present'));
+        if (options.voice !== false) announce((data.student_name || 'Student') + ' marked ' + (status === 'late' ? 'late' : 'present'));
 
         // Update counts
         const presentEl = document.getElementById('presentCount');

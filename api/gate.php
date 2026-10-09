@@ -1054,6 +1054,19 @@ try {
             ]);
             break;
 
+        // ============================================
+        // RECOGNITION ENGINE STATUS
+        // Used by the scanner to show "Model still loading..." until the
+        // Python face engine is warm and answering.
+        // ============================================
+        case 'engine_status':
+            $engineApi = new FaceRecognitionAPI(PYTHON_API_URL, PYTHON_API_KEY, 3);
+            echo json_encode([
+                'success' => true,
+                'ready'   => $engineApi->isAvailable()
+            ]);
+            break;
+
         default:
             echo json_encode(['success' => false, 'error' => 'Invalid action.']);
     }

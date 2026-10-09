@@ -19,7 +19,7 @@
     <!-- Google Fonts (self-hosted) -->
     <link href="<?= BASE_URL ?>/assets/vendor/fonts/fonts.css" rel="stylesheet">
     <!-- LDB-FRAS Design System -->
-    <link href="<?= BASE_URL ?>/assets/css/style.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/css/style.css?v=<?= @filemtime(ROOT_PATH . '/assets/css/style.css') ?: time() ?>" rel="stylesheet">
 
     <!-- Runtime CSS Variable Overrides -->
     <style>

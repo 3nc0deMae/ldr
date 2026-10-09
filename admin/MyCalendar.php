@@ -93,6 +93,7 @@ try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by=? AND
 <!-- Stylesheets — pages-theme.css first (sidebar lives there), pages-navbar.css second (everything else) -->
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-theme.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/pages-navbar.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/my-calendar.css">
 <style>
 @media(max-width:767px){.mobile-title{display:block!important}}
 /* ─── Delete Confirmation Modal (matches announcements.php) ─── */
@@ -162,7 +163,10 @@ try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by=? AND
                                 <div class="detail-day-num" id="detailDayNum">19</div>
                                 <div><div class="detail-day-name" id="detailDayName">Friday</div><div class="detail-month-name" id="detailMonthName">June 2026</div></div>
                             </div>
-                            <button class="cal-nav-btn detail-close-btn" id="detailClose"><i class="bi bi-x-lg"></i></button>
+                            <div class="detail-header-actions">
+                                <button class="btn-add-event" id="btnAddEvent"><i class="bi bi-plus-circle"></i><span class="btn-add-event-label">Add Event</span></button>
+                                <button class="cal-nav-btn detail-close-btn" id="detailClose"><i class="bi bi-x-lg"></i></button>
+                            </div>
                         </div>
                         <div class="detail-section">
                             <div class="detail-section-title"><i class="bi bi-bar-chart-steps"></i> Attendance Breakdown</div>
@@ -185,7 +189,6 @@ try { $stmt = $db->prepare("SELECT * FROM calendar_events WHERE created_by=? AND
                         <div class="detail-section detail-events-section">
                             <div class="detail-section-title"><i class="bi bi-calendar-event"></i> Events</div>
                             <div class="detail-events-list" id="detailEvents"><div class="detail-no-events"><i class="bi bi-inbox"></i><span>No events on this day</span></div></div>
-                            <button class="btn-add-event" id="btnAddEvent"><i class="bi bi-plus-circle me-1"></i> Add Event</button>
                         </div>
                     </div>
                 </div>

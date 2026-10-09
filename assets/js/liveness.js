@@ -60,6 +60,7 @@
         constructor(opts) {
             this.video = opts.video;
             this.onStatus = opts.onStatus || function () {};
+            this.onReady = opts.onReady || null;
 
             this.faceMesh = null;
             this.running = false;
@@ -74,7 +75,15 @@
              this._hasMotion = false;
              this._processing = false;
              this.faceBoundingBox = null;
+             this._readyFired = false;
          }
+
+        /** Notify consumers once that the face model is loaded and responding. */
+        _fireReady() {
+            if (this._readyFired) return;
+            this._readyFired = true;
+            try { if (this.onReady) this.onReady(); } catch (e) {}
+        }
 
         /** Is a live person currently verified? */
         isLive() {
@@ -99,6 +108,7 @@
                     'liveness disabled (fail-open).');
                 this.running = true; // fail-open so attendance still works
                 this._failOpen = true;
+                this._fireReady();
                 this._emit(); // notify consumers (isLive() is true in fail-open)
                 return;
             }
@@ -125,6 +135,7 @@
                     'liveness disabled (fail-open).', e);
                 this.running = true;
                 this._failOpen = true;
+                this._fireReady();
                 this._emit(); // notify consumers (isLive() is true in fail-open)
                 return;
             }
@@ -175,6 +186,7 @@
         }
 
          _onResults(results) {
+             this._fireReady();
              const faces = results.multiFaceLandmarks;
              if (!faces || faces.length === 0) {
                  this.faceVisible = false;

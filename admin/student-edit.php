@@ -348,6 +348,98 @@ require_once __DIR__ . '/../includes/sidebar.php';
     #cameraVideo {
         transform: scaleX(-1);
     }
+
+    /* =====================================================
+       INLINE CAPTURE STAGE (camera lives inside the card)
+       ===================================================== */
+    .capture-face-body {
+        display: flex;
+        flex-direction: column;
+        min-height: max(480px, calc(100vh - 300px));
+    }
+    .capture-stage {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 380px;
+        margin-bottom: 14px;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #000;
+        border: 1px solid rgba(255,255,255,0.08);
+    }
+    .capture-stage video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+    .capture-stage.is-live video { opacity: 1; }
+    .capture-stage .scanner-overlay {
+        height: min(420px, calc(100% - 130px));
+        display: none;
+    }
+    .capture-stage.is-live .scanner-overlay { display: block; }
+    .capture-stage .scanner-status {
+        bottom: 18px;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 8px 18px;
+        max-width: calc(100% - 40px);
+        display: none;
+    }
+    .capture-stage.is-live .scanner-status { display: flex; }
+    .capture-stage-idle {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        text-align: center;
+        padding: 20px;
+        background:
+            radial-gradient(circle at 50% 42%, rgba(59,130,246,0.18), transparent 62%),
+            rgba(255,255,255,0.03);
+    }
+    .capture-stage.is-live .capture-stage-idle { display: none; }
+    .capture-stage-idle i { font-size: 46px; color: rgba(96,165,250,0.7); }
+    .capture-stage-idle p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.6;
+        color: rgba(255,255,255,0.55);
+        max-width: 460px;
+    }
+    .capture-fs-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        z-index: 6;
+        width: 42px;
+        height: 42px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.55);
+        color: #fff;
+        font-size: 17px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .capture-stage.is-live .capture-fs-close { display: flex; }
+    .capture-fs-close:hover { background: rgba(239,68,68,0.85); }
+    .capture-face-actions {
+        margin-top: auto;
+        padding-top: 4px;
+    }
+    .capture-face-actions .btn-theme { justify-content: center; }
+
     .readonly-form .form-input,
     .readonly-form .form-select-input,
     .readonly-form .form-textarea {
@@ -556,32 +648,15 @@ require_once __DIR__ . '/../includes/sidebar.php';
         <!-- ===== TAB 2: FACE REGISTRATION ===== -->
         <div class="row g-4">
             <!-- Camera Section -->
-            <div class="col-lg-7">
+            <div class="col-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><i class="bi bi-camera-video-fill me-2"></i>Capture Face</span>
-                        <span class="badge-status <?= $hasFace ? 'badge-present' : 'badge-late' ?>">
+                        <span class="badge-status <?= $hasFace ? 'badge-present' : 'badge-late' ?>" id="faceStatusBadge">
                             <?= $hasFace ? 'Registered' : 'Not Registered' ?>
                         </span>
                     </div>
-                    <div class="card-body">
-                        <!-- Camera View -->
-                        <div class="scanner-container mb-3" id="scannerContainer">
-                            <video id="cameraVideo" autoplay playsinline></video>
-                            <div class="scanner-overlay"></div>
-                            <div class="scanner-status" id="scannerStatus">
-                                <span class="pulse-dot"></span> Camera Active
-                            </div>
-                        </div>
-
-                        <!-- Compliance Checkbox -->
-                        <div class="mb-3">
-                            <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;user-select:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px;">
-                                <input type="checkbox" id="consentVerificationCheckbox" style="margin-top:3px;width:16px;height:16px;border-radius:4px;border:1px solid #d1d5db;accent-color:#2563eb;cursor:pointer;flex-shrink:0;">
-                                <span style="font-size:13px;color:#374151;line-height:1.5;">I certify that a physical, signed Parental Consent and Biometric Waiver form is on file for this specific student profile.</span>
-                            </label>
-                        </div>
-
+                    <div class="card-body capture-face-body">
                         <!-- Step Tracker -->
                         <div class="mb-3">
                             <div class="d-flex align-items-center justify-content-center gap-3" id="stepTracker">
@@ -603,85 +678,92 @@ require_once __DIR__ . '/../includes/sidebar.php';
                             <p id="stepText" class="text-center mt-2" style="font-size:12px;color:rgba(255,255,255,0.5);">Complete all three angles</p>
                         </div>
 
-                        <!-- Capture Buttons -->
-                        <div class="d-flex flex-column gap-2 mb-3">
-                            <button type="button" class="btn-theme btn-theme-primary" id="btnFront" disabled>
-                                <i class="bi bi-camera"></i> Capture Front Profile
+                        <!-- Live camera (fills this container instead of a separate page) -->
+                        <div class="capture-stage" id="captureStage">
+                            <video id="cameraVideo" autoplay playsinline></video>
+                            <div class="scanner-overlay"></div>
+                            <div class="capture-stage-idle">
+                                <i class="bi bi-camera-video-fill"></i>
+                                <p>Press <strong>Begin Capture</strong> below to turn on the camera. All three angles are captured automatically right here.</p>
+                            </div>
+                            <button type="button" class="capture-fs-close" id="captureOverlayClose" title="Close capture session">
+                                <i class="bi bi-x-lg"></i>
                             </button>
-                            <button type="button" class="btn-theme btn-theme-primary" id="btnLeft" disabled>
-                                <i class="bi bi-camera"></i> Capture Left Profile
-                            </button>
-                            <button type="button" class="btn-theme btn-theme-primary" id="btnRight" disabled>
-                                <i class="bi bi-camera"></i> Capture Right Profile
-                            </button>
-                        </div>
-
-                        <div class="d-flex justify-content-center gap-2 mb-3">
-                            <button type="button" class="btn-theme btn-theme-primary d-none" id="startCameraBtn" onclick="initCamera()">
-                                <i class="bi bi-camera-video"></i> Start Camera
-                            </button>
-                            <button type="button" class="btn-theme btn-theme-danger d-none" id="stopCameraBtn" onclick="stopCameraFn()">
-                                <i class="bi bi-stop-fill"></i> Stop
-                            </button>
+                            <div class="scanner-status" id="scannerStatus">
+                                <span class="pulse-dot"></span> <span id="scannerStatusText">Position your face in the frame</span>
+                            </div>
                         </div>
 
                         <div id="captureMessage"></div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Captured Images -->
-            <div class="col-lg-5">
-                <div class="card">
-                    <div class="card-header" style="justify-content:flex-start;gap:2px;"><i class="bi bi-images me-2"></i>Captured Faces</div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-4 text-center">
-                                <div class="border rounded-xl p-2" style="aspect-ratio:1;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.12);" id="frontPreview">
-                                    <i class="bi bi-person" style="font-size:40px;color:rgba(255,255,255,0.15);"></i>
-                                </div>
-                                <small class="fw-600 mt-1 d-block" style="color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-size:11px;">Front</small>
-                                <button type="button" class="btn-theme btn-theme-outline retake-btn mt-1" data-type="front" style="display:none;padding:4px 10px;font-size:11px;border-radius:6px;" onclick="retakeFace('front')">
-                                    <i class="bi bi-arrow-counterclockwise"></i> Retake
+                        <!-- Bottom actions -->
+                        <div class="capture-face-actions">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn-theme btn-theme-primary btn-theme-lg flex-grow-1" id="beginCaptureBtn">
+                                    <i class="bi bi-camera-video"></i> Begin Capture
+                                </button>
+                                <button type="button" class="btn-theme btn-theme-success btn-theme-lg" id="registerFaceBtn"
+                                        onclick="registerFace()" disabled>
+                                    <i class="bi bi-cpu"></i> Register Face
                                 </button>
                             </div>
-                            <div class="col-4 text-center">
-                                <div class="border rounded-xl p-2" style="aspect-ratio:1;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.12);" id="leftPreview">
-                                    <i class="bi bi-person" style="font-size:40px;color:rgba(255,255,255,0.15);"></i>
-                                </div>
-                                <small class="fw-600 mt-1 d-block" style="color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-size:11px;">Left</small>
-                                <button type="button" class="btn-theme btn-theme-outline retake-btn mt-1" data-type="left" style="display:none;padding:4px 10px;font-size:11px;border-radius:6px;" onclick="retakeFace('left')">
-                                    <i class="bi bi-arrow-counterclockwise"></i> Retake
-                                </button>
+                            <div id="registerMessage" class="mt-2"></div>
+
+                            <?php if ($hasFace): ?>
+                            <div class="form-alert form-alert-success mt-3" style="font-size:13px;margin-bottom:0;">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span>Face encoding is registered and active for recognition.</span>
                             </div>
-                            <div class="col-4 text-center">
-                                <div class="border rounded-xl p-2" style="aspect-ratio:1;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.12);" id="rightPreview">
-                                    <i class="bi bi-person" style="font-size:40px;color:rgba(255,255,255,0.15);"></i>
-                                </div>
-                                <small class="fw-600 mt-1 d-block" style="color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-size:11px;">Right</small>
-                                <button type="button" class="btn-theme btn-theme-outline retake-btn mt-1" data-type="right" style="display:none;padding:4px 10px;font-size:11px;border-radius:6px;" onclick="retakeFace('right')">
-                                    <i class="bi bi-arrow-counterclockwise"></i> Retake
-                                </button>
-                            </div>
+                            <?php endif; ?>
                         </div>
-
-                        <!-- Register Face Button -->
-                        <button type="button" class="btn-theme btn-theme-success w-100 mt-3" id="registerFaceBtn"
-                                onclick="registerFace()" disabled>
-                            <i class="bi bi-cpu"></i> Register Face Encoding
-                        </button>
-                        <div id="registerMessage" class="mt-2"></div>
-
-                        <?php if ($hasFace): ?>
-                        <div class="form-alert form-alert-success mt-3" style="font-size:13px;margin-bottom:0;">
-                            <i class="bi bi-check-circle-fill"></i>
-                            <span>Face encoding is registered and active for recognition.</span>
-                        </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- ===== CONSENT MODAL ===== -->
+        <div class="event-modal-overlay" id="consentCertModal">
+            <div class="event-modal">
+                <div class="event-modal-header">
+                    <div class="event-modal-title">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>Parental Consent Verification</span>
+                    </div>
+                    <button type="button" class="event-modal-close" id="consentCertClose"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div class="event-modal-body">
+                    <p style="color:rgba(255,255,255,0.65);font-size:13px;line-height:1.6;">
+                        I certify that a physical, signed <strong>Parental Consent and Biometric Waiver</strong> form is on file for this specific student profile. By clicking <strong>"Accept &amp; Start Camera"</strong>, you authorize the capture of this student's facial images (front, left, and right) for face encoding, processed in accordance with the Data Privacy Act of 2012 (RA 10173).
+                    </p>
+                </div>
+                <div class="event-modal-footer">
+                    <button type="button" class="evt-btn evt-btn-cancel" id="consentCertDecline">Decline</button>
+                    <button type="button" class="evt-btn evt-btn-save" id="consentCertAccept">Accept &amp; Start Camera</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== REGISTRATION SUCCESS MODAL ===== -->
+        <div class="event-modal-overlay" id="registerSuccessModal">
+            <div class="event-modal" style="width:420px;text-align:center;">
+                <div class="event-modal-body" style="padding:34px 26px 26px;">
+                    <div style="width:74px;height:74px;border-radius:50%;background:rgba(16,185,129,0.15);border:2px solid rgba(16,185,129,0.5);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i class="bi bi-check-lg" style="font-size:38px;color:#34D399;"></i>
+                    </div>
+                    <h5 style="font-size:18px;font-weight:800;color:#fff;margin:0 0 8px;">Face Registration Successful</h5>
+                    <p style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.6;margin:0;">
+                        All three facial angles were captured and the face encoding has been saved. This student is now ready for facial recognition attendance.
+                    </p>
+                </div>
+                <div class="event-modal-footer" style="justify-content:center;">
+                    <button type="button" class="evt-btn evt-btn-save" id="registerSuccessOk">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MediaPipe FaceMesh — automatic angle detection for auto-capture -->
+        <script>window.FACE_MESH_BASE = '<?= BASE_URL ?>/assets/vendor/face_mesh';</script>
+        <script src="<?= BASE_URL ?>/assets/vendor/face_mesh/face_mesh.js"></script>
 
         <script>
             // ============================================================
@@ -690,6 +772,32 @@ require_once __DIR__ . '/../includes/sidebar.php';
             var frontImage = null, leftImage = null, rightImage = null;
             var studentId = <?= $studentId ?>;
             var frontCaptured = false, leftCaptured = false, rightCaptured = false;
+            var consentGiven = false;
+            var sessionOpen = false;
+
+            var ANGLES = ['front', 'left', 'right'];
+            var ANGLE_NAMES = { front: 'FRONT', left: 'LEFT', right: 'RIGHT' };
+
+            function isCaptured(type) {
+                return type === 'front' ? frontCaptured : (type === 'left' ? leftCaptured : rightCaptured);
+            }
+
+            function setCapturedFlag(type, value) {
+                if (type === 'front') frontCaptured = value;
+                else if (type === 'left') leftCaptured = value;
+                else rightCaptured = value;
+            }
+
+            function getPendingAngle() {
+                for (var i = 0; i < ANGLES.length; i++) {
+                    if (!isCaptured(ANGLES[i])) return ANGLES[i];
+                }
+                return null;
+            }
+
+            function completedCount() {
+                return (frontCaptured ? 1 : 0) + (leftCaptured ? 1 : 0) + (rightCaptured ? 1 : 0);
+            }
 
             function updateStepTracker() {
                 var step1 = document.getElementById('step1');
@@ -701,7 +809,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                 step2.className = 'step-circle ' + (leftCaptured ? 'done' : (frontCaptured ? 'active' : 'pending'));
                 step3.className = 'step-circle ' + (rightCaptured ? 'done' : (leftCaptured ? 'active' : 'pending'));
                 
-                var completed = (frontCaptured ? 1 : 0) + (leftCaptured ? 1 : 0) + (rightCaptured ? 1 : 0);
+                var completed = completedCount();
                 if (completed === 0) {
                     stepText.textContent = 'Complete all three angles';
                 } else if (completed < 3) {
@@ -711,153 +819,369 @@ require_once __DIR__ . '/../includes/sidebar.php';
                 }
             }
 
-            function updateCaptureButtons() {
-                var checkbox = document.getElementById('consentVerificationCheckbox');
-                var btnFront = document.getElementById('btnFront');
-                var btnLeft = document.getElementById('btnLeft');
-                var btnRight = document.getElementById('btnRight');
+            function setScannerStatus(text) {
+                var el = document.getElementById('scannerStatusText');
+                if (el) el.textContent = text;
+            }
+
+            function refreshUI() {
+                updateStepTracker();
+                updateCaptureControls();
+            }
+
+            function updateCaptureControls() {
                 var registerBtn = document.getElementById('registerFaceBtn');
-                
-                if (!checkbox) return;
-                var verified = checkbox.checked;
-                
-                if (btnFront) btnFront.disabled = !verified || frontCaptured;
-                if (btnLeft) btnLeft.disabled = !verified || leftCaptured;
-                if (btnRight) btnRight.disabled = !verified || rightCaptured;
-                
-                if (registerBtn) {
-                    registerBtn.disabled = !(frontCaptured && leftCaptured && rightCaptured);
+                var beginBtn = document.getElementById('beginCaptureBtn');
+                var allDone = completedCount() === 3;
+
+                if (registerBtn) registerBtn.disabled = !allDone;
+                if (beginBtn) beginBtn.disabled = allDone || sessionOpen;
+            }
+
+            function captureAngle(type) {
+                var image = captureFrameInZone('cameraVideo', 0.15);
+                if (!image) {
+                    setScannerStatus('Camera not ready — try again');
+                    return;
+                }
+                if (type === 'front') frontImage = image;
+                else if (type === 'left') leftImage = image;
+                else rightImage = image;
+                setCapturedFlag(type, true);
+                refreshUI();
+
+                var pending = getPendingAngle();
+                if (!pending) {
+                    setScannerStatus('All 3 angles captured ✓ — tap Done');
+                } else {
+                    setScannerStatus(ANGLE_NAMES[type] + ' captured ✓ — now capture ' + ANGLE_NAMES[pending] + ' view');
                 }
             }
 
-            function showPreview(containerId, imageData) {
-                var container = document.getElementById(containerId);
-                if (!container || !imageData) return;
-                container.innerHTML = '';
-                var img = document.createElement('img');
-                img.src = imageData;
-                img.alt = containerId;
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'cover';
-                img.style.borderRadius = '8px';
-                container.appendChild(img);
+            // ============================================================
+            // CONSENT MODAL
+            // ============================================================
+            function showConsentModal() {
+                var modal = document.getElementById('consentCertModal');
+                if (modal) modal.classList.add('show');
             }
 
-            function updateRetakeButtons() {
-                var retakeBtns = document.querySelectorAll('.retake-btn');
-                retakeBtns.forEach(function(btn) {
-                    var type = btn.getAttribute('data-type');
-                    if (type === 'front' && frontCaptured) btn.style.display = 'inline-flex';
-                    else if (type === 'left' && leftCaptured) btn.style.display = 'inline-flex';
-                    else if (type === 'right' && rightCaptured) btn.style.display = 'inline-flex';
-                    else btn.style.display = 'none';
+            function hideConsentModal() {
+                var modal = document.getElementById('consentCertModal');
+                if (modal) modal.classList.remove('show');
+            }
+
+            var consentAcceptBtn = document.getElementById('consentCertAccept');
+            var consentDeclineBtn = document.getElementById('consentCertDecline');
+            var consentCloseBtn = document.getElementById('consentCertClose');
+            var consentModalEl = document.getElementById('consentCertModal');
+
+            if (consentAcceptBtn) consentAcceptBtn.addEventListener('click', function() {
+                consentGiven = true;
+                hideConsentModal();
+                openCaptureSession();
+            });
+            if (consentDeclineBtn) consentDeclineBtn.addEventListener('click', hideConsentModal);
+            if (consentCloseBtn) consentCloseBtn.addEventListener('click', hideConsentModal);
+            if (consentModalEl) consentModalEl.addEventListener('click', function(e) {
+                if (e.target === consentModalEl) hideConsentModal();
+            });
+
+            // ============================================================
+            // INLINE CAPTURE STAGE + AUTO-CAPTURE
+            // ============================================================
+            // MediaPipe FaceMesh watches the live video and captures each
+            // angle automatically once the face is positioned correctly.
+            var autoMesh = null;
+            var autoRunning = false;
+            var autoProcessing = false;
+            var autoRafId = null;
+            var holdFrames = 0;
+            var cooldownUntil = 0;
+
+            var HOLD_FRONT = 14;     // stable frames required before FRONT is taken
+            var HOLD_SIDE = 12;      // stable frames required before LEFT/RIGHT is taken
+            var COOLDOWN_MS = 1200;  // pause after a capture so the user can reposition
+            var YAW_FRONT_MAX = 0.22;
+            var YAW_PROFILE_MIN = 0.26;
+            var FACE_MIN_H = 0.15;
+            var FACE_MAX_H = 0.90;
+            var CENTER_TOL = 0.16;
+
+            // Raw (unmirrored) camera frame: the user's left side appears on
+            // image right, so a nose shifted right (+) = head turned LEFT.
+            function sideFromYaw(yaw) { return yaw > 0 ? 'left' : 'right'; }
+
+            function nextAutoStage() {
+                if (!frontCaptured) return 'front';
+                if (!leftCaptured && !rightCaptured) return 'side1';
+                if (!leftCaptured || !rightCaptured) return 'side2';
+                return 'done';
+            }
+
+            function pendingSide2() {
+                return leftCaptured ? 'right' : 'left';
+            }
+
+            function computeYaw(lm) {
+                var nose = lm[1];
+                var a = lm[234], b = lm[454];
+                var leftEdge = Math.min(a.x, b.x);
+                var rightEdge = Math.max(a.x, b.x);
+                var mid = (leftEdge + rightEdge) / 2;
+                var half = (rightEdge - leftEdge) / 2;
+                if (half <= 0.001) return 0;
+                return (nose.x - mid) / half;
+            }
+
+            function faceBox(lm) {
+                var minX = 1, minY = 1, maxX = 0, maxY = 0;
+                for (var i = 0; i < lm.length; i++) {
+                    var p = lm[i];
+                    if (p.x < minX) minX = p.x;
+                    if (p.y < minY) minY = p.y;
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.y > maxY) maxY = p.y;
+                }
+                return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+            }
+
+            function onAutoResults(results) {
+                if (!autoRunning) return;
+                var faces = results.multiFaceLandmarks;
+                if (!faces || !faces.length) {
+                    holdFrames = 0;
+                    setScannerStatus('Position your face in the frame');
+                    return;
+                }
+                var lm = faces[0];
+                var box = faceBox(lm);
+                var cx = box.x + box.width / 2;
+                var cy = box.y + box.height / 2;
+                var posOk = box.height >= FACE_MIN_H && box.height <= FACE_MAX_H &&
+                            Math.abs(cx - 0.5) <= CENTER_TOL && cy >= 0.10 && cy <= 0.85;
+                if (!posOk) {
+                    holdFrames = 0;
+                    setScannerStatus('Move to the center of the frame');
+                    return;
+                }
+                if (Date.now() < cooldownUntil) {
+                    holdFrames = 0;
+                    return; // keep showing the latest instruction
+                }
+
+                var yaw = computeYaw(lm);
+                var stage = nextAutoStage();
+                var target = HOLD_SIDE;
+                var captureType = null;
+
+                if (stage === 'front') {
+                    target = HOLD_FRONT;
+                    if (Math.abs(yaw) > YAW_FRONT_MAX) {
+                        holdFrames = 0;
+                        setScannerStatus('Look straight at the camera');
+                        return;
+                    }
+                    captureType = 'front';
+                } else if (stage === 'side1') {
+                    if (Math.abs(yaw) < YAW_PROFILE_MIN) {
+                        holdFrames = 0;
+                        setScannerStatus('Turn your head slightly to your LEFT');
+                        return;
+                    }
+                    captureType = sideFromYaw(yaw);
+                } else if (stage === 'side2') {
+                    var need = pendingSide2();
+                    if (Math.abs(yaw) < YAW_PROFILE_MIN || sideFromYaw(yaw) !== need) {
+                        holdFrames = 0;
+                        setScannerStatus('Now turn your head to your ' + need.toUpperCase());
+                        return;
+                    }
+                    captureType = need;
+                } else {
+                    return;
+                }
+
+                holdFrames++;
+                if (holdFrames >= target) {
+                    doAutoCapture(captureType);
+                    return;
+                }
+                if (holdFrames >= Math.ceil(target / 2)) {
+                    setScannerStatus('Hold still…');
+                }
+            }
+
+            function doAutoCapture(type) {
+                captureAngle(type);
+                holdFrames = 0;
+                cooldownUntil = Date.now() + COOLDOWN_MS;
+
+                var stage = nextAutoStage();
+                if (stage === 'side1') {
+                    setScannerStatus('Good! Now turn your head slightly to your LEFT');
+                } else if (stage === 'side2') {
+                    setScannerStatus('Good! Now turn your head to your ' + pendingSide2().toUpperCase());
+                } else if (stage === 'done') {
+                    setScannerStatus('All 3 angles captured ✓ — registering…');
+                    finishCaptureSession();
+                }
+            }
+
+            function finishCaptureSession() {
+                stopAutoCapture();
+                setTimeout(function() {
+                    closeCaptureSession();
+                    registerFace();
+                }, 800);
+            }
+
+            function stopAutoCapture() {
+                autoRunning = false;
+                holdFrames = 0;
+                if (autoRafId) cancelAnimationFrame(autoRafId);
+                autoRafId = null;
+                if (autoMesh) { try { autoMesh.close(); } catch (e) {} autoMesh = null; }
+            }
+
+            async function startAutoCapture() {
+                if (typeof FaceMesh === 'undefined') {
+                    throw new Error('Automatic angle detection is unavailable (FaceMesh failed to load).');
+                }
+                stopAutoCapture();
+                var meshBase = (window.FACE_MESH_BASE || '').replace(/\/+$/, '');
+                autoMesh = new FaceMesh({
+                    locateFile: function(file) {
+                        return meshBase
+                            ? meshBase + '/' + file
+                            : 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/' + file;
+                    }
                 });
+                autoMesh.setOptions({
+                    maxNumFaces: 1,
+                    refineLandmarks: true,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+                autoMesh.onResults(onAutoResults);
+
+                autoRunning = true;
+                holdFrames = 0;
+                cooldownUntil = Date.now() + 700;
+
+                var video = document.getElementById('cameraVideo');
+                var loop = async function() {
+                    if (!autoRunning) return;
+                    try {
+                        if (video && video.readyState >= 2 && !autoProcessing) {
+                            autoProcessing = true;
+                            await autoMesh.send({ image: video });
+                            autoProcessing = false;
+                        }
+                    } catch (e) {
+                        autoProcessing = false;
+                    }
+                    if (autoRunning) autoRafId = requestAnimationFrame(loop);
+                };
+                loop();
             }
 
-            function retakeFace(type) {
-                var previewId = type + 'Preview';
-                var container = document.getElementById(previewId);
-                if (!container) return;
+            async function openCaptureSession() {
+                var stage = document.getElementById('captureStage');
+                if (!stage) return;
+                stage.classList.add('is-live');
+                sessionOpen = true;
 
-                if (type === 'front') frontCaptured = false;
-                if (type === 'left') leftCaptured = false;
-                if (type === 'right') rightCaptured = false;
+                var msgBox = document.getElementById('captureMessage');
+                if (msgBox) msgBox.innerHTML = '';
 
-                container.innerHTML = '<i class="bi bi-person" style="font-size:40px;color:rgba(255,255,255,0.15);"></i>';
+                setScannerStatus('Position your face in the frame');
+                refreshUI();
 
-                updateStepTracker();
-                updateCaptureButtons();
-                updateRetakeButtons();
-            }
-
-            function captureFront() {
-                frontImage = captureFrameInZone('cameraVideo', 0.15);
-                showPreview('frontPreview', frontImage);
-                frontCaptured = true;
-                updateStepTracker();
-                updateCaptureButtons();
-                updateRetakeButtons();
-            }
-
-            function captureLeft() {
-                leftImage = captureFrameInZone('cameraVideo', 0.15);
-                showPreview('leftPreview', leftImage);
-                leftCaptured = true;
-                updateStepTracker();
-                updateCaptureButtons();
-                updateRetakeButtons();
-            }
-
-            function captureRight() {
-                rightImage = captureFrameInZone('cameraVideo', 0.15);
-                showPreview('rightPreview', rightImage);
-                rightCaptured = true;
-                updateStepTracker();
-                updateCaptureButtons();
-                updateRetakeButtons();
-            }
-
-            // ============================================================
-            // CAMERA & CAPTURE
-            // ============================================================
-            async function initCamera() {
                 try {
                     await startCamera('cameraVideo');
-                    document.getElementById('startCameraBtn').classList.add('d-none');
-                    document.getElementById('stopCameraBtn').classList.remove('d-none');
-                    updateCaptureButtons();
                 } catch (e) {
-                    document.getElementById('captureMessage').innerHTML =
-                        '<div class="form-alert form-alert-danger" style="margin-bottom:0;">' +
-                        '<i class="bi bi-exclamation-circle-fill"></i>' +
-                        '<div>Camera access denied.</div></div>';
+                    closeCaptureSession();
+                    showCaptureError((e && e.userMessage) || 'Camera access denied.');
+                    return;
+                }
+                try {
+                    await startAutoCapture();
+                } catch (meshErr) {
+                    closeCaptureSession();
+                    showCaptureError(meshErr.message || 'Automatic angle detection failed to start.');
                 }
             }
 
-            function stopCameraFn() {
+            function closeCaptureSession() {
+                stopAutoCapture();
+                var stage = document.getElementById('captureStage');
+                if (stage) stage.classList.remove('is-live');
+                sessionOpen = false;
                 stopCamera();
-                document.getElementById('startCameraBtn').classList.remove('d-none');
-                document.getElementById('stopCameraBtn').classList.add('d-none');
+                refreshUI();
             }
 
-            // Compliance checkbox: enable capture buttons and control camera
-            var consentCheckbox = document.getElementById('consentVerificationCheckbox');
-            if (consentCheckbox) {
-                consentCheckbox.addEventListener('change', function() {
-                    var btnFront = document.getElementById('btnFront');
-                    var btnLeft = document.getElementById('btnLeft');
-                    var btnRight = document.getElementById('btnRight');
-                    var verified = this.checked;
-                    
-                    if (verified) {
-                        initCamera();
-                        if (btnFront) btnFront.disabled = false;
-                        if (btnLeft) btnLeft.disabled = false;
-                        if (btnRight) btnRight.disabled = false;
-                    } else {
-                        stopCameraFn();
-                        if (btnFront) btnFront.disabled = true;
-                        if (btnLeft) btnLeft.disabled = true;
-                        if (btnRight) btnRight.disabled = true;
-                    }
-                    
-                    updateCaptureButtons();
-                });
+            function showCaptureError(text) {
+                var msgBox = document.getElementById('captureMessage');
+                if (msgBox) {
+                    msgBox.innerHTML =
+                        '<div class="form-alert form-alert-danger" style="margin-bottom:0;">' +
+                        '<i class="bi bi-exclamation-circle-fill"></i>' +
+                        '<div>' + text + '</div></div>';
+                }
             }
 
-            // Individual capture buttons
-            var btnFront = document.getElementById('btnFront');
-            var btnLeft = document.getElementById('btnLeft');
-            var btnRight = document.getElementById('btnRight');
-            
-            if (btnFront) btnFront.addEventListener('click', function() { captureFront(); });
-            if (btnLeft) btnLeft.addEventListener('click', function() { captureLeft(); });
-            if (btnRight) btnRight.addEventListener('click', function() { captureRight(); });
+            var beginCaptureBtn = document.getElementById('beginCaptureBtn');
+            if (beginCaptureBtn) beginCaptureBtn.addEventListener('click', function() {
+                if (completedCount() === 3) return;
+                if (!consentGiven) showConsentModal();
+                else openCaptureSession();
+            });
 
-            // Initialize button states on load
-            updateStepTracker();
-            updateCaptureButtons();
+            var overlayCloseBtn = document.getElementById('captureOverlayClose');
+            if (overlayCloseBtn) overlayCloseBtn.addEventListener('click', closeCaptureSession);
+
+            // ============================================================
+            // SUCCESS MODAL
+            // ============================================================
+            var successModalEl = document.getElementById('registerSuccessModal');
+            var successOkBtn = document.getElementById('registerSuccessOk');
+
+            function hideRegisterSuccess() {
+                if (successModalEl) successModalEl.classList.remove('show');
+            }
+
+            function showRegisterSuccess() {
+                if (successModalEl) successModalEl.classList.add('show');
+                var badge = document.getElementById('faceStatusBadge');
+                if (badge) {
+                    badge.className = 'badge-status badge-present';
+                    badge.textContent = 'Registered';
+                }
+            }
+
+            if (successOkBtn) successOkBtn.addEventListener('click', hideRegisterSuccess);
+            if (successModalEl) successModalEl.addEventListener('click', function(e) {
+                if (e.target === successModalEl) hideRegisterSuccess();
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key !== 'Escape') return;
+                if (successModalEl && successModalEl.classList.contains('show')) {
+                    hideRegisterSuccess();
+                    return;
+                }
+                var modal = document.getElementById('consentCertModal');
+                if (modal && modal.classList.contains('show')) {
+                    hideConsentModal();
+                    return;
+                }
+                if (sessionOpen) closeCaptureSession();
+            });
+
+            // Initialize states on load
+            refreshUI();
 
             function registerFace() {
                 var msg = document.getElementById('registerMessage');
@@ -881,19 +1205,20 @@ require_once __DIR__ . '/../includes/sidebar.php';
                             msg.innerHTML = '<div class="form-alert form-alert-success" style="margin-bottom:0;">' +
                                 '<i class="bi bi-check-circle-fill"></i><div>' + (data.message || 'Face registered successfully.') + '</div></div>';
                             btn.innerHTML = '<i class="bi bi-check-lg"></i> Registered';
-                            btn.className = 'btn-theme btn-theme-success w-100 mt-3';
+                            btn.className = 'btn-theme btn-theme-success btn-theme-lg';
+                            showRegisterSuccess();
                         } else {
                             msg.innerHTML = '<div class="form-alert form-alert-danger" style="margin-bottom:0;">' +
                                 '<i class="bi bi-exclamation-circle-fill"></i><div>' + (data.error || data.message || 'Registration failed') + '</div></div>';
                             btn.disabled = false;
-                            btn.innerHTML = '<i class="bi bi-cpu"></i> Register Face Encoding';
+                            btn.innerHTML = '<i class="bi bi-cpu"></i> Register Face';
                         }
                     })
                     .catch(function() {
                         msg.innerHTML = '<div class="form-alert form-alert-danger" style="margin-bottom:0;">' +
                             '<i class="bi bi-exclamation-circle-fill"></i><div>Network error. Is the Python service running?</div></div>';
                         btn.disabled = false;
-                        btn.innerHTML = '<i class="bi bi-cpu"></i> Register Face Encoding';
+                        btn.innerHTML = '<i class="bi bi-cpu"></i> Register Face';
                     });
             }
         </script>

@@ -134,12 +134,24 @@ try {
                 jsonResponse(['error' => 'Email or Employee ID is required'], 400);
             }
 
-            $stmt = $db->prepare("SELECT id, first_name, last_name, email FROM teachers WHERE email = ? OR employee_id = ? LIMIT 1");
+            $stmt = $db->prepare("SELECT id, first_name, last_name, email, user_id FROM teachers WHERE email = ? OR employee_id = ? LIMIT 1");
             $stmt->execute([$identifier, $identifier]);
             $teacher = $stmt->fetch();
 
             if (!$teacher) {
                 jsonResponse(['error' => 'No teacher record found with this email or ID. Contact the administrator.'], 404);
+            }
+
+            $accountStmt = $db->prepare("SELECT id, password, status FROM users WHERE role = 'teacher' AND (id = ? OR email = ?) LIMIT 1");
+            $accountStmt->execute([intval($teacher['user_id'] ?? 0), $teacher['email']]);
+            $existingAccount = $accountStmt->fetch();
+
+            if ($existingAccount && !empty($existingAccount['password'])) {
+                jsonResponse([
+                    'success' => false,
+                    'already_registered' => true,
+                    'error' => 'This account has already been created. Please log in instead of registering again.'
+                ]);
             }
 
             jsonResponse([
@@ -178,6 +190,12 @@ try {
             if ($existingUser) {
                 if ($existingUser['role'] !== 'teacher') {
                     jsonResponse(['error' => 'This email is already used by a non-teacher account.'], 400);
+                }
+                if (!empty($existingUser['password'])) {
+                    jsonResponse([
+                        'error' => 'This account has already been created. Please log in instead of registering again.',
+                        'already_registered' => true
+                    ]);
                 }
                 $userId = $existingUser['id'];
                 if (!updatePassword($db, $userId, $password)) {

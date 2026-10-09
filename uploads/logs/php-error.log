@@ -808,3 +808,1002 @@
 [23-Sep-2026 10:29:37 Asia/Manila] advisoryStudentCounts: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'section_id' in 'field list'
 [25-Sep-2026 20:52:16 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
 [25-Sep-2026 20:52:16 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 09:07:59 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[30-Sep-2026 09:07:59 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 09:08:22 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[30-Sep-2026 09:08:22 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 09:08:33 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[30-Sep-2026 09:08:33 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 09:20:52 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[30-Sep-2026 09:20:55 Asia/Manila] GATE API LOADED action=confirm_auto_end helper_loaded=yes
+[30-Sep-2026 09:20:55 Asia/Manila] DISPATCH CALLED student_id=10 event=GATE_ABSENT
+[30-Sep-2026 09:20:55 Asia/Manila] DISPATCH GUARDIANS student_id=10 count=1 emails=christinemaebanculo45@gmail.com
+[30-Sep-2026 09:20:55 Asia/Manila] DISPATCH MESSAGE student_id=10 event=GATE_ABSENT template_len=79 message_len=97 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:20:55 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=10 channel=email template_len=79 message_len=97 send_email=1 guardian_count=1
+[30-Sep-2026 09:20:55 Asia/Manila] DISPATCH EMAIL SEND student_id=10 to=christinemaebanculo45@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:20:55 Asia/Manila] EMAIL SEND START: to=christinemaebanculo45@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:02 Asia/Manila] EMAIL SEND RESULT: to=christinemaebanculo45@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:02 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=0 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:02 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:02 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=1 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:02 Asia/Manila] DISPATCH EMAIL RESULT student_id=10 to=christinemaebanculo45@gmail.com result=OK
+[30-Sep-2026 09:21:02 Asia/Manila] DISPATCH CALLED student_id=17 event=GATE_ABSENT
+[30-Sep-2026 09:21:02 Asia/Manila] DISPATCH GUARDIANS student_id=17 count=1 emails=candidatovien327@gmail.com
+[30-Sep-2026 09:21:02 Asia/Manila] DISPATCH MESSAGE student_id=17 event=GATE_ABSENT template_len=79 message_len=94 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:02 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=17 channel=email template_len=79 message_len=94 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:02 Asia/Manila] DISPATCH EMAIL SEND student_id=17 to=candidatovien327@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:02 Asia/Manila] EMAIL SEND START: to=candidatovien327@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:07 Asia/Manila] EMAIL SEND RESULT: to=candidatovien327@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:07 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=1 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:07 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:07 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=2 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:07 Asia/Manila] DISPATCH EMAIL RESULT student_id=17 to=candidatovien327@gmail.com result=OK
+[30-Sep-2026 09:21:07 Asia/Manila] DISPATCH CALLED student_id=24 event=GATE_ABSENT
+[30-Sep-2026 09:21:07 Asia/Manila] DISPATCH GUARDIANS student_id=24 count=1 emails=thegreat.gerardsopsop@gmail.com
+[30-Sep-2026 09:21:07 Asia/Manila] DISPATCH MESSAGE student_id=24 event=GATE_ABSENT template_len=79 message_len=93 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:07 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=24 channel=email template_len=79 message_len=93 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:07 Asia/Manila] DISPATCH EMAIL SEND student_id=24 to=thegreat.gerardsopsop@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:07 Asia/Manila] EMAIL SEND START: to=thegreat.gerardsopsop@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:12 Asia/Manila] EMAIL SEND RESULT: to=thegreat.gerardsopsop@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:12 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=2 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:12 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:12 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=3 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:12 Asia/Manila] DISPATCH EMAIL RESULT student_id=24 to=thegreat.gerardsopsop@gmail.com result=OK
+[30-Sep-2026 09:21:12 Asia/Manila] DISPATCH CALLED student_id=29 event=GATE_ABSENT
+[30-Sep-2026 09:21:12 Asia/Manila] DISPATCH GUARDIANS student_id=29 count=1 emails=anazcabm112@gmail.com
+[30-Sep-2026 09:21:12 Asia/Manila] DISPATCH MESSAGE student_id=29 event=GATE_ABSENT template_len=79 message_len=98 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:12 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=29 channel=email template_len=79 message_len=98 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:12 Asia/Manila] DISPATCH EMAIL SEND student_id=29 to=anazcabm112@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:12 Asia/Manila] EMAIL SEND START: to=anazcabm112@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:18 Asia/Manila] EMAIL SEND RESULT: to=anazcabm112@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:18 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=3 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:18 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:18 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=4 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:18 Asia/Manila] DISPATCH EMAIL RESULT student_id=29 to=anazcabm112@gmail.com result=OK
+[30-Sep-2026 09:21:18 Asia/Manila] DISPATCH CALLED student_id=30 event=GATE_ABSENT
+[30-Sep-2026 09:21:18 Asia/Manila] DISPATCH GUARDIANS student_id=30 count=1 emails=maglentejackelyn9@gmail.com
+[30-Sep-2026 09:21:18 Asia/Manila] DISPATCH MESSAGE student_id=30 event=GATE_ABSENT template_len=79 message_len=101 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:18 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=30 channel=email template_len=79 message_len=101 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:18 Asia/Manila] DISPATCH EMAIL SEND student_id=30 to=maglentejackelyn9@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:18 Asia/Manila] EMAIL SEND START: to=maglentejackelyn9@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:26 Asia/Manila] EMAIL SEND RESULT: to=maglentejackelyn9@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:26 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=4 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:26 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:26 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=5 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:26 Asia/Manila] DISPATCH EMAIL RESULT student_id=30 to=maglentejackelyn9@gmail.com result=OK
+[30-Sep-2026 09:21:26 Asia/Manila] DISPATCH CALLED student_id=31 event=GATE_ABSENT
+[30-Sep-2026 09:21:26 Asia/Manila] DISPATCH GUARDIANS student_id=31 count=1 emails=inopia@gmail.com
+[30-Sep-2026 09:21:26 Asia/Manila] DISPATCH MESSAGE student_id=31 event=GATE_ABSENT template_len=79 message_len=101 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:26 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=31 channel=email template_len=79 message_len=101 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:26 Asia/Manila] DISPATCH EMAIL SEND student_id=31 to=inopia@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:26 Asia/Manila] EMAIL SEND START: to=inopia@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:32 Asia/Manila] EMAIL SEND RESULT: to=inopia@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:32 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=5 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:32 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:32 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=6 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:32 Asia/Manila] DISPATCH EMAIL RESULT student_id=31 to=inopia@gmail.com result=OK
+[30-Sep-2026 09:21:32 Asia/Manila] DISPATCH CALLED student_id=32 event=GATE_ABSENT
+[30-Sep-2026 09:21:32 Asia/Manila] DISPATCH GUARDIANS student_id=32 count=1 emails=bagood03@gmail.com
+[30-Sep-2026 09:21:32 Asia/Manila] DISPATCH MESSAGE student_id=32 event=GATE_ABSENT template_len=79 message_len=106 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:32 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=32 channel=email template_len=79 message_len=106 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:32 Asia/Manila] DISPATCH EMAIL SEND student_id=32 to=bagood03@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:32 Asia/Manila] EMAIL SEND START: to=bagood03@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:37 Asia/Manila] EMAIL SEND RESULT: to=bagood03@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:37 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=6 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:37 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:37 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=7 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:37 Asia/Manila] DISPATCH EMAIL RESULT student_id=32 to=bagood03@gmail.com result=OK
+[30-Sep-2026 09:21:37 Asia/Manila] DISPATCH CALLED student_id=33 event=GATE_ABSENT
+[30-Sep-2026 09:21:37 Asia/Manila] DISPATCH GUARDIANS student_id=33 count=1 emails=ricalynbobosa@gmail.com
+[30-Sep-2026 09:21:37 Asia/Manila] DISPATCH MESSAGE student_id=33 event=GATE_ABSENT template_len=79 message_len=93 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:37 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=33 channel=email template_len=79 message_len=93 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:37 Asia/Manila] DISPATCH EMAIL SEND student_id=33 to=ricalynbobosa@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:37 Asia/Manila] EMAIL SEND START: to=ricalynbobosa@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:43 Asia/Manila] EMAIL SEND RESULT: to=ricalynbobosa@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:43 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=7 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:43 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:43 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=8 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:43 Asia/Manila] DISPATCH EMAIL RESULT student_id=33 to=ricalynbobosa@gmail.com result=OK
+[30-Sep-2026 09:21:43 Asia/Manila] DISPATCH CALLED student_id=34 event=GATE_ABSENT
+[30-Sep-2026 09:21:43 Asia/Manila] DISPATCH GUARDIANS student_id=34 count=1 emails=luvidisis@gmail.com
+[30-Sep-2026 09:21:43 Asia/Manila] DISPATCH MESSAGE student_id=34 event=GATE_ABSENT template_len=79 message_len=93 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:43 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=34 channel=email template_len=79 message_len=93 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:43 Asia/Manila] DISPATCH EMAIL SEND student_id=34 to=luvidisis@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:43 Asia/Manila] EMAIL SEND START: to=luvidisis@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:47 Asia/Manila] EMAIL SEND RESULT: to=luvidisis@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:47 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=8 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:47 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:47 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=9 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH EMAIL RESULT student_id=34 to=luvidisis@gmail.com result=OK
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH CALLED student_id=35 event=GATE_ABSENT
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH GUARDIANS student_id=35 count=1 emails=
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH MESSAGE student_id=35 event=GATE_ABSENT template_len=79 message_len=100 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=35 channel=email template_len=79 message_len=100 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH CALLED student_id=36 event=GATE_ABSENT
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH GUARDIANS student_id=36 count=1 emails=arnelcabarles45@gmail.com
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH MESSAGE student_id=36 event=GATE_ABSENT template_len=79 message_len=95 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=36 channel=email template_len=79 message_len=95 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:47 Asia/Manila] DISPATCH EMAIL SEND student_id=36 to=arnelcabarles45@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:47 Asia/Manila] EMAIL SEND START: to=arnelcabarles45@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:53 Asia/Manila] EMAIL SEND RESULT: to=arnelcabarles45@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:53 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=9 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:53 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:53 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=10 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:53 Asia/Manila] DISPATCH EMAIL RESULT student_id=36 to=arnelcabarles45@gmail.com result=OK
+[30-Sep-2026 09:21:53 Asia/Manila] DISPATCH CALLED student_id=37 event=GATE_ABSENT
+[30-Sep-2026 09:21:53 Asia/Manila] DISPATCH GUARDIANS student_id=37 count=1 emails=janicemorado26@gmail.com
+[30-Sep-2026 09:21:53 Asia/Manila] DISPATCH MESSAGE student_id=37 event=GATE_ABSENT template_len=79 message_len=101 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:53 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=37 channel=email template_len=79 message_len=101 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:53 Asia/Manila] DISPATCH EMAIL SEND student_id=37 to=janicemorado26@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:53 Asia/Manila] EMAIL SEND START: to=janicemorado26@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:58 Asia/Manila] EMAIL SEND RESULT: to=janicemorado26@gmail.com result=SUCCESS
+[30-Sep-2026 09:21:59 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=10 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:59 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:21:59 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=11 last_counter_reset=2026-09-30
+[30-Sep-2026 09:21:59 Asia/Manila] DISPATCH EMAIL RESULT student_id=37 to=janicemorado26@gmail.com result=OK
+[30-Sep-2026 09:21:59 Asia/Manila] DISPATCH CALLED student_id=38 event=GATE_ABSENT
+[30-Sep-2026 09:21:59 Asia/Manila] DISPATCH GUARDIANS student_id=38 count=1 emails=BebeLaurio143@gmail.com
+[30-Sep-2026 09:21:59 Asia/Manila] DISPATCH MESSAGE student_id=38 event=GATE_ABSENT template_len=79 message_len=94 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:21:59 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=38 channel=email template_len=79 message_len=94 send_email=1 guardian_count=1
+[30-Sep-2026 09:21:59 Asia/Manila] DISPATCH EMAIL SEND student_id=38 to=BebeLaurio143@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:21:59 Asia/Manila] EMAIL SEND START: to=BebeLaurio143@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:04 Asia/Manila] EMAIL SEND RESULT: to=BebeLaurio143@gmail.com result=SUCCESS
+[30-Sep-2026 09:22:04 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=11 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:04 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:22:04 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=12 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:04 Asia/Manila] DISPATCH EMAIL RESULT student_id=38 to=BebeLaurio143@gmail.com result=OK
+[30-Sep-2026 09:22:04 Asia/Manila] DISPATCH CALLED student_id=39 event=GATE_ABSENT
+[30-Sep-2026 09:22:04 Asia/Manila] DISPATCH GUARDIANS student_id=39 count=1 emails=amylaurio@gmail.com
+[30-Sep-2026 09:22:04 Asia/Manila] DISPATCH MESSAGE student_id=39 event=GATE_ABSENT template_len=79 message_len=97 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:22:04 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=39 channel=email template_len=79 message_len=97 send_email=1 guardian_count=1
+[30-Sep-2026 09:22:04 Asia/Manila] DISPATCH EMAIL SEND student_id=39 to=amylaurio@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:04 Asia/Manila] EMAIL SEND START: to=amylaurio@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:12 Asia/Manila] EMAIL SEND RESULT: to=amylaurio@gmail.com result=SUCCESS
+[30-Sep-2026 09:22:12 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=12 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:12 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:22:12 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=13 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:12 Asia/Manila] DISPATCH EMAIL RESULT student_id=39 to=amylaurio@gmail.com result=OK
+[30-Sep-2026 09:22:12 Asia/Manila] DISPATCH CALLED student_id=41 event=GATE_ABSENT
+[30-Sep-2026 09:22:12 Asia/Manila] DISPATCH GUARDIANS student_id=41 count=1 emails=amormiaamor572@gmail.com
+[30-Sep-2026 09:22:12 Asia/Manila] DISPATCH MESSAGE student_id=41 event=GATE_ABSENT template_len=79 message_len=100 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:22:12 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=41 channel=email template_len=79 message_len=100 send_email=1 guardian_count=1
+[30-Sep-2026 09:22:12 Asia/Manila] DISPATCH EMAIL SEND student_id=41 to=amormiaamor572@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:12 Asia/Manila] EMAIL SEND START: to=amormiaamor572@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:18 Asia/Manila] EMAIL SEND RESULT: to=amormiaamor572@gmail.com result=SUCCESS
+[30-Sep-2026 09:22:18 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=13 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:18 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:22:18 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=14 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:18 Asia/Manila] DISPATCH EMAIL RESULT student_id=41 to=amormiaamor572@gmail.com result=OK
+[30-Sep-2026 09:22:18 Asia/Manila] DISPATCH CALLED student_id=42 event=GATE_ABSENT
+[30-Sep-2026 09:22:18 Asia/Manila] DISPATCH GUARDIANS student_id=42 count=1 emails=ellobolina2@gmail.com
+[30-Sep-2026 09:22:18 Asia/Manila] DISPATCH MESSAGE student_id=42 event=GATE_ABSENT template_len=79 message_len=98 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:22:18 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=42 channel=email template_len=79 message_len=98 send_email=1 guardian_count=1
+[30-Sep-2026 09:22:18 Asia/Manila] DISPATCH EMAIL SEND student_id=42 to=ellobolina2@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:18 Asia/Manila] EMAIL SEND START: to=ellobolina2@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:24 Asia/Manila] EMAIL SEND RESULT: to=ellobolina2@gmail.com result=SUCCESS
+[30-Sep-2026 09:22:24 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=14 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:24 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:22:24 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=15 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:24 Asia/Manila] DISPATCH EMAIL RESULT student_id=42 to=ellobolina2@gmail.com result=OK
+[30-Sep-2026 09:22:24 Asia/Manila] DISPATCH CALLED student_id=43 event=GATE_ABSENT
+[30-Sep-2026 09:22:24 Asia/Manila] DISPATCH GUARDIANS student_id=43 count=0 emails=
+[30-Sep-2026 09:22:24 Asia/Manila] DISPATCH EARLY RETURN student_id=43 event=GATE_ABSENT status=NO_CONTACT
+[30-Sep-2026 09:22:24 Asia/Manila] DISPATCH CALLED student_id=44 event=GATE_ABSENT
+[30-Sep-2026 09:22:24 Asia/Manila] DISPATCH GUARDIANS student_id=44 count=1 emails=gievitancur01221976@gmail.com
+[30-Sep-2026 09:22:24 Asia/Manila] DISPATCH MESSAGE student_id=44 event=GATE_ABSENT template_len=79 message_len=104 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:22:24 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=44 channel=email template_len=79 message_len=104 send_email=1 guardian_count=1
+[30-Sep-2026 09:22:24 Asia/Manila] DISPATCH EMAIL SEND student_id=44 to=gievitancur01221976@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:24 Asia/Manila] EMAIL SEND START: to=gievitancur01221976@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:39 Asia/Manila] EMAIL SEND RESULT: to=gievitancur01221976@gmail.com result=SUCCESS
+[30-Sep-2026 09:22:39 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=15 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:39 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:22:39 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=16 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH EMAIL RESULT student_id=44 to=gievitancur01221976@gmail.com result=OK
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH CALLED student_id=45 event=GATE_ABSENT
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH GUARDIANS student_id=45 count=0 emails=
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH EARLY RETURN student_id=45 event=GATE_ABSENT status=NO_CONTACT
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH CALLED student_id=46 event=GATE_ABSENT
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH GUARDIANS student_id=46 count=0 emails=
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH EARLY RETURN student_id=46 event=GATE_ABSENT status=NO_CONTACT
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH CALLED student_id=47 event=GATE_ABSENT
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH GUARDIANS student_id=47 count=1 emails=
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH MESSAGE student_id=47 event=GATE_ABSENT template_len=79 message_len=94 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=47 channel=email template_len=79 message_len=94 send_email=1 guardian_count=1
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH CALLED student_id=48 event=GATE_ABSENT
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH GUARDIANS student_id=48 count=1 emails=manalomonaliza59@gmail.com
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH MESSAGE student_id=48 event=GATE_ABSENT template_len=79 message_len=92 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=48 channel=email template_len=79 message_len=92 send_email=1 guardian_count=1
+[30-Sep-2026 09:22:39 Asia/Manila] DISPATCH EMAIL SEND student_id=48 to=manalomonaliza59@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:39 Asia/Manila] EMAIL SEND START: to=manalomonaliza59@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:55 Asia/Manila] EMAIL SEND RESULT: to=manalomonaliza59@gmail.com result=SUCCESS
+[30-Sep-2026 09:22:55 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=16 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:55 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:22:55 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=17 last_counter_reset=2026-09-30
+[30-Sep-2026 09:22:55 Asia/Manila] DISPATCH EMAIL RESULT student_id=48 to=manalomonaliza59@gmail.com result=OK
+[30-Sep-2026 09:22:55 Asia/Manila] DISPATCH CALLED student_id=49 event=GATE_ABSENT
+[30-Sep-2026 09:22:55 Asia/Manila] DISPATCH GUARDIANS student_id=49 count=1 emails=mindaaviso055@gmail.com
+[30-Sep-2026 09:22:55 Asia/Manila] DISPATCH MESSAGE student_id=49 event=GATE_ABSENT template_len=79 message_len=96 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:22:55 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=49 channel=email template_len=79 message_len=96 send_email=1 guardian_count=1
+[30-Sep-2026 09:22:55 Asia/Manila] DISPATCH EMAIL SEND student_id=49 to=mindaaviso055@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:22:55 Asia/Manila] EMAIL SEND START: to=mindaaviso055@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:01 Asia/Manila] EMAIL SEND RESULT: to=mindaaviso055@gmail.com result=SUCCESS
+[30-Sep-2026 09:23:01 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=17 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:01 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:23:01 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=18 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:01 Asia/Manila] DISPATCH EMAIL RESULT student_id=49 to=mindaaviso055@gmail.com result=OK
+[30-Sep-2026 09:23:01 Asia/Manila] DISPATCH CALLED student_id=50 event=GATE_ABSENT
+[30-Sep-2026 09:23:01 Asia/Manila] DISPATCH GUARDIANS student_id=50 count=1 emails=ailyn154@gmail.com
+[30-Sep-2026 09:23:01 Asia/Manila] DISPATCH MESSAGE student_id=50 event=GATE_ABSENT template_len=79 message_len=93 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:01 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=50 channel=email template_len=79 message_len=93 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:01 Asia/Manila] DISPATCH EMAIL SEND student_id=50 to=ailyn154@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:01 Asia/Manila] EMAIL SEND START: to=ailyn154@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:10 Asia/Manila] EMAIL SEND RESULT: to=ailyn154@gmail.com result=SUCCESS
+[30-Sep-2026 09:23:10 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=18 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:10 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:23:10 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=19 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:10 Asia/Manila] DISPATCH EMAIL RESULT student_id=50 to=ailyn154@gmail.com result=OK
+[30-Sep-2026 09:23:10 Asia/Manila] DISPATCH CALLED student_id=51 event=GATE_ABSENT
+[30-Sep-2026 09:23:10 Asia/Manila] DISPATCH GUARDIANS student_id=51 count=1 emails=cabarlesbabyann@gmail.com
+[30-Sep-2026 09:23:10 Asia/Manila] DISPATCH MESSAGE student_id=51 event=GATE_ABSENT template_len=79 message_len=98 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:10 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=51 channel=email template_len=79 message_len=98 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:10 Asia/Manila] DISPATCH EMAIL SEND student_id=51 to=cabarlesbabyann@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:10 Asia/Manila] EMAIL SEND START: to=cabarlesbabyann@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:17 Asia/Manila] EMAIL SEND RESULT: to=cabarlesbabyann@gmail.com result=SUCCESS
+[30-Sep-2026 09:23:17 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=19 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:17 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:23:17 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=20 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH EMAIL RESULT student_id=51 to=cabarlesbabyann@gmail.com result=OK
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH CALLED student_id=52 event=GATE_ABSENT
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH GUARDIANS student_id=52 count=1 emails=
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH MESSAGE student_id=52 event=GATE_ABSENT template_len=79 message_len=98 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=52 channel=email template_len=79 message_len=98 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH CALLED student_id=53 event=GATE_ABSENT
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH GUARDIANS student_id=53 count=1 emails=
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH MESSAGE student_id=53 event=GATE_ABSENT template_len=79 message_len=93 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=53 channel=email template_len=79 message_len=93 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH CALLED student_id=54 event=GATE_ABSENT
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH GUARDIANS student_id=54 count=0 emails=
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH EARLY RETURN student_id=54 event=GATE_ABSENT status=NO_CONTACT
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH CALLED student_id=55 event=GATE_ABSENT
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH GUARDIANS student_id=55 count=1 emails=florence.candidato@deped.gov.ph
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH MESSAGE student_id=55 event=GATE_ABSENT template_len=79 message_len=101 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=55 channel=email template_len=79 message_len=101 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:17 Asia/Manila] DISPATCH EMAIL SEND student_id=55 to=florence.candidato@deped.gov.ph subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:17 Asia/Manila] EMAIL SEND START: to=florence.candidato@deped.gov.ph subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:22 Asia/Manila] EMAIL SEND RESULT: to=florence.candidato@deped.gov.ph result=SUCCESS
+[30-Sep-2026 09:23:22 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=20 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:23 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:23:23 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=21 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:23 Asia/Manila] DISPATCH EMAIL RESULT student_id=55 to=florence.candidato@deped.gov.ph result=OK
+[30-Sep-2026 09:23:23 Asia/Manila] DISPATCH CALLED student_id=56 event=GATE_ABSENT
+[30-Sep-2026 09:23:23 Asia/Manila] DISPATCH GUARDIANS student_id=56 count=1 emails=bunaocecilebaridon@gmail.com
+[30-Sep-2026 09:23:23 Asia/Manila] DISPATCH MESSAGE student_id=56 event=GATE_ABSENT template_len=79 message_len=92 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:23 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=56 channel=email template_len=79 message_len=92 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:23 Asia/Manila] DISPATCH EMAIL SEND student_id=56 to=bunaocecilebaridon@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:23 Asia/Manila] EMAIL SEND START: to=bunaocecilebaridon@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:27 Asia/Manila] EMAIL SEND RESULT: to=bunaocecilebaridon@gmail.com result=SUCCESS
+[30-Sep-2026 09:23:27 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=21 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:27 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:23:27 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=22 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:27 Asia/Manila] DISPATCH EMAIL RESULT student_id=56 to=bunaocecilebaridon@gmail.com result=OK
+[30-Sep-2026 09:23:27 Asia/Manila] DISPATCH CALLED student_id=57 event=GATE_ABSENT
+[30-Sep-2026 09:23:27 Asia/Manila] DISPATCH GUARDIANS student_id=57 count=1 emails=doloresarteche3@gmail.com
+[30-Sep-2026 09:23:27 Asia/Manila] DISPATCH MESSAGE student_id=57 event=GATE_ABSENT template_len=79 message_len=101 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:27 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=57 channel=email template_len=79 message_len=101 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:27 Asia/Manila] DISPATCH EMAIL SEND student_id=57 to=doloresarteche3@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:27 Asia/Manila] EMAIL SEND START: to=doloresarteche3@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:33 Asia/Manila] EMAIL SEND RESULT: to=doloresarteche3@gmail.com result=SUCCESS
+[30-Sep-2026 09:23:33 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=22 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:33 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:23:33 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=23 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH EMAIL RESULT student_id=57 to=doloresarteche3@gmail.com result=OK
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH CALLED student_id=58 event=GATE_ABSENT
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH GUARDIANS student_id=58 count=1 emails=
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH MESSAGE student_id=58 event=GATE_ABSENT template_len=79 message_len=100 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=58 channel=email template_len=79 message_len=100 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH CALLED student_id=59 event=GATE_ABSENT
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH GUARDIANS student_id=59 count=1 emails=calderonanggie06@gmail.com
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH MESSAGE student_id=59 event=GATE_ABSENT template_len=79 message_len=94 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=59 channel=email template_len=79 message_len=94 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:33 Asia/Manila] DISPATCH EMAIL SEND student_id=59 to=calderonanggie06@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:33 Asia/Manila] EMAIL SEND START: to=calderonanggie06@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:39 Asia/Manila] EMAIL SEND RESULT: to=calderonanggie06@gmail.com result=SUCCESS
+[30-Sep-2026 09:23:39 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=23 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:39 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:23:39 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=24 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:39 Asia/Manila] DISPATCH EMAIL RESULT student_id=59 to=calderonanggie06@gmail.com result=OK
+[30-Sep-2026 09:23:39 Asia/Manila] DISPATCH CALLED student_id=60 event=GATE_ABSENT
+[30-Sep-2026 09:23:39 Asia/Manila] DISPATCH GUARDIANS student_id=60 count=1 emails=pearlcortes08@gmail.com
+[30-Sep-2026 09:23:39 Asia/Manila] DISPATCH MESSAGE student_id=60 event=GATE_ABSENT template_len=79 message_len=97 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:39 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=60 channel=email template_len=79 message_len=97 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:39 Asia/Manila] DISPATCH EMAIL SEND student_id=60 to=pearlcortes08@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:39 Asia/Manila] EMAIL SEND START: to=pearlcortes08@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:45 Asia/Manila] EMAIL SEND RESULT: to=pearlcortes08@gmail.com result=SUCCESS
+[30-Sep-2026 09:23:45 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=24 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:45 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:23:45 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=25 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:45 Asia/Manila] DISPATCH EMAIL RESULT student_id=60 to=pearlcortes08@gmail.com result=OK
+[30-Sep-2026 09:23:45 Asia/Manila] DISPATCH CALLED student_id=61 event=GATE_ABSENT
+[30-Sep-2026 09:23:45 Asia/Manila] DISPATCH GUARDIANS student_id=61 count=1 emails=
+[30-Sep-2026 09:23:45 Asia/Manila] DISPATCH MESSAGE student_id=61 event=GATE_ABSENT template_len=79 message_len=94 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:45 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=61 channel=email template_len=79 message_len=94 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:45 Asia/Manila] DISPATCH CALLED student_id=62 event=GATE_ABSENT
+[30-Sep-2026 09:23:46 Asia/Manila] DISPATCH GUARDIANS student_id=62 count=1 emails=markrapsing@gmail.com
+[30-Sep-2026 09:23:46 Asia/Manila] DISPATCH MESSAGE student_id=62 event=GATE_ABSENT template_len=79 message_len=101 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:46 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=62 channel=email template_len=79 message_len=101 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:46 Asia/Manila] DISPATCH EMAIL SEND student_id=62 to=markrapsing@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:46 Asia/Manila] EMAIL SEND START: to=markrapsing@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:53 Asia/Manila] EMAIL SEND RESULT: to=markrapsing@gmail.com result=SUCCESS
+[30-Sep-2026 09:23:53 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=25 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:53 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:23:53 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=26 last_counter_reset=2026-09-30
+[30-Sep-2026 09:23:53 Asia/Manila] DISPATCH EMAIL RESULT student_id=62 to=markrapsing@gmail.com result=OK
+[30-Sep-2026 09:23:53 Asia/Manila] DISPATCH CALLED student_id=63 event=GATE_ABSENT
+[30-Sep-2026 09:23:53 Asia/Manila] DISPATCH GUARDIANS student_id=63 count=1 emails=jorgejocelyn@gmail.com
+[30-Sep-2026 09:23:53 Asia/Manila] DISPATCH MESSAGE student_id=63 event=GATE_ABSENT template_len=79 message_len=93 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:23:53 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=63 channel=email template_len=79 message_len=93 send_email=1 guardian_count=1
+[30-Sep-2026 09:23:53 Asia/Manila] DISPATCH EMAIL SEND student_id=63 to=jorgejocelyn@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:23:53 Asia/Manila] EMAIL SEND START: to=jorgejocelyn@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:24:01 Asia/Manila] EMAIL SEND RESULT: to=jorgejocelyn@gmail.com result=SUCCESS
+[30-Sep-2026 09:24:01 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=26 last_counter_reset=2026-09-30
+[30-Sep-2026 09:24:01 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:24:01 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=27 last_counter_reset=2026-09-30
+[30-Sep-2026 09:24:01 Asia/Manila] DISPATCH EMAIL RESULT student_id=63 to=jorgejocelyn@gmail.com result=OK
+[30-Sep-2026 09:24:01 Asia/Manila] DISPATCH CALLED student_id=64 event=GATE_ABSENT
+[30-Sep-2026 09:24:01 Asia/Manila] DISPATCH GUARDIANS student_id=64 count=1 emails=elishathalia22@gmail.com
+[30-Sep-2026 09:24:01 Asia/Manila] DISPATCH MESSAGE student_id=64 event=GATE_ABSENT template_len=79 message_len=98 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:24:01 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=64 channel=email template_len=79 message_len=98 send_email=1 guardian_count=1
+[30-Sep-2026 09:24:01 Asia/Manila] DISPATCH EMAIL SEND student_id=64 to=elishathalia22@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:24:01 Asia/Manila] EMAIL SEND START: to=elishathalia22@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:24:07 Asia/Manila] EMAIL SEND RESULT: to=elishathalia22@gmail.com result=SUCCESS
+[30-Sep-2026 09:24:07 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=27 last_counter_reset=2026-09-30
+[30-Sep-2026 09:24:07 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:24:07 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=28 last_counter_reset=2026-09-30
+[30-Sep-2026 09:24:07 Asia/Manila] DISPATCH EMAIL RESULT student_id=64 to=elishathalia22@gmail.com result=OK
+[30-Sep-2026 09:24:07 Asia/Manila] DISPATCH CALLED student_id=65 event=GATE_ABSENT
+[30-Sep-2026 09:24:07 Asia/Manila] DISPATCH GUARDIANS student_id=65 count=0 emails=
+[30-Sep-2026 09:24:07 Asia/Manila] DISPATCH EARLY RETURN student_id=65 event=GATE_ABSENT status=NO_CONTACT
+[30-Sep-2026 09:24:07 Asia/Manila] DISPATCH CALLED student_id=66 event=GATE_ABSENT
+[30-Sep-2026 09:24:07 Asia/Manila] DISPATCH GUARDIANS student_id=66 count=1 emails=kimmy@gmail.com
+[30-Sep-2026 09:24:07 Asia/Manila] DISPATCH MESSAGE student_id=66 event=GATE_ABSENT template_len=79 message_len=93 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:24:07 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=66 channel=email template_len=79 message_len=93 send_email=1 guardian_count=1
+[30-Sep-2026 09:24:07 Asia/Manila] DISPATCH EMAIL SEND student_id=66 to=kimmy@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:24:07 Asia/Manila] EMAIL SEND START: to=kimmy@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:24:13 Asia/Manila] EMAIL SEND RESULT: to=kimmy@gmail.com result=SUCCESS
+[30-Sep-2026 09:24:13 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=28 last_counter_reset=2026-09-30
+[30-Sep-2026 09:24:13 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:24:13 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=29 last_counter_reset=2026-09-30
+[30-Sep-2026 09:24:13 Asia/Manila] DISPATCH EMAIL RESULT student_id=66 to=kimmy@gmail.com result=OK
+[30-Sep-2026 09:24:13 Asia/Manila] DISPATCH CALLED student_id=67 event=GATE_ABSENT
+[30-Sep-2026 09:24:13 Asia/Manila] DISPATCH GUARDIANS student_id=67 count=1 emails=ceasar@gmail.com
+[30-Sep-2026 09:24:13 Asia/Manila] DISPATCH MESSAGE student_id=67 event=GATE_ABSENT template_len=79 message_len=91 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[30-Sep-2026 09:24:13 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=67 channel=email template_len=79 message_len=91 send_email=1 guardian_count=1
+[30-Sep-2026 09:24:13 Asia/Manila] DISPATCH EMAIL SEND student_id=67 to=ceasar@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:24:13 Asia/Manila] EMAIL SEND START: to=ceasar@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[30-Sep-2026 09:24:19 Asia/Manila] EMAIL SEND RESULT: to=ceasar@gmail.com result=SUCCESS
+[30-Sep-2026 09:24:19 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=29 last_counter_reset=2026-09-30
+[30-Sep-2026 09:24:19 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-09-30
+[30-Sep-2026 09:24:19 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=30 last_counter_reset=2026-09-30
+[30-Sep-2026 09:24:19 Asia/Manila] DISPATCH EMAIL RESULT student_id=67 to=ceasar@gmail.com result=OK
+[30-Sep-2026 09:24:19 Asia/Manila] DISPATCH CALLED student_id=68 event=GATE_ABSENT
+[30-Sep-2026 09:24:19 Asia/Manila] DISPATCH GUARDIANS student_id=68 count=0 emails=
+[30-Sep-2026 09:24:19 Asia/Manila] DISPATCH EARLY RETURN student_id=68 event=GATE_ABSENT status=NO_CONTACT
+[30-Sep-2026 09:24:19 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[30-Sep-2026 09:24:19 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:19 Asia/Manila] advisoryStudentCounts: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'section_id' in 'field list'
+[30-Sep-2026 09:24:19 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:19 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:20 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[30-Sep-2026 09:24:20 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:20 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[30-Sep-2026 09:24:20 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:20 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:20 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:20 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[30-Sep-2026 09:24:20 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:20 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:21 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:21 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[30-Sep-2026 09:24:21 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:24:21 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[30-Sep-2026 09:24:21 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[30-Sep-2026 09:25:16 Asia/Manila] recognize_class: existing status='present' for student_id=10
+[30-Sep-2026 09:25:20 Asia/Manila] recognize_class: existing status='present' for student_id=10
+[30-Sep-2026 09:25:37 Asia/Manila] recognize_class: existing status='present' for student_id=10
+[30-Sep-2026 09:32:07 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[30-Sep-2026 09:32:07 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 09:33:49 Asia/Manila] advisoryStudentCounts: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'section_id' in 'field list'
+[30-Sep-2026 09:39:33 Asia/Manila] advisoryStudentCounts: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'section_id' in 'field list'
+[30-Sep-2026 09:41:14 Asia/Manila] recognize_class: existing status='present' for student_id=10
+[30-Sep-2026 09:41:18 Asia/Manila] recognize_class: existing status='present' for student_id=10
+[30-Sep-2026 09:41:36 Asia/Manila] recognize_class: existing status='late' for student_id=17
+[30-Sep-2026 22:27:27 Asia/Manila] Uncaught exception: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away in C:\xampp\htdocs\Tin\includes\functions.php:264
+[30-Sep-2026 22:27:49 Asia/Manila] Uncaught exception: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away in C:\xampp\htdocs\Tin\includes\functions.php:265
+[30-Sep-2026 22:28:48 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[30-Sep-2026 22:28:48 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 22:52:44 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[30-Sep-2026 22:52:44 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 22:52:48 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[30-Sep-2026 22:52:48 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 22:53:16 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[30-Sep-2026 22:53:16 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 22:55:58 Asia/Manila] advisoryStudentCounts: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'section_id' in 'field list'
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH CALLED student_id=65 event=3X_ABSENCE
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH GUARDIANS student_id=65 count=0 emails=
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH EARLY RETURN student_id=65 event=3X_ABSENCE status=NO_CONTACT
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH CALLED student_id=66 event=3X_ABSENCE
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH GUARDIANS student_id=66 count=1 emails=kimmy@gmail.com
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH CALLED student_id=67 event=3X_ABSENCE
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH GUARDIANS student_id=67 count=1 emails=ceasar@gmail.com
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH CALLED student_id=68 event=3X_ABSENCE
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH GUARDIANS student_id=68 count=0 emails=
+[30-Sep-2026 22:56:12 Asia/Manila] DISPATCH EARLY RETURN student_id=68 event=3X_ABSENCE status=NO_CONTACT
+[30-Sep-2026 23:01:08 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[30-Sep-2026 23:01:08 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[30-Sep-2026 23:41:03 Asia/Manila] advisoryStudentCounts: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'section_id' in 'field list'
+[30-Sep-2026 23:55:33 Asia/Manila] recognize_class: existing status='present' for student_id=10
+[30-Sep-2026 23:55:39 Asia/Manila] recognize_class: existing status='present' for student_id=10
+[30-Sep-2026 23:55:43 Asia/Manila] recognize_class: existing status='present' for student_id=10
+[30-Sep-2026 23:55:47 Asia/Manila] recognize_class: existing status='present' for student_id=10
+[01-Oct-2026 00:07:59 Asia/Manila] recognize_class: existing status='late' for student_id=10
+[01-Oct-2026 00:18:10 Asia/Manila] recognize_class: existing status='late' for student_id=10
+[01-Oct-2026 00:18:17 Asia/Manila] recognize_class: existing status='late' for student_id=10
+[01-Oct-2026 00:18:22 Asia/Manila] recognize_class: existing status='late' for student_id=10
+[01-Oct-2026 00:28:08 Asia/Manila] Database Connection Error: could not find driver
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH CALLED student_id=17 event=3X_ABSENCE
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH GUARDIANS student_id=17 count=1 emails=candidatovien327@gmail.com
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH CALLED student_id=65 event=3X_ABSENCE
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH GUARDIANS student_id=65 count=0 emails=
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH EARLY RETURN student_id=65 event=3X_ABSENCE status=NO_CONTACT
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH CALLED student_id=66 event=3X_ABSENCE
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH GUARDIANS student_id=66 count=1 emails=kimmy@gmail.com
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH MESSAGE student_id=66 event=3X_ABSENCE template_len=80 message_len=53 template_preview={student_name} has been absent for {consecutive_absence_limi
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH TRACE event=3X_ABSENCE student_id=66 channel=email template_len=80 message_len=53 send_email=1 guardian_count=1
+[01-Oct-2026 00:35:42 Asia/Manila] DISPATCH EMAIL SEND student_id=66 to=kimmy@gmail.com subject=[Liceo de Baleno] Parent Notification: 3x absence
+[01-Oct-2026 00:35:42 Asia/Manila] EMAIL SEND START: to=kimmy@gmail.com subject=[Liceo de Baleno] Parent Notification: 3x absence
+[01-Oct-2026 00:35:48 Asia/Manila] EMAIL SEND RESULT: to=kimmy@gmail.com result=SUCCESS
+[01-Oct-2026 00:35:48 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=0 last_counter_reset=2026-10-01
+[01-Oct-2026 00:35:48 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-01
+[01-Oct-2026 00:35:48 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=1 last_counter_reset=2026-10-01
+[01-Oct-2026 00:35:48 Asia/Manila] DISPATCH EMAIL RESULT student_id=66 to=kimmy@gmail.com result=OK
+[01-Oct-2026 00:35:48 Asia/Manila] DISPATCH CALLED student_id=67 event=3X_ABSENCE
+[01-Oct-2026 00:35:48 Asia/Manila] DISPATCH GUARDIANS student_id=67 count=1 emails=ceasar@gmail.com
+[01-Oct-2026 00:35:48 Asia/Manila] DISPATCH CALLED student_id=68 event=3X_ABSENCE
+[01-Oct-2026 00:35:48 Asia/Manila] DISPATCH GUARDIANS student_id=68 count=0 emails=
+[01-Oct-2026 00:35:48 Asia/Manila] DISPATCH EARLY RETURN student_id=68 event=3X_ABSENCE status=NO_CONTACT
+[05-Oct-2026 19:59:12 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[05-Oct-2026 19:59:12 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[05-Oct-2026 23:11:57 Asia/Manila] Face API Error: Failed to connect to 127.0.0.1 port 5000 after 2048 ms: Couldn't connect to server
+[06-Oct-2026 21:06:46 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[06-Oct-2026 21:06:46 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[06-Oct-2026 21:49:48 Asia/Manila] Face API Error: Operation timed out after 10003 milliseconds with 0 bytes received
+[06-Oct-2026 22:09:20 Asia/Manila] GATE API LOADED action=start_session helper_loaded=yes
+[06-Oct-2026 22:09:20 Asia/Manila] GATE API: start_session created session_id=94 type=time_in period=afternoon
+[06-Oct-2026 22:09:20 Asia/Manila] GATE API: start_session created 42 pending records for session_id=94
+[06-Oct-2026 22:09:28 Asia/Manila] GATE API LOADED action=engine_status helper_loaded=yes
+[06-Oct-2026 22:09:37 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:09:43 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:09:43 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:09:46 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:09:49 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:09:51 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:09:51 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:09:54 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:09:57 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:00 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:10:04 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:07 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:10 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:10:10 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:13 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:16 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:19 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:10:19 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:22 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:25 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:28 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:10:32 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:10:38 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:10:48 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:10:52 Asia/Manila] GATE API LOADED action=engine_status helper_loaded=yes
+[06-Oct-2026 22:10:58 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:01 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:05 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:05 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:08 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:11 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:11 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:14 Asia/Manila] GATE API: matchedFace found student_id=51 name=Angie Nel Cabarles
+[06-Oct-2026 22:11:14 Asia/Manila] GATE API: duplicate check student_id=51 session_id=94 session_type=time_in existing=yes(status=pending)
+[06-Oct-2026 22:11:14 Asia/Manila] GATE API: pending branch entered student_id=51 session_id=94
+[06-Oct-2026 22:11:14 Asia/Manila] GATE API: pending branch about to dispatch student_id=51 event=TIME_IN
+[06-Oct-2026 22:11:14 Asia/Manila] DISPATCH CALLED student_id=51 event=TIME_IN
+[06-Oct-2026 22:11:14 Asia/Manila] DISPATCH GUARDIANS student_id=51 count=1 emails=cabarlesbabyann@gmail.com
+[06-Oct-2026 22:11:14 Asia/Manila] DISPATCH MESSAGE student_id=51 event=TIME_IN template_len=71 message_len=88 template_preview={student_name} has safely arrived at {school_name} on {date}
+[06-Oct-2026 22:11:14 Asia/Manila] DISPATCH TRACE event=TIME_IN student_id=51 channel=email template_len=71 message_len=88 send_email=1 guardian_count=1
+[06-Oct-2026 22:11:14 Asia/Manila] DISPATCH EMAIL SEND student_id=51 to=cabarlesbabyann@gmail.com subject=[Liceo de Baleno] Parent Notification: Time in
+[06-Oct-2026 22:11:14 Asia/Manila] EMAIL SEND START: to=cabarlesbabyann@gmail.com subject=[Liceo de Baleno] Parent Notification: Time in
+[06-Oct-2026 22:11:20 Asia/Manila] EMAIL SEND RESULT: to=cabarlesbabyann@gmail.com result=SUCCESS
+[06-Oct-2026 22:11:20 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=0 last_counter_reset=2026-10-06
+[06-Oct-2026 22:11:20 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:11:20 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=1 last_counter_reset=2026-10-06
+[06-Oct-2026 22:11:20 Asia/Manila] DISPATCH EMAIL RESULT student_id=51 to=cabarlesbabyann@gmail.com result=OK
+[06-Oct-2026 22:11:20 Asia/Manila] GATE API: pending branch dispatch returned student_id=51
+[06-Oct-2026 22:11:20 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:20 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:23 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:23 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:27 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:30 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:30 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:33 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:37 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:37 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:37 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:40 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:11:43 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:43 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:48 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:52 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:11:58 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:02 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:08 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:12 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:18 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:22 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:24 Asia/Manila] GATE API LOADED action=engine_status helper_loaded=yes
+[06-Oct-2026 22:12:30 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:32 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:34 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:38 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:39 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:12:42 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:12:45 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:45 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:48 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:52 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:54 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:12:58 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:13:00 Asia/Manila] GATE API LOADED action=manual_attendance helper_loaded=yes
+[06-Oct-2026 22:13:00 Asia/Manila] DISPATCH CALLED student_id=10 event=TIME_IN
+[06-Oct-2026 22:13:00 Asia/Manila] DISPATCH GUARDIANS student_id=10 count=1 emails=christinemaebanculo45@gmail.com
+[06-Oct-2026 22:13:00 Asia/Manila] DISPATCH MESSAGE student_id=10 event=TIME_IN template_len=71 message_len=87 template_preview={student_name} has safely arrived at {school_name} on {date}
+[06-Oct-2026 22:13:00 Asia/Manila] DISPATCH TRACE event=TIME_IN student_id=10 channel=email template_len=71 message_len=87 send_email=1 guardian_count=1
+[06-Oct-2026 22:13:00 Asia/Manila] DISPATCH EMAIL SEND student_id=10 to=christinemaebanculo45@gmail.com subject=[Liceo de Baleno] Parent Notification: Time in
+[06-Oct-2026 22:13:00 Asia/Manila] EMAIL SEND START: to=christinemaebanculo45@gmail.com subject=[Liceo de Baleno] Parent Notification: Time in
+[06-Oct-2026 22:13:05 Asia/Manila] EMAIL SEND RESULT: to=christinemaebanculo45@gmail.com result=SUCCESS
+[06-Oct-2026 22:13:05 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=1 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:05 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:13:05 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=2 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:05 Asia/Manila] DISPATCH EMAIL RESULT student_id=10 to=christinemaebanculo45@gmail.com result=OK
+[06-Oct-2026 22:13:05 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:13:05 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:13:08 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:13:12 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:13:14 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:13:18 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:13:22 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:13:23 Asia/Manila] GATE API LOADED action=end_session helper_loaded=yes
+[06-Oct-2026 22:13:23 Asia/Manila] DISPATCH CALLED student_id=17 event=GATE_ABSENT
+[06-Oct-2026 22:13:23 Asia/Manila] DISPATCH GUARDIANS student_id=17 count=1 emails=candidatovien327@gmail.com
+[06-Oct-2026 22:13:23 Asia/Manila] DISPATCH MESSAGE student_id=17 event=GATE_ABSENT template_len=79 message_len=92 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:13:23 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=17 channel=email template_len=79 message_len=92 send_email=1 guardian_count=1
+[06-Oct-2026 22:13:23 Asia/Manila] DISPATCH EMAIL SEND student_id=17 to=candidatovien327@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:23 Asia/Manila] EMAIL SEND START: to=candidatovien327@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:29 Asia/Manila] EMAIL SEND RESULT: to=candidatovien327@gmail.com result=SUCCESS
+[06-Oct-2026 22:13:29 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=2 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:29 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:13:29 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=3 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:29 Asia/Manila] DISPATCH EMAIL RESULT student_id=17 to=candidatovien327@gmail.com result=OK
+[06-Oct-2026 22:13:29 Asia/Manila] DISPATCH CALLED student_id=24 event=GATE_ABSENT
+[06-Oct-2026 22:13:29 Asia/Manila] DISPATCH GUARDIANS student_id=24 count=1 emails=thegreat.gerardsopsop@gmail.com
+[06-Oct-2026 22:13:29 Asia/Manila] DISPATCH MESSAGE student_id=24 event=GATE_ABSENT template_len=79 message_len=91 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:13:29 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=24 channel=email template_len=79 message_len=91 send_email=1 guardian_count=1
+[06-Oct-2026 22:13:29 Asia/Manila] DISPATCH EMAIL SEND student_id=24 to=thegreat.gerardsopsop@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:29 Asia/Manila] EMAIL SEND START: to=thegreat.gerardsopsop@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:35 Asia/Manila] EMAIL SEND RESULT: to=thegreat.gerardsopsop@gmail.com result=SUCCESS
+[06-Oct-2026 22:13:35 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=3 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:35 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:13:35 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=4 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:35 Asia/Manila] DISPATCH EMAIL RESULT student_id=24 to=thegreat.gerardsopsop@gmail.com result=OK
+[06-Oct-2026 22:13:35 Asia/Manila] DISPATCH CALLED student_id=29 event=GATE_ABSENT
+[06-Oct-2026 22:13:35 Asia/Manila] DISPATCH GUARDIANS student_id=29 count=1 emails=anazcabm112@gmail.com
+[06-Oct-2026 22:13:35 Asia/Manila] DISPATCH MESSAGE student_id=29 event=GATE_ABSENT template_len=79 message_len=96 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:13:35 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=29 channel=email template_len=79 message_len=96 send_email=1 guardian_count=1
+[06-Oct-2026 22:13:35 Asia/Manila] DISPATCH EMAIL SEND student_id=29 to=anazcabm112@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:35 Asia/Manila] EMAIL SEND START: to=anazcabm112@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:40 Asia/Manila] EMAIL SEND RESULT: to=anazcabm112@gmail.com result=SUCCESS
+[06-Oct-2026 22:13:40 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=4 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:40 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:13:40 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=5 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:40 Asia/Manila] DISPATCH EMAIL RESULT student_id=29 to=anazcabm112@gmail.com result=OK
+[06-Oct-2026 22:13:40 Asia/Manila] DISPATCH CALLED student_id=30 event=GATE_ABSENT
+[06-Oct-2026 22:13:40 Asia/Manila] DISPATCH GUARDIANS student_id=30 count=1 emails=maglentejackelyn9@gmail.com
+[06-Oct-2026 22:13:40 Asia/Manila] DISPATCH MESSAGE student_id=30 event=GATE_ABSENT template_len=79 message_len=99 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:13:40 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=30 channel=email template_len=79 message_len=99 send_email=1 guardian_count=1
+[06-Oct-2026 22:13:40 Asia/Manila] DISPATCH EMAIL SEND student_id=30 to=maglentejackelyn9@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:40 Asia/Manila] EMAIL SEND START: to=maglentejackelyn9@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:45 Asia/Manila] EMAIL SEND RESULT: to=maglentejackelyn9@gmail.com result=SUCCESS
+[06-Oct-2026 22:13:45 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=5 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:45 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:13:45 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=6 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:45 Asia/Manila] DISPATCH EMAIL RESULT student_id=30 to=maglentejackelyn9@gmail.com result=OK
+[06-Oct-2026 22:13:45 Asia/Manila] DISPATCH CALLED student_id=31 event=GATE_ABSENT
+[06-Oct-2026 22:13:45 Asia/Manila] DISPATCH GUARDIANS student_id=31 count=1 emails=inopia@gmail.com
+[06-Oct-2026 22:13:45 Asia/Manila] DISPATCH MESSAGE student_id=31 event=GATE_ABSENT template_len=79 message_len=99 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:13:45 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=31 channel=email template_len=79 message_len=99 send_email=1 guardian_count=1
+[06-Oct-2026 22:13:45 Asia/Manila] DISPATCH EMAIL SEND student_id=31 to=inopia@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:45 Asia/Manila] EMAIL SEND START: to=inopia@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:50 Asia/Manila] EMAIL SEND RESULT: to=inopia@gmail.com result=SUCCESS
+[06-Oct-2026 22:13:50 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=6 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:50 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:13:50 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=7 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:50 Asia/Manila] DISPATCH EMAIL RESULT student_id=31 to=inopia@gmail.com result=OK
+[06-Oct-2026 22:13:50 Asia/Manila] DISPATCH CALLED student_id=32 event=GATE_ABSENT
+[06-Oct-2026 22:13:50 Asia/Manila] DISPATCH GUARDIANS student_id=32 count=1 emails=bagood03@gmail.com
+[06-Oct-2026 22:13:50 Asia/Manila] DISPATCH MESSAGE student_id=32 event=GATE_ABSENT template_len=79 message_len=104 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:13:50 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=32 channel=email template_len=79 message_len=104 send_email=1 guardian_count=1
+[06-Oct-2026 22:13:50 Asia/Manila] DISPATCH EMAIL SEND student_id=32 to=bagood03@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:50 Asia/Manila] EMAIL SEND START: to=bagood03@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:56 Asia/Manila] EMAIL SEND RESULT: to=bagood03@gmail.com result=SUCCESS
+[06-Oct-2026 22:13:56 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=7 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:56 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:13:56 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=8 last_counter_reset=2026-10-06
+[06-Oct-2026 22:13:56 Asia/Manila] DISPATCH EMAIL RESULT student_id=32 to=bagood03@gmail.com result=OK
+[06-Oct-2026 22:13:56 Asia/Manila] DISPATCH CALLED student_id=33 event=GATE_ABSENT
+[06-Oct-2026 22:13:56 Asia/Manila] DISPATCH GUARDIANS student_id=33 count=1 emails=ricalynbobosa@gmail.com
+[06-Oct-2026 22:13:56 Asia/Manila] DISPATCH MESSAGE student_id=33 event=GATE_ABSENT template_len=79 message_len=91 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:13:56 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=33 channel=email template_len=79 message_len=91 send_email=1 guardian_count=1
+[06-Oct-2026 22:13:56 Asia/Manila] DISPATCH EMAIL SEND student_id=33 to=ricalynbobosa@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:13:56 Asia/Manila] EMAIL SEND START: to=ricalynbobosa@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:01 Asia/Manila] EMAIL SEND RESULT: to=ricalynbobosa@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:01 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=8 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:01 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:01 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=9 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:01 Asia/Manila] DISPATCH EMAIL RESULT student_id=33 to=ricalynbobosa@gmail.com result=OK
+[06-Oct-2026 22:14:01 Asia/Manila] DISPATCH CALLED student_id=34 event=GATE_ABSENT
+[06-Oct-2026 22:14:01 Asia/Manila] DISPATCH GUARDIANS student_id=34 count=1 emails=luvidisis@gmail.com
+[06-Oct-2026 22:14:01 Asia/Manila] DISPATCH MESSAGE student_id=34 event=GATE_ABSENT template_len=79 message_len=91 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:01 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=34 channel=email template_len=79 message_len=91 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:01 Asia/Manila] DISPATCH EMAIL SEND student_id=34 to=luvidisis@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:01 Asia/Manila] EMAIL SEND START: to=luvidisis@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:07 Asia/Manila] EMAIL SEND RESULT: to=luvidisis@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:07 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=9 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:07 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:07 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=10 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH EMAIL RESULT student_id=34 to=luvidisis@gmail.com result=OK
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH CALLED student_id=35 event=GATE_ABSENT
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH GUARDIANS student_id=35 count=1 emails=
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH MESSAGE student_id=35 event=GATE_ABSENT template_len=79 message_len=98 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=35 channel=email template_len=79 message_len=98 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH CALLED student_id=36 event=GATE_ABSENT
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH GUARDIANS student_id=36 count=1 emails=arnelcabarles45@gmail.com
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH MESSAGE student_id=36 event=GATE_ABSENT template_len=79 message_len=93 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=36 channel=email template_len=79 message_len=93 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:07 Asia/Manila] DISPATCH EMAIL SEND student_id=36 to=arnelcabarles45@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:07 Asia/Manila] EMAIL SEND START: to=arnelcabarles45@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:12 Asia/Manila] EMAIL SEND RESULT: to=arnelcabarles45@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:12 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=10 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:12 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:12 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=11 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:12 Asia/Manila] DISPATCH EMAIL RESULT student_id=36 to=arnelcabarles45@gmail.com result=OK
+[06-Oct-2026 22:14:12 Asia/Manila] DISPATCH CALLED student_id=37 event=GATE_ABSENT
+[06-Oct-2026 22:14:12 Asia/Manila] DISPATCH GUARDIANS student_id=37 count=1 emails=janicemorado26@gmail.com
+[06-Oct-2026 22:14:12 Asia/Manila] DISPATCH MESSAGE student_id=37 event=GATE_ABSENT template_len=79 message_len=99 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:12 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=37 channel=email template_len=79 message_len=99 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:12 Asia/Manila] DISPATCH EMAIL SEND student_id=37 to=janicemorado26@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:12 Asia/Manila] EMAIL SEND START: to=janicemorado26@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:18 Asia/Manila] EMAIL SEND RESULT: to=janicemorado26@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:18 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=11 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:18 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:18 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=12 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:18 Asia/Manila] DISPATCH EMAIL RESULT student_id=37 to=janicemorado26@gmail.com result=OK
+[06-Oct-2026 22:14:18 Asia/Manila] DISPATCH CALLED student_id=38 event=GATE_ABSENT
+[06-Oct-2026 22:14:18 Asia/Manila] DISPATCH GUARDIANS student_id=38 count=1 emails=BebeLaurio143@gmail.com
+[06-Oct-2026 22:14:18 Asia/Manila] DISPATCH MESSAGE student_id=38 event=GATE_ABSENT template_len=79 message_len=92 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:18 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=38 channel=email template_len=79 message_len=92 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:18 Asia/Manila] DISPATCH EMAIL SEND student_id=38 to=BebeLaurio143@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:18 Asia/Manila] EMAIL SEND START: to=BebeLaurio143@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:23 Asia/Manila] EMAIL SEND RESULT: to=BebeLaurio143@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:23 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=12 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:23 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:23 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=13 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:23 Asia/Manila] DISPATCH EMAIL RESULT student_id=38 to=BebeLaurio143@gmail.com result=OK
+[06-Oct-2026 22:14:23 Asia/Manila] DISPATCH CALLED student_id=39 event=GATE_ABSENT
+[06-Oct-2026 22:14:23 Asia/Manila] DISPATCH GUARDIANS student_id=39 count=1 emails=amylaurio@gmail.com
+[06-Oct-2026 22:14:23 Asia/Manila] DISPATCH MESSAGE student_id=39 event=GATE_ABSENT template_len=79 message_len=95 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:23 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=39 channel=email template_len=79 message_len=95 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:23 Asia/Manila] DISPATCH EMAIL SEND student_id=39 to=amylaurio@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:23 Asia/Manila] EMAIL SEND START: to=amylaurio@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:29 Asia/Manila] EMAIL SEND RESULT: to=amylaurio@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:29 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=13 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:29 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:29 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=14 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:29 Asia/Manila] DISPATCH EMAIL RESULT student_id=39 to=amylaurio@gmail.com result=OK
+[06-Oct-2026 22:14:29 Asia/Manila] DISPATCH CALLED student_id=41 event=GATE_ABSENT
+[06-Oct-2026 22:14:29 Asia/Manila] DISPATCH GUARDIANS student_id=41 count=1 emails=amormiaamor572@gmail.com
+[06-Oct-2026 22:14:29 Asia/Manila] DISPATCH MESSAGE student_id=41 event=GATE_ABSENT template_len=79 message_len=98 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:29 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=41 channel=email template_len=79 message_len=98 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:29 Asia/Manila] DISPATCH EMAIL SEND student_id=41 to=amormiaamor572@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:29 Asia/Manila] EMAIL SEND START: to=amormiaamor572@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:35 Asia/Manila] EMAIL SEND RESULT: to=amormiaamor572@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:35 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=14 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:35 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:35 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=15 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:35 Asia/Manila] DISPATCH EMAIL RESULT student_id=41 to=amormiaamor572@gmail.com result=OK
+[06-Oct-2026 22:14:35 Asia/Manila] DISPATCH CALLED student_id=42 event=GATE_ABSENT
+[06-Oct-2026 22:14:35 Asia/Manila] DISPATCH GUARDIANS student_id=42 count=1 emails=ellobolina2@gmail.com
+[06-Oct-2026 22:14:35 Asia/Manila] DISPATCH MESSAGE student_id=42 event=GATE_ABSENT template_len=79 message_len=96 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:35 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=42 channel=email template_len=79 message_len=96 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:35 Asia/Manila] DISPATCH EMAIL SEND student_id=42 to=ellobolina2@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:35 Asia/Manila] EMAIL SEND START: to=ellobolina2@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:42 Asia/Manila] EMAIL SEND RESULT: to=ellobolina2@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:42 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=15 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:42 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:42 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=16 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:42 Asia/Manila] DISPATCH EMAIL RESULT student_id=42 to=ellobolina2@gmail.com result=OK
+[06-Oct-2026 22:14:42 Asia/Manila] DISPATCH CALLED student_id=43 event=GATE_ABSENT
+[06-Oct-2026 22:14:42 Asia/Manila] DISPATCH GUARDIANS student_id=43 count=0 emails=
+[06-Oct-2026 22:14:42 Asia/Manila] DISPATCH EARLY RETURN student_id=43 event=GATE_ABSENT status=NO_CONTACT
+[06-Oct-2026 22:14:42 Asia/Manila] DISPATCH CALLED student_id=44 event=GATE_ABSENT
+[06-Oct-2026 22:14:42 Asia/Manila] DISPATCH GUARDIANS student_id=44 count=1 emails=gievitancur01221976@gmail.com
+[06-Oct-2026 22:14:42 Asia/Manila] DISPATCH MESSAGE student_id=44 event=GATE_ABSENT template_len=79 message_len=102 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:42 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=44 channel=email template_len=79 message_len=102 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:42 Asia/Manila] DISPATCH EMAIL SEND student_id=44 to=gievitancur01221976@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:42 Asia/Manila] EMAIL SEND START: to=gievitancur01221976@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:48 Asia/Manila] EMAIL SEND RESULT: to=gievitancur01221976@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:48 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=16 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:48 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:48 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=17 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH EMAIL RESULT student_id=44 to=gievitancur01221976@gmail.com result=OK
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH CALLED student_id=45 event=GATE_ABSENT
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH GUARDIANS student_id=45 count=0 emails=
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH EARLY RETURN student_id=45 event=GATE_ABSENT status=NO_CONTACT
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH CALLED student_id=46 event=GATE_ABSENT
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH GUARDIANS student_id=46 count=0 emails=
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH EARLY RETURN student_id=46 event=GATE_ABSENT status=NO_CONTACT
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH CALLED student_id=47 event=GATE_ABSENT
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH GUARDIANS student_id=47 count=1 emails=
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH MESSAGE student_id=47 event=GATE_ABSENT template_len=79 message_len=92 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=47 channel=email template_len=79 message_len=92 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH CALLED student_id=48 event=GATE_ABSENT
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH GUARDIANS student_id=48 count=1 emails=manalomonaliza59@gmail.com
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH MESSAGE student_id=48 event=GATE_ABSENT template_len=79 message_len=90 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=48 channel=email template_len=79 message_len=90 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:48 Asia/Manila] DISPATCH EMAIL SEND student_id=48 to=manalomonaliza59@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:48 Asia/Manila] EMAIL SEND START: to=manalomonaliza59@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:53 Asia/Manila] EMAIL SEND RESULT: to=manalomonaliza59@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:53 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=17 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:53 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:53 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=18 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:53 Asia/Manila] DISPATCH EMAIL RESULT student_id=48 to=manalomonaliza59@gmail.com result=OK
+[06-Oct-2026 22:14:53 Asia/Manila] DISPATCH CALLED student_id=49 event=GATE_ABSENT
+[06-Oct-2026 22:14:53 Asia/Manila] DISPATCH GUARDIANS student_id=49 count=1 emails=mindaaviso055@gmail.com
+[06-Oct-2026 22:14:53 Asia/Manila] DISPATCH MESSAGE student_id=49 event=GATE_ABSENT template_len=79 message_len=94 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:53 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=49 channel=email template_len=79 message_len=94 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:53 Asia/Manila] DISPATCH EMAIL SEND student_id=49 to=mindaaviso055@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:53 Asia/Manila] EMAIL SEND START: to=mindaaviso055@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:57 Asia/Manila] EMAIL SEND RESULT: to=mindaaviso055@gmail.com result=SUCCESS
+[06-Oct-2026 22:14:57 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=18 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:57 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:14:57 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=19 last_counter_reset=2026-10-06
+[06-Oct-2026 22:14:57 Asia/Manila] DISPATCH EMAIL RESULT student_id=49 to=mindaaviso055@gmail.com result=OK
+[06-Oct-2026 22:14:57 Asia/Manila] DISPATCH CALLED student_id=50 event=GATE_ABSENT
+[06-Oct-2026 22:14:57 Asia/Manila] DISPATCH GUARDIANS student_id=50 count=1 emails=ailyn154@gmail.com
+[06-Oct-2026 22:14:57 Asia/Manila] DISPATCH MESSAGE student_id=50 event=GATE_ABSENT template_len=79 message_len=91 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:14:57 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=50 channel=email template_len=79 message_len=91 send_email=1 guardian_count=1
+[06-Oct-2026 22:14:57 Asia/Manila] DISPATCH EMAIL SEND student_id=50 to=ailyn154@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:14:57 Asia/Manila] EMAIL SEND START: to=ailyn154@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:02 Asia/Manila] EMAIL SEND RESULT: to=ailyn154@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:02 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=19 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:02 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:02 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=20 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH EMAIL RESULT student_id=50 to=ailyn154@gmail.com result=OK
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH CALLED student_id=52 event=GATE_ABSENT
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH GUARDIANS student_id=52 count=1 emails=
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH MESSAGE student_id=52 event=GATE_ABSENT template_len=79 message_len=96 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=52 channel=email template_len=79 message_len=96 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH CALLED student_id=53 event=GATE_ABSENT
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH GUARDIANS student_id=53 count=1 emails=
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH MESSAGE student_id=53 event=GATE_ABSENT template_len=79 message_len=91 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=53 channel=email template_len=79 message_len=91 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH CALLED student_id=54 event=GATE_ABSENT
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH GUARDIANS student_id=54 count=0 emails=
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH EARLY RETURN student_id=54 event=GATE_ABSENT status=NO_CONTACT
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH CALLED student_id=55 event=GATE_ABSENT
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH GUARDIANS student_id=55 count=1 emails=florence.candidato@deped.gov.ph
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH MESSAGE student_id=55 event=GATE_ABSENT template_len=79 message_len=99 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=55 channel=email template_len=79 message_len=99 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:02 Asia/Manila] DISPATCH EMAIL SEND student_id=55 to=florence.candidato@deped.gov.ph subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:02 Asia/Manila] EMAIL SEND START: to=florence.candidato@deped.gov.ph subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:07 Asia/Manila] EMAIL SEND RESULT: to=florence.candidato@deped.gov.ph result=SUCCESS
+[06-Oct-2026 22:15:07 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=20 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:07 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:07 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=21 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:07 Asia/Manila] DISPATCH EMAIL RESULT student_id=55 to=florence.candidato@deped.gov.ph result=OK
+[06-Oct-2026 22:15:07 Asia/Manila] DISPATCH CALLED student_id=56 event=GATE_ABSENT
+[06-Oct-2026 22:15:07 Asia/Manila] DISPATCH GUARDIANS student_id=56 count=1 emails=bunaocecilebaridon@gmail.com
+[06-Oct-2026 22:15:07 Asia/Manila] DISPATCH MESSAGE student_id=56 event=GATE_ABSENT template_len=79 message_len=90 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:07 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=56 channel=email template_len=79 message_len=90 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:07 Asia/Manila] DISPATCH EMAIL SEND student_id=56 to=bunaocecilebaridon@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:07 Asia/Manila] EMAIL SEND START: to=bunaocecilebaridon@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:13 Asia/Manila] EMAIL SEND RESULT: to=bunaocecilebaridon@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:13 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=21 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:13 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:13 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=22 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:13 Asia/Manila] DISPATCH EMAIL RESULT student_id=56 to=bunaocecilebaridon@gmail.com result=OK
+[06-Oct-2026 22:15:13 Asia/Manila] DISPATCH CALLED student_id=57 event=GATE_ABSENT
+[06-Oct-2026 22:15:13 Asia/Manila] DISPATCH GUARDIANS student_id=57 count=1 emails=doloresarteche3@gmail.com
+[06-Oct-2026 22:15:13 Asia/Manila] DISPATCH MESSAGE student_id=57 event=GATE_ABSENT template_len=79 message_len=99 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:13 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=57 channel=email template_len=79 message_len=99 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:13 Asia/Manila] DISPATCH EMAIL SEND student_id=57 to=doloresarteche3@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:13 Asia/Manila] EMAIL SEND START: to=doloresarteche3@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:18 Asia/Manila] EMAIL SEND RESULT: to=doloresarteche3@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:18 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=22 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:18 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:18 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=23 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:18 Asia/Manila] DISPATCH EMAIL RESULT student_id=57 to=doloresarteche3@gmail.com result=OK
+[06-Oct-2026 22:15:19 Asia/Manila] DISPATCH CALLED student_id=58 event=GATE_ABSENT
+[06-Oct-2026 22:15:19 Asia/Manila] DISPATCH GUARDIANS student_id=58 count=1 emails=
+[06-Oct-2026 22:15:19 Asia/Manila] DISPATCH MESSAGE student_id=58 event=GATE_ABSENT template_len=79 message_len=98 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:19 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=58 channel=email template_len=79 message_len=98 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:19 Asia/Manila] DISPATCH CALLED student_id=59 event=GATE_ABSENT
+[06-Oct-2026 22:15:19 Asia/Manila] DISPATCH GUARDIANS student_id=59 count=1 emails=calderonanggie06@gmail.com
+[06-Oct-2026 22:15:19 Asia/Manila] DISPATCH MESSAGE student_id=59 event=GATE_ABSENT template_len=79 message_len=92 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:19 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=59 channel=email template_len=79 message_len=92 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:19 Asia/Manila] DISPATCH EMAIL SEND student_id=59 to=calderonanggie06@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:19 Asia/Manila] EMAIL SEND START: to=calderonanggie06@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:24 Asia/Manila] EMAIL SEND RESULT: to=calderonanggie06@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:24 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=23 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:24 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:24 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=24 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:24 Asia/Manila] DISPATCH EMAIL RESULT student_id=59 to=calderonanggie06@gmail.com result=OK
+[06-Oct-2026 22:15:24 Asia/Manila] DISPATCH CALLED student_id=60 event=GATE_ABSENT
+[06-Oct-2026 22:15:24 Asia/Manila] DISPATCH GUARDIANS student_id=60 count=1 emails=pearlcortes08@gmail.com
+[06-Oct-2026 22:15:24 Asia/Manila] DISPATCH MESSAGE student_id=60 event=GATE_ABSENT template_len=79 message_len=95 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:24 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=60 channel=email template_len=79 message_len=95 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:24 Asia/Manila] DISPATCH EMAIL SEND student_id=60 to=pearlcortes08@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:24 Asia/Manila] EMAIL SEND START: to=pearlcortes08@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:28 Asia/Manila] EMAIL SEND RESULT: to=pearlcortes08@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:28 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=24 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:28 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:28 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=25 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:28 Asia/Manila] DISPATCH EMAIL RESULT student_id=60 to=pearlcortes08@gmail.com result=OK
+[06-Oct-2026 22:15:29 Asia/Manila] DISPATCH CALLED student_id=61 event=GATE_ABSENT
+[06-Oct-2026 22:15:29 Asia/Manila] DISPATCH GUARDIANS student_id=61 count=1 emails=
+[06-Oct-2026 22:15:29 Asia/Manila] DISPATCH MESSAGE student_id=61 event=GATE_ABSENT template_len=79 message_len=92 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:29 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=61 channel=email template_len=79 message_len=92 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:29 Asia/Manila] DISPATCH CALLED student_id=62 event=GATE_ABSENT
+[06-Oct-2026 22:15:29 Asia/Manila] DISPATCH GUARDIANS student_id=62 count=1 emails=markrapsing@gmail.com
+[06-Oct-2026 22:15:29 Asia/Manila] DISPATCH MESSAGE student_id=62 event=GATE_ABSENT template_len=79 message_len=99 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:29 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=62 channel=email template_len=79 message_len=99 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:29 Asia/Manila] DISPATCH EMAIL SEND student_id=62 to=markrapsing@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:29 Asia/Manila] EMAIL SEND START: to=markrapsing@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:33 Asia/Manila] EMAIL SEND RESULT: to=markrapsing@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:33 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=25 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:33 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:33 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=26 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:33 Asia/Manila] DISPATCH EMAIL RESULT student_id=62 to=markrapsing@gmail.com result=OK
+[06-Oct-2026 22:15:34 Asia/Manila] DISPATCH CALLED student_id=63 event=GATE_ABSENT
+[06-Oct-2026 22:15:34 Asia/Manila] DISPATCH GUARDIANS student_id=63 count=1 emails=jorgejocelyn@gmail.com
+[06-Oct-2026 22:15:34 Asia/Manila] DISPATCH MESSAGE student_id=63 event=GATE_ABSENT template_len=79 message_len=91 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:34 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=63 channel=email template_len=79 message_len=91 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:34 Asia/Manila] DISPATCH EMAIL SEND student_id=63 to=jorgejocelyn@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:34 Asia/Manila] EMAIL SEND START: to=jorgejocelyn@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:41 Asia/Manila] EMAIL SEND RESULT: to=jorgejocelyn@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:41 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=26 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:41 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:41 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=27 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:41 Asia/Manila] DISPATCH EMAIL RESULT student_id=63 to=jorgejocelyn@gmail.com result=OK
+[06-Oct-2026 22:15:41 Asia/Manila] DISPATCH CALLED student_id=64 event=GATE_ABSENT
+[06-Oct-2026 22:15:41 Asia/Manila] DISPATCH GUARDIANS student_id=64 count=1 emails=elishathalia22@gmail.com
+[06-Oct-2026 22:15:41 Asia/Manila] DISPATCH MESSAGE student_id=64 event=GATE_ABSENT template_len=79 message_len=96 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:41 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=64 channel=email template_len=79 message_len=96 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:41 Asia/Manila] DISPATCH EMAIL SEND student_id=64 to=elishathalia22@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:41 Asia/Manila] EMAIL SEND START: to=elishathalia22@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:46 Asia/Manila] EMAIL SEND RESULT: to=elishathalia22@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:46 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=27 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:46 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:46 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=28 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:46 Asia/Manila] DISPATCH EMAIL RESULT student_id=64 to=elishathalia22@gmail.com result=OK
+[06-Oct-2026 22:15:46 Asia/Manila] DISPATCH CALLED student_id=65 event=GATE_ABSENT
+[06-Oct-2026 22:15:46 Asia/Manila] DISPATCH GUARDIANS student_id=65 count=0 emails=
+[06-Oct-2026 22:15:46 Asia/Manila] DISPATCH EARLY RETURN student_id=65 event=GATE_ABSENT status=NO_CONTACT
+[06-Oct-2026 22:15:47 Asia/Manila] DISPATCH CALLED student_id=66 event=GATE_ABSENT
+[06-Oct-2026 22:15:47 Asia/Manila] DISPATCH GUARDIANS student_id=66 count=1 emails=kimmy@gmail.com
+[06-Oct-2026 22:15:47 Asia/Manila] DISPATCH MESSAGE student_id=66 event=GATE_ABSENT template_len=79 message_len=91 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:47 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=66 channel=email template_len=79 message_len=91 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:47 Asia/Manila] DISPATCH EMAIL SEND student_id=66 to=kimmy@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:47 Asia/Manila] EMAIL SEND START: to=kimmy@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:52 Asia/Manila] EMAIL SEND RESULT: to=kimmy@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:52 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=28 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:52 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:52 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=29 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:52 Asia/Manila] DISPATCH EMAIL RESULT student_id=66 to=kimmy@gmail.com result=OK
+[06-Oct-2026 22:15:52 Asia/Manila] DISPATCH CALLED student_id=67 event=GATE_ABSENT
+[06-Oct-2026 22:15:52 Asia/Manila] DISPATCH GUARDIANS student_id=67 count=1 emails=ceasar@gmail.com
+[06-Oct-2026 22:15:52 Asia/Manila] DISPATCH MESSAGE student_id=67 event=GATE_ABSENT template_len=79 message_len=89 template_preview={student_name} was marked ABSENT at the {school_name} gate o
+[06-Oct-2026 22:15:52 Asia/Manila] DISPATCH TRACE event=GATE_ABSENT student_id=67 channel=email template_len=79 message_len=89 send_email=1 guardian_count=1
+[06-Oct-2026 22:15:52 Asia/Manila] DISPATCH EMAIL SEND student_id=67 to=ceasar@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:52 Asia/Manila] EMAIL SEND START: to=ceasar@gmail.com subject=[Liceo de Baleno] Parent Notification: Gate absent
+[06-Oct-2026 22:15:57 Asia/Manila] EMAIL SEND RESULT: to=ceasar@gmail.com result=SUCCESS
+[06-Oct-2026 22:15:57 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=29 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:57 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:15:57 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=30 last_counter_reset=2026-10-06
+[06-Oct-2026 22:15:57 Asia/Manila] DISPATCH EMAIL RESULT student_id=67 to=ceasar@gmail.com result=OK
+[06-Oct-2026 22:15:57 Asia/Manila] DISPATCH CALLED student_id=68 event=GATE_ABSENT
+[06-Oct-2026 22:15:57 Asia/Manila] DISPATCH GUARDIANS student_id=68 count=0 emails=
+[06-Oct-2026 22:15:57 Asia/Manila] DISPATCH EARLY RETURN student_id=68 event=GATE_ABSENT status=NO_CONTACT
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:15:57 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:24:53 Asia/Manila] GATE API LOADED action=start_session helper_loaded=yes
+[06-Oct-2026 22:24:53 Asia/Manila] GATE API: start_session created session_id=95 type=time_in period=afternoon
+[06-Oct-2026 22:24:53 Asia/Manila] GATE API: start_session created 42 pending records for session_id=95
+[06-Oct-2026 22:25:00 Asia/Manila] GATE API LOADED action=engine_status helper_loaded=yes
+[06-Oct-2026 22:25:10 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:25:12 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:20 Asia/Manila] GATE API: matchedFace found student_id=51 name=Angie Nel Cabarles
+[06-Oct-2026 22:25:20 Asia/Manila] GATE API: duplicate check student_id=51 session_id=95 session_type=time_in existing=yes(status=pending)
+[06-Oct-2026 22:25:20 Asia/Manila] GATE API: pending branch entered student_id=51 session_id=95
+[06-Oct-2026 22:25:20 Asia/Manila] GATE API: pending branch about to dispatch student_id=51 event=TIME_IN
+[06-Oct-2026 22:25:20 Asia/Manila] DISPATCH CALLED student_id=51 event=TIME_IN
+[06-Oct-2026 22:25:20 Asia/Manila] DISPATCH GUARDIANS student_id=51 count=1 emails=cabarlesbabyann@gmail.com
+[06-Oct-2026 22:25:20 Asia/Manila] DISPATCH MESSAGE student_id=51 event=TIME_IN template_len=71 message_len=88 template_preview={student_name} has safely arrived at {school_name} on {date}
+[06-Oct-2026 22:25:20 Asia/Manila] DISPATCH TRACE event=TIME_IN student_id=51 channel=email template_len=71 message_len=88 send_email=1 guardian_count=1
+[06-Oct-2026 22:25:20 Asia/Manila] DISPATCH EMAIL SEND student_id=51 to=cabarlesbabyann@gmail.com subject=[Liceo de Baleno] Parent Notification: Time in
+[06-Oct-2026 22:25:20 Asia/Manila] EMAIL SEND START: to=cabarlesbabyann@gmail.com subject=[Liceo de Baleno] Parent Notification: Time in
+[06-Oct-2026 22:25:26 Asia/Manila] EMAIL SEND RESULT: to=cabarlesbabyann@gmail.com result=SUCCESS
+[06-Oct-2026 22:25:26 Asia/Manila] EMAIL COUNTER: Found row id=1 email_daily_count=30 last_counter_reset=2026-10-06
+[06-Oct-2026 22:25:26 Asia/Manila] EMAIL COUNTER: Updated row id=1, affected rows: 1, today: 2026-10-06
+[06-Oct-2026 22:25:26 Asia/Manila] EMAIL COUNTER: Verified email_daily_count=31 last_counter_reset=2026-10-06
+[06-Oct-2026 22:25:26 Asia/Manila] DISPATCH EMAIL RESULT student_id=51 to=cabarlesbabyann@gmail.com result=OK
+[06-Oct-2026 22:25:26 Asia/Manila] GATE API: pending branch dispatch returned student_id=51
+[06-Oct-2026 22:25:26 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:31 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:34 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:25:35 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:38 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:42 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:45 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:25:45 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:49 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:25:49 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:53 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:56 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:25:56 Asia/Manila] PHP Warning:  session_start(): open(C:\xampp\tmp\sess_jed0gvcg69cf3a0b71irqul4hp, O_RDWR) failed: Permission denied (13) in C:\xampp\htdocs\Tin\config.php on line 25
+[06-Oct-2026 22:25:56 Asia/Manila] PHP Warning:  session_start(): Failed to read session data: files (path: C:\xampp\tmp) in C:\xampp\htdocs\Tin\config.php on line 25
+[06-Oct-2026 22:26:00 Asia/Manila] GATE API LOADED action=check_session_status helper_loaded=yes
+[06-Oct-2026 22:26:00 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:26:02 Asia/Manila] GATE API LOADED action=recognize_attendance helper_loaded=yes
+[06-Oct-2026 22:28:52 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[06-Oct-2026 22:28:52 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[06-Oct-2026 22:37:25 Asia/Manila] GATE API LOADED action=registration_stats helper_loaded=yes
+[06-Oct-2026 22:37:30 Asia/Manila] GATE API LOADED action=registration_stats helper_loaded=yes
+[06-Oct-2026 22:50:19 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[06-Oct-2026 22:50:19 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[06-Oct-2026 22:50:22 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[06-Oct-2026 22:50:22 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[06-Oct-2026 22:50:23 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[06-Oct-2026 22:50:23 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330
+[06-Oct-2026 22:53:15 Asia/Manila] PHP Warning:  Undefined variable $monthlyData in C:\xampp\htdocs\Tin\admin\index.php on line 329
+[06-Oct-2026 22:53:15 Asia/Manila] PHP Warning:  Undefined variable $monthlyDailyData in C:\xampp\htdocs\Tin\admin\index.php on line 330

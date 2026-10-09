@@ -314,27 +314,97 @@ function autoDismissAlerts() {
 // ============================================================
 let cameraStream = null;
 
+function describeCameraError(error) {
+    const name = (error && error.name) || '';
+    switch (name) {
+        case 'NotAllowedError':
+        case 'PermissionDeniedError':
+            return 'Camera permission is blocked. Click the camera icon in the address bar, choose "Allow", then reload the page and try again.';
+        case 'SecurityError':
+            return 'Camera access needs a secure page. Open this site with https:// or localhost (not a raw IP address) and allow camera permission.';
+        case 'NotFoundError':
+        case 'DevicesNotFoundError':
+            return 'No camera was detected on this device. Connect a camera, then try again.';
+        case 'NotReadableError':
+        case 'TrackStartError':
+        case 'AbortError':
+            return 'The camera is being used by another app or browser tab. Close it, then try again.';
+        case 'OverconstrainedError':
+            return 'This camera does not support the required video settings. Try a different camera.';
+        default:
+            return 'Camera access was denied. Allow camera permission for this site and try again.';
+    }
+}
+
+function isCameraBusyError(error) {
+    const name = (error && error.name) || '';
+    return name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError';
+}
+
+/**
+ * Match the scanner container's aspect ratio to the real camera frame so the
+ * preview is shown 1:1 — no cropping, no zooming, no letterbox bars.
+ * @param {HTMLVideoElement} video
+ */
+function syncScannerAspect(video) {
+    const container = video && video.closest ? video.closest('.scanner-container') : null;
+    if (!container) return;
+
+    const apply = () => {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+            container.style.aspectRatio = video.videoWidth + ' / ' + video.videoHeight;
+        }
+    };
+
+    apply();
+    video.addEventListener('loadedmetadata', apply, { once: true });
+}
+
+async function acquireCamera(videoId) {
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+        const err = new Error('getUserMedia is unavailable in this context');
+        err.name = 'SecurityError';
+        throw err;
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: 'user' }
+    });
+
+    const video = document.getElementById(videoId);
+    if (video) {
+        video.srcObject = stream;
+        syncScannerAspect(video);
+        const played = video.play();
+        if (played && typeof played.catch === 'function') played.catch(() => {});
+    }
+    cameraStream = stream;
+    return stream;
+}
+
 /**
  * Start camera on a video element
  * @param {string} videoId
  * @returns {Promise<MediaStream>}
  */
 async function startCamera(videoId) {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 640, height: 480, facingMode: 'user' }
-        });
-        const video = document.getElementById(videoId);
-        if (video) {
-            video.srcObject = stream;
-            video.play();
+    stopCamera();
+
+    let lastError = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            return await acquireCamera(videoId);
+        } catch (error) {
+            lastError = error;
+            stopCamera();
+            if (!isCameraBusyError(error) || attempt === 1) break;
+            await new Promise(resolve => setTimeout(resolve, 800));
         }
-        cameraStream = stream;
-        return stream;
-    } catch (error) {
-        showToast('Camera access denied. Please allow camera permissions.', 'danger');
-        throw error;
     }
+
+    lastError.userMessage = lastError.userMessage || describeCameraError(lastError);
+    showToast(lastError.userMessage, 'danger', 6000);
+    throw lastError;
 }
 
 /**

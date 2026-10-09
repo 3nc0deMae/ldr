@@ -1633,6 +1633,15 @@ require_once __DIR__ . '/config.php';
                 titleEl.textContent = title || 'Registration Successful';
                 msgEl.textContent = message || 'Your account has been created. Redirecting to login...';
                 footer.innerHTML = '<button type="button" class="evt-btn evt-btn-primary" onclick="window.location.href=BASE_URL+\'/login.php?role=teacher\'">Go to Login</button>';
+            } else if (type === 'already') {
+                iconWrap.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
+                iconWrap.style.background = 'rgba(245,158,11,0.15)';
+                iconWrap.style.color = '#f59e0b';
+                titleEl.textContent = title || 'Account Already Exists';
+                msgEl.textContent = message || 'You already have an account. Please log in instead of registering again.';
+                footer.innerHTML =
+                    '<button type="button" class="evt-btn" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.75);width:auto;padding:13px 18px;" onclick="closeRegResultModal()">Close</button>' +
+                    '<button type="button" class="evt-btn evt-btn-primary" style="width:auto;padding:13px 18px;" onclick="window.location.href=BASE_URL+\'/login.php?role=teacher\'">Go to Login</button>';
             } else {
                 iconWrap.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i>';
                 iconWrap.style.background = 'rgba(239,68,68,0.15)';
@@ -1683,6 +1692,8 @@ require_once __DIR__ . '/config.php';
                     document.getElementById('stepIdentity').style.display = 'none';
                     document.getElementById('stepRegistration').style.display = 'block';
                     document.getElementById('verifyMsgText').textContent = data.message;
+                } else if (data.already_registered) {
+                    showResultModal('already', 'Account Already Exists', data.error || 'You already have an account. Please log in instead of registering again.');
                 } else {
                     showVerifyAlert(data.error || 'Verification failed', 'danger');
                 }
@@ -1773,6 +1784,8 @@ require_once __DIR__ . '/config.php';
                     setTimeout(function () {
                         window.location.href = BASE_URL + '/login.php?role=teacher';
                     }, 2500);
+                } else if (data.already_registered) {
+                    showResultModal('already', 'Account Already Exists', data.error || 'You already have an account. Please log in instead of registering again.');
                 } else {
                     showResultModal('error', 'Registration Failed', data.error || 'Registration failed. Please try again.');
                 }

@@ -287,7 +287,7 @@ $__userInitial = $__userName ? strtoupper(substr($__userName, 0, 1)) : strtouppe
             <?php $role = $_SESSION['user_role'] ?? 'admin'; ?>
 
             <?php if (file_exists(__DIR__ . '/../' . $role . '/settings.php')): ?>
-            <a href="<?= BASE_URL ?>/<?= $role ?>/settings.php" class="navbar-profile-menu-item"><i class="bi bi-gear"></i>Settings</a>
+            <a href="<?= BASE_URL ?>/settings.php?tab=myaccount" class="navbar-profile-menu-item"><i class="bi bi-gear"></i>Settings</a>
             <?php endif; ?>
             <div class="navbar-profile-menu-divider"></div>
             <a href="<?= BASE_URL ?>/logout.php" class="navbar-profile-menu-item"><i class="bi bi-box-arrow-right"></i>Logout</a>

@@ -4,6 +4,7 @@
  */
 
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../includes/face_api.php';
 require_once __DIR__ . '/../send_notification_helper.php';
 
 header('Content-Type: application/json');
@@ -599,6 +600,19 @@ try {
                 'success' => true,
                 'status' => $newStatus,
                 'message' => 'Attendance status updated successfully.'
+            ]);
+            break;
+
+        // ============================================
+        // RECOGNITION ENGINE STATUS
+        // Used by the scanner to show "Model still loading..." until the
+        // Python face engine is warm and answering.
+        // ============================================
+        case 'engine_status':
+            $engineApi = new FaceRecognitionAPI(PYTHON_API_URL, PYTHON_API_KEY, 3);
+            echo json_encode([
+                'success' => true,
+                'ready'   => $engineApi->isAvailable()
             ]);
             break;
 
