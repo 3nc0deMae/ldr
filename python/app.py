@@ -83,6 +83,7 @@ logger.info("Loading DeepFace + Facenet512 model (first run downloads ~90MB mode
 from deepface import DeepFace
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
 
 # Global model cache to prevent reloading
 _model_cache = {}
@@ -149,6 +150,13 @@ CORS(app)
 def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def get_json_body():
+    """Return parsed JSON dict or None (never raises).
+    force=True parses the body as JSON even if the Content-Type header is wrong,
+    silent=True returns None instead of raising 400/415 on bad input."""
+    return request.get_json(silent=True, force=True)
 
 
 _haar_cascade = None
@@ -584,6 +592,15 @@ def detect_faces_in_image(image):
 # API ENDPOINTS
 # ============================================================
 
+@app.route('/', methods=['GET'])
+def index():
+    """Root route so opening the server URL in a browser shows status"""
+    return jsonify({
+        'service': 'LDB-FRAS Face Recognition Engine',
+        'status': 'running'
+    })
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
@@ -603,9 +620,9 @@ def check_quality_endpoint():
     Response: { quality_ok: bool, issues: [...], metrics: {...} }
     """
     try:
-        data = request.get_json()
+        data = get_json_body()
         if not data or 'image' not in data:
-            return jsonify({'error': 'No image provided'}), 400
+            return jsonify({'error': 'No image provided. Send JSON: {"image": "<base64>"}'}), 400
 
         image = decode_base64_image(data['image'])
         if image is None:
@@ -620,6 +637,8 @@ def check_quality_endpoint():
             'status': 'good' if quality_ok else 'poor'
         })
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Quality check error: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -633,10 +652,10 @@ def encode_face_endpoint():
     Response: { encoding: [...], status: 'success' }
     """
     try:
-        data = request.get_json()
+        data = get_json_body()
 
         if not data or 'image' not in data:
-            return jsonify({'error': 'No image provided'}), 400
+            return jsonify({'error': 'No image provided. Send JSON: {"image": "<base64>"}'}), 400
 
         image = decode_base64_image(data['image'])
         if image is None:
@@ -653,6 +672,8 @@ def encode_face_endpoint():
             'message': 'Face encoded successfully'
         })
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Encode face error: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -666,10 +687,10 @@ def recognize_face_endpoint():
     Response: { matched: bool, student_id: string, confidence: float, quality_issues: [...] }
     """
     try:
-        data = request.get_json()
+        data = get_json_body()
 
         if not data or 'image' not in data:
-            return jsonify({'error': 'No image provided'}), 400
+            return jsonify({'error': 'No image provided. Send JSON: {"image": "<base64>"}'}), 400
 
         if 'known_faces' not in data or not data['known_faces']:
             return jsonify({'error': 'No known faces provided'}), 400
@@ -766,6 +787,8 @@ def recognize_face_endpoint():
             'message': reason
         })
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Recognize face error: {str(e)}")
         return jsonify({'error': str(e), 'matched': False}), 500
@@ -779,10 +802,10 @@ def detect_face_endpoint():
     Response: { faces: [{top, right, bottom, left}], count: int }
     """
     try:
-        data = request.get_json()
+        data = get_json_body()
 
         if not data or 'image' not in data:
-            return jsonify({'error': 'No image provided'}), 400
+            return jsonify({'error': 'No image provided. Send JSON: {"image": "<base64>"}'}), 400
 
         image = decode_base64_image(data['image'])
         if image is None:
@@ -795,6 +818,8 @@ def detect_face_endpoint():
             'count': len(faces)
         })
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Detect face error: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -808,10 +833,10 @@ def save_face_image_endpoint():
     Response: { path: str, status: 'success' }
     """
     try:
-        data = request.get_json()
+        data = get_json_body()
 
         if not data or 'image' not in data:
-            return jsonify({'error': 'No image provided'}), 400
+            return jsonify({'error': 'No image provided. Send JSON: {"image": "<base64>"}'}), 400
 
         student_id = data.get('student_id', 'unknown')
         face_type = data.get('face_type', 'front')
@@ -834,6 +859,8 @@ def save_face_image_endpoint():
             'message': 'Face image saved successfully'
         })
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Save face image error: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -847,10 +874,10 @@ def batch_encode_endpoint():
     Response: { encoding: [...], status: 'success' }
     """
     try:
-        data = request.get_json()
+        data = get_json_body()
 
         if not data or 'images' not in data:
-            return jsonify({'error': 'No images provided'}), 400
+            return jsonify({'error': 'No images provided. Send JSON: {"images": {"front": "<base64>"}}'}), 400
 
         images = data['images']
         encodings = []
@@ -898,6 +925,8 @@ def batch_encode_endpoint():
             'message': f'Successfully encoded {len(encodings)} face(s)'
         })
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Batch encode error: {str(e)}")
         return jsonify({'error': str(e)}), 500
