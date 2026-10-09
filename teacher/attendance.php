@@ -490,7 +490,7 @@ if ($activeSession) {
                             <i class="bi bi-clock" style="font-size:12px;"></i> Time left: <strong id="sessionTimer">--:--</strong>
                         </div>
                     </div>
-                    <form method="POST" action="<?= BASE_URL ?>/api/teacher-attendance.php" class="m-0" style="flex-shrink:0;">
+                    <form method="POST" action="<?= BASE_URL ?>/api/teacher-attendance.php" id="endSessionForm" class="m-0" style="flex-shrink:0;">
                         <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                         <input type="hidden" name="action" value="end_session">
                         <input type="hidden" name="session_id" value="<?= $activeSession['id'] ?>">
@@ -498,6 +498,32 @@ if ($activeSession) {
                             <i class="bi bi-stop-circle me-1"></i> End Session
                         </button>
                     </form>
+                    <script>
+                    document.getElementById('endSessionForm').addEventListener('submit', async function(event) {
+                        event.preventDefault();
+                        const button = this.querySelector('button[type="submit"]');
+                        button.disabled = true;
+                        try {
+                            const response = await fetch(this.action, {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                                body: new FormData(this)
+                            });
+                            if (response.redirected) {
+                                window.location.assign(response.url);
+                                return;
+                            }
+                            const result = await response.json();
+                            if (!response.ok || result.success !== true) {
+                                throw new Error(result.error || result.message || 'Unexpected session response. Please reload the attendance page and check whether the session ended.');
+                            }
+                            window.location.assign(<?= json_encode(BASE_URL . '/teacher/attendance.php') ?>);
+                        } catch (error) {
+                            alert(error.message || 'Could not end the session. Please reload the attendance page to check its status.');
+                            button.disabled = false;
+                        }
+                    });
+                    </script>
                 </div>
                 <?php endif; ?>
 
