@@ -81,7 +81,7 @@ define('UPLOADS_PATH', __DIR__ . '/uploads');
 define('FACES_PATH', __DIR__ . '/uploads/faces');
 
 // Python Face Recognition API (overridable via environment variables)
-define('PYTHON_API_URL', rtrim(getenv('PYTHON_API_URL') ?: 'http://127.0.0.1:5000', '/'));
+define('PYTHON_API_URL', rtrim(getenv('PYTHON_API_URL') ?: 'https://disciplined-expression-production.up.railway.app', '/'));
 define('PYTHON_API_KEY', getenv('PYTHON_API_KEY') ?: 'ldb_fras_api_key_2026');
 
 // User Roles
