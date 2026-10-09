@@ -727,19 +727,25 @@ def recognize_face_endpoint():
 
         # Compare the unknown face against EVERY registered student and rank
         # the candidates by cosine distance (closest first).
-        ranked = []
+        candidates = {}
         for face_data in data['known_faces']:
             known_encoding = json.loads(face_data['encoding']) if isinstance(
                 face_data['encoding'], str
             ) else face_data['encoding']
 
             is_match, distance = compare_faces(known_encoding, unknown_encoding)
-            ranked.append({
+            candidate = {
                 'student_id': face_data['student_id'],
                 'distance': distance,
                 'is_match': is_match,
-            })
+            }
+            # Multiple templates for one student must not compete with each
+            # other as if they represented different identities.
+            identity = str(face_data['student_id'])
+            if identity not in candidates or distance < candidates[identity]['distance']:
+                candidates[identity] = candidate
 
+        ranked = list(candidates.values())
         ranked.sort(key=lambda r: r['distance'])
         best = ranked[0] if ranked else None
         second = ranked[1] if len(ranked) > 1 else None
@@ -754,7 +760,11 @@ def recognize_face_endpoint():
         # Stricter thresholds help distinguish identical twins: the best match
         # must be clearly the closest match with high confidence.
         matched = bool(best and best['is_match'])
-        ambiguous = bool(second is not None and margin < MIN_MATCH_MARGIN)
+        ambiguous = bool(matched and second is not None and margin < MIN_MATCH_MARGIN)
+        logger.info(
+            "Recognition decision: candidates=%s best_distance=%.4f second_distance=%.4f margin=%.4f matched=%s ambiguous=%s",
+            len(ranked), best_distance, second_distance, margin, matched, ambiguous
+        )
 
         if matched and not ambiguous and confidence >= MIN_CONFIDENCE:
             return jsonify({
