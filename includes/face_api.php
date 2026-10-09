@@ -8,6 +8,11 @@ class FaceRecognitionAPI {
     private $apiUrl;
     private $apiKey;
     private $timeout;
+    private $lastError = null;
+
+    public function getLastError() {
+        return $this->lastError;
+    }
 
     public function __construct($apiUrl = PYTHON_API_URL, $apiKey = PYTHON_API_KEY, $timeout = 120) {
         $this->apiUrl  = rtrim($apiUrl, '/');
@@ -22,6 +27,7 @@ class FaceRecognitionAPI {
      * @return array|null
      */
     private function request($endpoint, $data = []) {
+        $this->lastError = null;
         $url = $this->apiUrl . $endpoint;
 
         $ch = curl_init();
@@ -44,10 +50,14 @@ class FaceRecognitionAPI {
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error    = curl_error($ch);
+        $errorCode = curl_errno($ch);
         curl_close($ch);
 
         if ($error) {
             error_log("Face API Error: $error");
+            $this->lastError = $errorCode === 28
+                ? 'Face encoding timed out. Please retry after the recognition service has loaded.'
+                : 'Cannot connect to the face recognition service. Please check the service logs.';
             return null;
         }
 
@@ -55,9 +65,19 @@ class FaceRecognitionAPI {
 
         if ($httpCode >= 400) {
             error_log("Face API HTTP Error ($httpCode): " . ($result['error'] ?? 'Unknown'));
+            $this->lastError = 'Face recognition service returned HTTP ' . $httpCode . '. Please check the service logs.';
+            if ($httpCode === 400 && is_array($result)) {
+                $details = array_filter($result['details'] ?? [], 'is_string');
+                $this->lastError = ($result['error'] ?? 'Face images could not be encoded')
+                    . ($details ? ': ' . implode('; ', $details) : '');
+            }
             return null;
         }
 
+        if (!is_array($result)) {
+            $this->lastError = 'Face recognition service returned an invalid response. Please check PYTHON_API_URL.';
+            return null;
+        }
         return $result;
     }
 
@@ -67,7 +87,7 @@ class FaceRecognitionAPI {
      */
     public function isAvailable() {
         $result = $this->request('/api/health');
-        return $result && $result['status'] === 'ok';
+        return $result && ($result['status'] ?? null) === 'ok';
     }
 
     /**
