@@ -935,8 +935,7 @@ if __name__ == '__main__':
     
     # Warm up models before binding to port
     
-    model_status = 'Loaded & warmed up' if warmup_success else 'Loaded (warm-up failed)'
-    logger.info(f"Model status: {model_status}")
+    
     
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', '0') == '1'
