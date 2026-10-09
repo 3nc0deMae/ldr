@@ -6,4 +6,6 @@ tf-keras
 opencv-python
 numpy
 retina-face
-mediapipe       # lightweight CPU-friendly detector alternative (set FACE_DETECTOR=mediapipe)
+mediapipe       
+gunicorn==23.0.0
+# lightweight CPU-friendly detector alternative (set FACE_DETECTOR=mediapipe)
