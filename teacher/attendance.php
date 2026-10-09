@@ -504,7 +504,9 @@ if ($activeSession) {
                         const button = this.querySelector('button[type="submit"]');
                         button.disabled = true;
                         try {
-                            const response = await fetch(this.action, {
+                            // The hidden input named "action" shadows form.action.
+                            const endpoint = new URL(this.getAttribute('action'), window.location.href);
+                            const response = await fetch(endpoint.href, {
                                 method: 'POST',
                                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                                 body: new FormData(this)
@@ -512,6 +514,10 @@ if ($activeSession) {
                             if (response.redirected) {
                                 window.location.assign(response.url);
                                 return;
+                            }
+                            const contentType = response.headers.get('Content-Type') || '';
+                            if (!contentType.toLowerCase().includes('application/json')) {
+                                throw new Error('The session service returned an unexpected page. Please reload the attendance page to check the session status.');
                             }
                             const result = await response.json();
                             if (!response.ok || result.success !== true) {
