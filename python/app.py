@@ -934,7 +934,7 @@ if __name__ == '__main__':
     logger.info(f"Upload folder: {os.path.abspath(UPLOAD_FOLDER)}")
     
     # Warm up models before binding to port
-    warmup_success = warmup_models()
+    
     model_status = 'Loaded & warmed up' if warmup_success else 'Loaded (warm-up failed)'
     logger.info(f"Model status: {model_status}")
     
